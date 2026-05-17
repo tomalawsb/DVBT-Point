@@ -1,0 +1,11 @@
+DVB-T/T2 Point 19.11 - 1705261840
+
+Poprawki po testach UI/profilu:
+- Usunięto z panelu Dane/API niezrozumiałe funkcje zewnętrznych warstw: import GeoJSON i „Podłącz warstwę”.
+- Uproszczono panel Dane i diagnostyka do realnie używanych funkcji: baza nadajników, profil DEM, RF/ITM-lite, ANT, aktualizacja PWA.
+- Profil terenu nie zostawia już pustego panelu, gdy Open-Meteo nie odpowiada albo limituje zapytania.
+- Dodano awaryjny profil z wyraźnym ostrzeżeniem, że nie jest to pełny DEM.
+- Zmniejszono liczbę punktów profilu, żeby rzadziej wpadać w limity API.
+- Diagnostyka ANT pokazuje jasny raport końcowy i informację, że przeglądarka nie pobierze/zapisze automatycznie plików ANT na GitHubie.
+- Zmieniono nazwę diagnostyki ANT na prostsze „Sprawdź pliki ANT”.
+- Podbito wersję UI i service workera do 19.11.

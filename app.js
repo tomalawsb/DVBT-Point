@@ -1,6 +1,6 @@
 (() => {
   'use strict';
-  const APP_VERSION = '19.10.1 - 1705261822';
+  const APP_VERSION = '19.12 - 1705261905';
   const STORE = 'dvbt-point-v19-state';
   const $ = id => document.getElementById(id);
   const state = {
@@ -9,6 +9,11 @@
     heading:null, rawHeading:null, pendingHeading:null, headingSource:'brak', headingInvert:false, headingOffset:0, compassOn:false, gpsWatchId:null, headingRaf:null, headingSamples:[], headingLastTs:0, coverageLayer:null, rfLayer:null, coverageTileUrl:'', rfBusy:false, lastRf:null, antPatterns:new Map(), demCache:null, demBusy:false
   };
   let profileAbort = null;
+  function withTimeoutSignal(ms){
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), ms);
+    return {signal: ctrl.signal, clear: () => clearTimeout(timer)};
+  }
 
   function normDeg(v){ return ((v % 360) + 360) % 360; }
   function smoothHeading(prev, next, strength=.075){
@@ -328,24 +333,18 @@
 
   function showData(){
     const muxCount=state.txs.reduce((sum,t)=>sum+(t.muxes?.length||0),0);
-    openPanel('Dane / API','Prawdziwe dane: wysokości, nadajniki i legalne warstwy zasięgu.', `
+    openPanel('Dane i diagnostyka','Najważniejsze funkcje techniczne bez zbędnych opcji.', `
       <div class="info-card"><strong>Wersja</strong><span>${APP_VERSION}</span></div>
-      <div class="info-card"><strong>Profil terenu / DEM</strong><span>DEM pobierasz na żądanie dla wybranego nadajnika i zapisujesz w lokalnym cache przeglądarki. Open-Meteo zostaje tylko jako źródło pobierania brakujących punktów.</span><button id="downloadDemSelected" class="panel-btn primary">Pobierz DEM dla wybranego nadajnika</button><button id="showDemStats" class="panel-btn">Pokaż stan cache DEM</button></div>
-      <div class="info-card"><strong>Nadajniki</strong><span>Baza RadioPolska po oczyszczeniu: ${state.txs.length} obiektów nadawczych i ${muxCount} emisji/MUX-ów. Ładowane z data/transmitters.json.</span></div>
-      <div class="info-card"><strong>Własne obliczanie zasięgu RF / ITM</strong><span>Aplikacja liczy poglądowy zasięg wybranego nadajnika z ERP, częstotliwości, wysokości anten, lokalnego DEM i plików ANT. Wersja 19.9 dodaje pierwszy model terenowy typu ITM/Longley-Rice: profil po promieniu, krzywizna Ziemi, strefa Fresnela i strata dyfrakcyjna za przeszkodami.</span><button id="calcRfCoverage" class="panel-btn primary">Oblicz zasięg ITM / terenowy</button><button id="clearRfCoverage" class="panel-btn">Usuń obliczony zasięg</button></div>
-      <div class="info-card"><strong>Charakterystyki anten ANT</strong><span>Wersja 19.6 ma diagnostykę plików ANT: sprawdza indeks, pobrane pliki lokalne, poprawność parsera, zakres azymutów i to, czy RF faktycznie ma z czego korzystać. Pliki pobierzesz komendą: python download_ant_patterns.py.</span><button id="runAntDiagnostics" class="panel-btn primary">Uruchom diagnostykę ANT</button></div>
-      <div class="info-card"><strong>Prawdziwy zasięg masztów</strong><span>Warstwa zasięgu może pochodzić z własnego obliczenia RF, importu GeoJSON albo licencjonowanego XYZ tile URL. Gotowych kafelków RadioPolska/Emitel aplikacja nie skrobie.</span></div>
-      <div class="info-card"><strong>Import GeoJSON zasięgu</strong><input id="coverageGeoJson" type="file" accept=".json,.geojson,application/geo+json,application/json"></div>
-      <div class="info-card"><strong>Licencjonowane kafelki zasięgu</strong><input id="coverageTileUrl" type="url" placeholder="https://.../{z}/{x}/{y}.png — wymagane {z}, {x}, {y}" value="${esc(state.coverageTileUrl||'')}"><button id="applyCoverageTile" class="panel-btn primary">Podłącz warstwę</button><button id="clearCoverage" class="panel-btn">Usuń warstwę</button></div>
+      <div class="info-card"><strong>Baza nadajników</strong><span>Załadowano ${state.txs.length} obiektów nadawczych i ${muxCount} emisji/MUX-ów z data/transmitters.json.</span></div>
+      <div class="info-card"><strong>Profil terenu</strong><span>Profil działa najpierw z lokalnego cache DEM. Jeżeli API Open-Meteo jest zablokowane limitem, aplikacja pokaże profil awaryjny oznaczony jako przybliżony, zamiast zostawiać puste okno.</span><button id="downloadDemSelected" class="panel-btn primary">Pobierz DEM dla wybranego nadajnika</button><button id="showDemStats" class="panel-btn">Stan cache DEM</button></div>
+      <div class="info-card"><strong>Zasięg terenowy RF / ITM-lite</strong><span>Liczenie poglądowego zasięgu z ERP, częstotliwości, wysokości anten, DEM i charakterystyki ANT, jeśli plik ANT jest dostępny lokalnie.</span><button id="calcRfCoverage" class="panel-btn primary">Oblicz zasięg terenowy</button><button id="clearRfCoverage" class="panel-btn">Usuń obliczony zasięg</button></div>
+      <div class="info-card"><strong>Pliki ANT anten</strong><span>Diagnostyka sprawdza, czy w tej konkretnej paczce/na tej stronie są faktycznie dostępne pliki data/ant/*.ant. Sama przeglądarka nie zapisze ich automatycznie na GitHubie — trzeba je pobrać skryptem i wgrać razem z aplikacją.</span><button id="runAntDiagnostics" class="panel-btn primary">Sprawdź pliki ANT</button></div>
       <button id="refreshPwa" class="panel-btn primary">Wymuś aktualizację PWA</button>`);
     $('calcRfCoverage').onclick=()=>calculateRfCoverage().catch(err=>toast('Błąd obliczeń RF: '+(err.message||err)));
     $('clearRfCoverage').onclick=()=>{ clearRfLayer(); toast('Usunięto obliczony zasięg RF.'); };
     $('runAntDiagnostics').onclick=()=>runAntDiagnostics().catch(err=>toast('Błąd diagnostyki ANT: '+(err.message||err)));
     $('downloadDemSelected').onclick=()=>downloadDemForSelectedTx();
     $('showDemStats').onclick=()=>{ const st=demStats(); toast('Cache DEM: '+st.points+' punktów lokalnie.'); };
-    $('coverageGeoJson').onchange=e=>importCoverageGeoJson(e.target.files?.[0]).catch(err=>toast('Błąd GeoJSON: '+(err.message||err)));
-    $('applyCoverageTile').onclick=()=>applyCoverageTile($('coverageTileUrl').value);
-    $('clearCoverage').onclick=()=>{ clearCoverageLayer(); state.coverageTileUrl=''; save(); toast('Usunięto warstwę zasięgu.'); };
     $('refreshPwa').onclick=async()=>{ const regs=await navigator.serviceWorker?.getRegistrations?.()||[]; for(const r of regs){ await r.unregister(); } const keys=await caches.keys(); await Promise.all(keys.map(k=>caches.delete(k))); location.reload(); };
   }
 
@@ -390,26 +389,36 @@
     return Number.isFinite(+val) ? +val : null;
   }
   function demStats(){ const c=loadDemCache(); return {points:Object.keys(c).length}; }
-  async function fetchElevationsFromApi(points, errText){
+  async function fetchElevationsFromApi(points, errText, opts={}){
     const out=[];
-    for(let i=0;i<points.length;i+=20){
-      const chunk=points.slice(i,i+20);
+    const retries = Number.isFinite(+opts.retries) ? Math.max(1, +opts.retries) : 4;
+    const chunkSize = Number.isFinite(+opts.chunkSize) ? Math.max(1, +opts.chunkSize) : 20;
+    const timeoutMs = Number.isFinite(+opts.timeoutMs) ? Math.max(1000, +opts.timeoutMs) : 9000;
+    const pauseMs = Number.isFinite(+opts.pauseMs) ? Math.max(0, +opts.pauseMs) : 500;
+    for(let i=0;i<points.length;i+=chunkSize){
+      const chunk=points.slice(i,i+chunkSize);
       const url=`https://api.open-meteo.com/v1/elevation?latitude=${chunk.map(p=>p.lat.toFixed(5)).join(',')}&longitude=${chunk.map(p=>p.lon.toFixed(5)).join(',')}`;
       let ok=false, lastErr='';
-      for(let attempt=1; attempt<=4; attempt++){
+      for(let attempt=1; attempt<=retries; attempt++){
+        const timeout = withTimeoutSignal(timeoutMs);
         try{
-          const r=await fetch(url);
-          if(r.status === 429){ lastErr='Limit Open-Meteo 429'; await sleep(3500*attempt); continue; }
+          const r=await fetch(url, {cache:'no-store', signal: timeout.signal});
+          timeout.clear();
+          if(r.status === 429){ lastErr='Limit Open-Meteo 429'; await sleep(Math.min(2500*attempt, 7000)); continue; }
           if(!r.ok) throw new Error('HTTP '+r.status);
           const j=await r.json();
           if(!Array.isArray(j.elevation) || j.elevation.length !== chunk.length) throw new Error('API wysokości zwróciło niepełne dane.');
           out.push(...j.elevation.map(x=>+x));
           ok=true;
           break;
-        }catch(e){ lastErr=e.message||String(e); await sleep(1200*attempt); }
+        }catch(e){
+          timeout.clear();
+          lastErr = e?.name === 'AbortError' ? 'przekroczono czas oczekiwania' : (e.message||String(e));
+          if(attempt < retries) await sleep(Math.min(900*attempt, 2500));
+        }
       }
       if(!ok) throw new Error((errText || 'Nie udało się pobrać wysokości DEM.') + ' ' + lastErr);
-      await sleep(500);
+      if(pauseMs) await sleep(pauseMs);
     }
     return out;
   }
@@ -553,7 +562,8 @@
     const notUsed=[];
     const checked=[];
     const limit=items.length;
-    toast('Diagnostyka ANT: sprawdzam lokalne pliki...');
+    toast('Sprawdzam pliki ANT...');
+    openPanel('Sprawdzanie ANT', 'Trwa kontrola plików data/ant/*.ant.', '<div class="info-card"><strong>Pracuję</strong><span>Sprawdzam, które pliki ANT są naprawdę dostępne w tej paczce lub na stronie.</span></div>');
     for(const item of items){
       if(item.url) withUrl++; else withoutUrl++;
       const path=item.local_path;
@@ -579,14 +589,15 @@
     const usedDownloaded=checked.filter(x=>used.has(x.path)).length;
     const usedOk=checked.filter(x=>used.has(x.path) && x.ok).length;
     const rfReady = usedOk > 0;
-    openPanel('Diagnostyka ANT 19.6', 'Sprawdzenie lokalnych charakterystyk anten z RadioPolska.', `
+    openPanel('Raport ANT', 'Diagnostyka zakończona. To jest wynik końcowy sprawdzenia.', `
       <div class="info-card"><strong>Podsumowanie</strong><span>Indeks ANT: ${items.length} wpisów. Linki ANT: ${withUrl}. Bez linku: ${withoutUrl}. Lokalnie dostępne pliki: ${fetched}. Brakujące lokalnie: ${missing}.</span></div>
       <div class="info-card"><strong>Parser</strong><span>Poprawnie odczytane: ${parsedOk}. Błędny/nieznany format: ${parsedBad}. Pełny lub prawie pełny zakres 360°: ${full360}. Niepełny zakres: ${partial}.</span></div>
       <div class="info-card"><strong>Użycie w RF</strong><span>Ścieżki ANT używane przez nadajniki: ${usedCount}. Z tych ścieżek lokalnie dostępne: ${usedDownloaded}. Poprawnie parsowane i gotowe dla RF: ${usedOk}. Status: ${rfReady ? 'RF ma dostęp do charakterystyk ANT.' : 'RF nie ma jeszcze poprawnych lokalnych charakterystyk ANT.'}</span></div>
       <div class="info-card"><strong>Brakujące pliki — pierwsze 30</strong><span>${missingList.length ? esc(missingList.join('\n')) : 'Brak na sprawdzonej liście.'}</span></div>
       <div class="info-card"><strong>Błędne formaty — pierwsze 30</strong><span>${bad.length ? esc(bad.join('\n')) : 'Nie wykryto błędnych formatów w pobranych plikach.'}</span></div>
-      <div class="info-card"><strong>Wniosek</strong><span>${rfReady ? 'Można przejść do kolejnego etapu: dokładniejszy model propagacji albo DEM offline.' : 'Najpierw trzeba pobrać brakujące pliki poleceniem python download_ant_patterns.py i ponowić diagnostykę.'}</span></div>
+      <div class="info-card"><strong>Wniosek końcowy</strong><span>${rfReady ? 'Pliki ANT są dostępne i RF może z nich korzystać.' : 'Brakuje lokalnych plików ANT w tej uruchomionej wersji aplikacji. Uruchom python download_ant_patterns.py, a potem wgraj/skopiuj cały folder data/ant razem z aplikacją. Sama przeglądarka nie zapisze tych plików automatycznie na GitHubie.'}</span></div>
     `);
+    toast('Diagnostyka ANT zakończona.');
   }
 
   async function loadAntPattern(mux){
@@ -746,17 +757,46 @@
 
   async function showProfile(){
     const t=state.selected; if(!t) return toast('Najpierw wybierz nadajnik.');
-    openPanel('Profil terenu', `${state.rx.label} → ${t.short_name||t.name}`, `<div class="row info-card"><strong>Wysokość anteny odbiorczej</strong><input id="rxHeight" type="number" min="1" max="40" value="${state.rxHeight}"></div><button id="profileDownloadDem" class="panel-btn primary" type="button">Pobierz DEM i odśwież profil</button><div id="profileBox" class="info-card"><strong>Ładuję profil terenu...</strong><span>Najpierw używam lokalnego DEM. Przy brakach aplikacja spróbuje dociągnąć tylko punkty potrzebne do tego profilu.</span></div>`);
+    openPanel('Profil terenu', `${state.rx.label} → ${t.short_name||t.name}`, `<div class="row info-card"><strong>Wysokość anteny odbiorczej</strong><input id="rxHeight" type="number" min="1" max="40" value="${state.rxHeight}"></div><button id="profileDownloadDem" class="panel-btn primary" type="button">Pobierz DEM i odśwież profil</button><div id="profileBox" class="info-card"><strong>Ładuję profil terenu...</strong><span>Najpierw używam lokalnego DEM. Przy braku odpowiedzi API profil zostanie narysowany w trybie awaryjnym, z wyraźnym ostrzeżeniem.</span></div>`);
     $('rxHeight').onchange=e=>{state.rxHeight=Math.max(1,Math.min(40,+e.target.value||6)); save(); showProfile();};
     $('profileDownloadDem').onclick=async()=>{ await downloadDemForSelectedTx(); showProfile(); };
     try{ const p=await fetchProfile(state.rx,t); renderProfile(p,t); }catch(err){ $('profileBox').innerHTML=`<strong>Profil nie został wczytany</strong><span>${esc(err.message||'Nie udało się pobrać danych wysokości.')} Kliknij „Pobierz DEM i odśwież profil” albo spróbuj później, jeśli API wysokości jest limitowane.</span>`; }
   }
   async function fetchProfile(a,t){
     if(profileAbort) profileAbort.abort(); profileAbort=new AbortController();
-    const n=42, points=[];
+    const n=26, points=[];
     for(let i=0;i<n;i++){ const f=i/(n-1); points.push({lat:a.lat+(t.lat-a.lat)*f, lon:a.lon+(t.lon-a.lon)*f}); }
-    const elev=await fetchElevations(points);
-    return elev.map((e,i)=>({d:t.distance*i/(n-1), e:+e}));
+    const cache=loadDemCache();
+    const elev=new Array(points.length).fill(null);
+    const missing=[];
+    points.forEach((p,i)=>{
+      const key=demKeyFromPoint(p);
+      if(Number.isFinite(+cache[key])) elev[i]=+cache[key];
+      else missing.push({i, lat:p.lat, lon:p.lon, key});
+    });
+    let apiOk=false, apiError='';
+    if(missing.length){
+      try{
+        const apiElev=await fetchElevationsFromApi(missing, 'Open-Meteo Elevation API nie odpowiedziało podczas pobierania profilu.', {retries:1, timeoutMs:4500, chunkSize:26, pauseMs:0});
+        missing.forEach((p,idx)=>{ elev[p.i]=+apiElev[idx]; cache[p.key]=+apiElev[idx]; });
+        saveDemCache();
+        apiOk=true;
+      }catch(err){
+        apiError=err.message || String(err);
+      }
+    }
+    const known=elev.map((v,i)=>Number.isFinite(+v)?{i,v:+v}:null).filter(Boolean);
+    const txKnown=Number.isFinite(+t.site_elevation_m) ? +t.site_elevation_m : (known.length ? known[known.length-1].v : 200);
+    const rxKnown=known.length ? known[0].v : txKnown;
+    for(let i=0;i<elev.length;i++){
+      if(!Number.isFinite(+elev[i])){
+        const f=i/(elev.length-1);
+        elev[i]=rxKnown + (txKnown-rxKnown)*f;
+      }
+    }
+    const result=elev.map((e,i)=>({d:t.distance*i/(n-1), e:+e}));
+    result.meta={source: missing.length===0 ? 'cache' : (apiOk ? 'cache-api' : 'fallback'), missing:missing.length, apiError};
+    return result;
   }
   function renderProfile(p,t){
     const rxGround = p[0].e;
@@ -768,12 +808,17 @@
     const txAlt = txGround + txHeight;
     const terrainForScale = p.map(x=>x.e).concat([txGround, rxGround, rxAlt, txAlt]);
     const min=Math.min(...terrainForScale)-25, max=Math.max(...terrainForScale)+35; const W=620,H=230,pad=34;
-    const x=d=>pad+(W-pad*2)*(d/t.distance), y=e=>H-pad-(H-pad*2)*((e-min)/(max-min));
+    const totalDistance = Math.max(0.1, Number.isFinite(+t.distance) ? +t.distance : dist(state.rx,t));
+    const x=d=>pad+(W-pad*2)*(d/totalDistance), y=e=>H-pad-(H-pad*2)*((e-min)/(max-min));
     const path=p.map((pt,i)=>`${i?'L':'M'}${x(pt.d).toFixed(1)},${y(pt.e).toFixed(1)}`).join(' '); const area=`M${pad},${H-pad} ${path} L${W-pad},${H-pad} Z`;
-    let worst=999, worstD=0; for(const pt of p){ const los=rxAlt+(txAlt-rxAlt)*(pt.d/t.distance); const margin=los-pt.e; if(margin<worst){worst=margin; worstD=pt.d;} }
+    let worst=999, worstD=0; for(const pt of p){ const los=rxAlt+(txAlt-rxAlt)*(pt.d/totalDistance); const margin=los-pt.e; if(margin<worst){worst=margin; worstD=pt.d;} }
     const msg=worst<0?'Przeszkoda w linii optycznej':worst<10?'Mały zapas nad terenem':'Linia optyczna wygląda czysto';
     const noteClass=worst<0?'profile-note bad':worst<10?'profile-note warn':'profile-note ok';
-    $('profileBox').innerHTML=`<svg class="profile-svg" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none"><path d="${area}" fill="#e5e7eb"/><path d="${path}" fill="none" stroke="#475569" stroke-width="2.4"/><line x1="${pad}" y1="${y(rxAlt)}" x2="${W-pad}" y2="${y(txAlt)}" stroke="#111827" stroke-width="2"/><circle cx="${pad}" cy="${y(rxAlt)}" r="5" fill="#2563eb"/><circle cx="${W-pad}" cy="${y(txAlt)}" r="5" fill="#16a34a"/><text x="${pad}" y="18" font-size="13" font-weight="850">Dom +${state.rxHeight} m</text><text x="${W-pad-130}" y="18" font-size="13" font-weight="850">Nadajnik +${txHeight} m</text><text x="${pad}" y="${H-8}" font-size="12" fill="#64748b">0 km</text><text x="${W-pad-46}" y="${H-8}" font-size="12" fill="#64748b">${t.distance.toFixed(1)} km</text></svg><div class="${noteClass}">${msg}. Najmniejszy zapas: ${Math.round(worst)} m, około ${worstD.toFixed(1)} km od punktu odbioru.</div><div class="profile-meta">Teren: lokalny cache DEM / Open-Meteo. Wysokość nadajnika: ${txGroundSource}. To profil geometryczny, bez kopiowania map pokrycia z obcych serwisów.</div>`;
+    const meta=p.meta||{};
+    const sourceText = meta.source === 'fallback'
+      ? `Uwaga: API wysokości nie odpowiedziało, więc narysowano profil awaryjny z dostępnych danych. To NIE jest pełny DEM. ${esc(meta.apiError||'')}`
+      : (meta.source === 'cache' ? 'Teren: lokalny cache DEM.' : 'Teren: lokalny cache DEM + brakujące punkty z Open-Meteo.');
+    $('profileBox').innerHTML=`<svg class="profile-svg" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none"><path d="${area}" fill="#e5e7eb"/><path d="${path}" fill="none" stroke="#475569" stroke-width="2.4"/><line x1="${pad}" y1="${y(rxAlt)}" x2="${W-pad}" y2="${y(txAlt)}" stroke="#111827" stroke-width="2"/><circle cx="${pad}" cy="${y(rxAlt)}" r="5" fill="#2563eb"/><circle cx="${W-pad}" cy="${y(txAlt)}" r="5" fill="#16a34a"/><text x="${pad}" y="18" font-size="13" font-weight="850">Dom +${state.rxHeight} m</text><text x="${W-pad-130}" y="18" font-size="13" font-weight="850">Nadajnik +${txHeight} m</text><text x="${pad}" y="${H-8}" font-size="12" fill="#64748b">0 km</text><text x="${W-pad-46}" y="${H-8}" font-size="12" fill="#64748b">${totalDistance.toFixed(1)} km</text></svg><div class="${noteClass}">${msg}. Najmniejszy zapas: ${Math.round(worst)} m, około ${worstD.toFixed(1)} km od punktu odbioru.</div><div class="profile-meta">${sourceText} Wysokość nadajnika: ${txGroundSource}.</div>`;
   }
 
   function updateCompass(){
@@ -850,6 +895,6 @@
     $('closeStationBtn').onclick=hideStation; $('openStationBtn').onclick=showStation; $('antennaBtn').onclick=()=>{startCompass(false); showCompassPanel();}; $('compassWidget').onclick=()=>{startCompass(false); showCompassPanel();}; $('stationProfileBtn').onclick=showProfile; $('stationMuxBtn').onclick=showMux; $('stationDemBtn').onclick=downloadDemForSelectedTx;
     window.addEventListener('online',()=>{$('onlineChip').textContent='Online';$('onlineChip').classList.add('online-chip');}); window.addEventListener('offline',()=>{$('onlineChip').textContent='Offline';$('onlineChip').classList.remove('online-chip');});
   }
-  async function boot(){ load(); bind(); initMap(); await loadTxs(); if(state.coverageTileUrl) applyCoverageTile(state.coverageTileUrl); startCompass(true); window.addEventListener('pointerdown',()=>startCompass(true),{once:true,passive:true}); if('serviceWorker' in navigator) navigator.serviceWorker.register('./service-worker.js?v=19.10.1-1705261822').catch(()=>{}); setAppHeight(); }
+  async function boot(){ load(); bind(); initMap(); await loadTxs(); if(state.coverageTileUrl) applyCoverageTile(state.coverageTileUrl); startCompass(true); window.addEventListener('pointerdown',()=>startCompass(true),{once:true,passive:true}); if('serviceWorker' in navigator) navigator.serviceWorker.register('./service-worker.js?v=19.12-1705261905').catch(()=>{}); setAppHeight(); }
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', boot); else boot();
 })();

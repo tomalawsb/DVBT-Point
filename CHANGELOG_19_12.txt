@@ -1,0 +1,8 @@
+19.12 - 1705261905
+
+Naprawa profilu terenu:
+- profil nie czeka już długo na kilka ponowień Open-Meteo;
+- dla profilu zastosowano szybki timeout i jedno pobranie brakujących punktów;
+- gdy API nie odpowiada, profil rysuje się awaryjnie z dostępnych danych zamiast zostawać na „Ładuję profil terenu”;
+- dodano timeout do pobierania wysokości DEM, żeby fetch nie wisiał bez końca;
+- podbito wersję aplikacji i cache service workera.
