@@ -1,6 +1,6 @@
 (() => {
   'use strict';
-  const APP_VERSION = '19.10 - 1705261810';
+  const APP_VERSION = '19.10.1 - 1705261822';
   const STORE = 'dvbt-point-v19-state';
   const $ = id => document.getElementById(id);
   const state = {
@@ -86,6 +86,16 @@
   function fmtKm(k){ return k<10 ? `${k.toFixed(1)} km` : `${Math.round(k)} km`; }
   function muxNames(t){ return [...new Set((t.muxes||[]).map(m=>m.name))]; }
   function pols(t){ return [...new Set((t.muxes||[]).map(m=>m.polarization||m.pol).filter(Boolean))].join('/') || '—'; }
+  function stationPowerText(t){
+    const values=(t?.muxes||[])
+      .map(m=>Number(String(m.erp_kw ?? m.erp ?? '').replace(',', '.')))
+      .filter(v=>Number.isFinite(v) && v>0);
+    if(!values.length) return '—';
+    const min=Math.min(...values);
+    const max=Math.max(...values);
+    const fmt=v => Number.isInteger(v) ? String(v) : String(+v.toFixed(2)).replace('.', ',');
+    return min===max ? `${fmt(max)} kW` : `${fmt(min)}–${fmt(max)} kW`;
+  }
 
   function normalizeTx(raw){
     const muxes=(raw.muxes||[]).map(m=>({
@@ -840,6 +850,6 @@
     $('closeStationBtn').onclick=hideStation; $('openStationBtn').onclick=showStation; $('antennaBtn').onclick=()=>{startCompass(false); showCompassPanel();}; $('compassWidget').onclick=()=>{startCompass(false); showCompassPanel();}; $('stationProfileBtn').onclick=showProfile; $('stationMuxBtn').onclick=showMux; $('stationDemBtn').onclick=downloadDemForSelectedTx;
     window.addEventListener('online',()=>{$('onlineChip').textContent='Online';$('onlineChip').classList.add('online-chip');}); window.addEventListener('offline',()=>{$('onlineChip').textContent='Offline';$('onlineChip').classList.remove('online-chip');});
   }
-  async function boot(){ load(); bind(); initMap(); await loadTxs(); if(state.coverageTileUrl) applyCoverageTile(state.coverageTileUrl); startCompass(true); window.addEventListener('pointerdown',()=>startCompass(true),{once:true,passive:true}); if('serviceWorker' in navigator) navigator.serviceWorker.register('./service-worker.js?v=19.9-1705261742').catch(()=>{}); setAppHeight(); }
+  async function boot(){ load(); bind(); initMap(); await loadTxs(); if(state.coverageTileUrl) applyCoverageTile(state.coverageTileUrl); startCompass(true); window.addEventListener('pointerdown',()=>startCompass(true),{once:true,passive:true}); if('serviceWorker' in navigator) navigator.serviceWorker.register('./service-worker.js?v=19.10.1-1705261822').catch(()=>{}); setAppHeight(); }
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', boot); else boot();
 })();

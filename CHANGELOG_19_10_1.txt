@@ -1,0 +1,11 @@
+DVB-T/T2 Point 19.10.1 - 1705261822
+
+Naprawy awaryjne po wersji 19.10:
+- naprawiono błąd JavaScript: stationPowerText is not defined, który przerywał ładowanie nadajników;
+- przywrócono listę nadajników i wybór najbliższego/najlepszego nadajnika;
+- karta nadajnika pokazuje moc ERP bez blokowania startu aplikacji;
+- lista nadajników pokazuje zakres mocy ERP, jeżeli obiekt ma kilka emisji;
+- zaktualizowano wersję UI, app.js i cache service workera.
+
+Uwaga:
+- nie zmieniano teraz modelu RF/ITM-lite, DEM ani parsera ANT; to jest poprawka stabilizacyjna interfejsu i ładowania danych.
