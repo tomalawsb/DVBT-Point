@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#f8fafc" />
+  <meta name="description" content="DVB-T/T2 Mapa Instalatora — Etap 11" />
+  <title>DVB-T/T2 Mapa Instalatora 11.0 - 1705261630</title>
+
+  <link rel="manifest" href="./manifest.json" />
+  <link rel="icon" href="./assets/icon.svg" type="image/svg+xml" />
+
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIINfQd9E7ZV9mjD0+HOy9l+HMgiiYSZ7nM=" crossorigin="" />
+  <link rel="stylesheet" href="./css/style.css" />
+</head>
+<body>
+  <noscript>Ta aplikacja wymaga włączonego JavaScript.</noscript>
+
+  <main class="app-shell" aria-label="DVB-T/T2 Mapa Instalatora">
+    <div id="map" class="map" aria-label="Mapa nadajników DVB-T/T2"></div>
+
+    <section class="top-overlay" aria-label="Wyszukiwanie i lokalizacja">
+      <label class="search-box" for="addressInput">
+        <span class="search-icon" aria-hidden="true">⌕</span>
+        <input id="addressInput" type="search" placeholder="Wpisz adres lub miejscowość" autocomplete="off" />
+        <button id="searchBtn" type="button" class="inline-button" aria-label="Szukaj">🔎</button>
+      </label>
+      <div class="top-row">
+        <div class="location-chip" id="locationChip" title="Aktualna lokalizacja odbioru">
+          <span aria-hidden="true">🏠</span>
+          <span id="locationName">Punkt odbioru</span>
+        </div>
+        <div class="version-chip" id="versionChip">11.0 - 1705261630</div>
+        <div class="network-chip" id="networkStatus">Online</div>
+      </div>
+    </section>
+
+    <nav class="floating floating-left" aria-label="Narzędzia mapy po lewej">
+      <button class="float-btn" id="gpsBtn" type="button" title="Użyj GPS">⌖<small>GPS</small></button>
+      <button class="float-btn" id="compassBtn" type="button" title="Kompas">🧭<small>Kompas</small></button>
+      <button class="float-btn" id="txBtn" type="button" title="Nadajniki">📡<small>Nadajniki</small></button>
+    </nav>
+
+    <nav class="floating floating-right" aria-label="Narzędzia mapy po prawej">
+      <button class="float-btn" id="profileBtn" type="button" title="Profil terenu">⛰<small>Profil</small></button>
+      <button class="float-btn" id="coverageBtn" type="button" title="Pokrycie zasięgiem">◌<small>Zasięg</small></button>
+      <button class="float-btn" id="layersBtn" type="button" title="Warstwy mapy">▱<small>Warstwy</small></button>
+      <button class="float-btn" id="filterBtn" type="button" title="Filtry MUX">☰<small>Filtry</small></button>
+      <button class="float-btn" id="reportBtn" type="button" title="Raport">▤<small>Raport</small></button>
+      <button class="float-btn" id="pwaBtn" type="button" title="PWA / Offline">⬇<small>PWA</small></button>
+    </nav>
+
+    <aside class="compass-card" id="compassCard" aria-live="polite">
+      <div class="compass-dial" id="compassDial" title="Kompas antenowy">
+        <span>N</span>
+        <i id="targetNeedle" class="target-needle"></i>
+        <i id="compassNeedle" class="phone-needle"></i>
+      </div>
+      <div class="compass-info">
+        <div class="compass-hint" id="compassHint">Wybierz nadajnik</div>
+        <div class="compass-meta">
+          <span>Telefon: <strong id="currentHeadingValue">—</strong></span>
+          <span>Cel: <strong id="targetAzimuthValue">—</strong></span>
+        </div>
+        <div class="compass-note" id="compassNote">Kompas wymaga HTTPS i zgody przeglądarki.</div>
+      </div>
+    </aside>
+
+    <section class="side-panel hidden" id="sidePanel" aria-label="Panel boczny">
+      <div class="side-panel-header">
+        <div>
+          <p class="eyebrow" id="sidePanelEyebrow">Panel</p>
+          <h2 id="sidePanelTitle">Nadajniki</h2>
+        </div>
+        <button id="closeSidePanel" class="close-btn" type="button" aria-label="Zamknij">×</button>
+      </div>
+      <div id="sidePanelBody" class="side-panel-body"></div>
+    </section>
+
+    <section class="toast" id="toast" role="status" aria-live="polite"></section>
+
+    <section class="bottom-sheet" id="bottomSheet" aria-label="Szczegóły nadajnika">
+      <button class="sheet-handle" id="sheetHandle" type="button" aria-label="Zwiń lub rozwiń panel"></button>
+      <div class="sheet-header">
+        <div class="tx-badge">📡</div>
+        <div>
+          <p class="eyebrow">Najlepszy nadajnik</p>
+          <h1 id="txName">Ładowanie nadajników...</h1>
+        </div>
+        <button class="star-btn" type="button" title="Ulubiony">☆</button>
+      </div>
+
+      <div class="info-grid">
+        <div><span>Azymut</span><strong id="azimuthValue">—</strong></div>
+        <div><span>Odległość</span><strong id="distanceValue">—</strong></div>
+        <div><span>Polaryzacja</span><strong id="polarizationValue">—</strong></div>
+        <div><span>MUX</span><strong id="muxValue">—</strong></div>
+      </div>
+
+      <div class="actions">
+        <button id="aimBtn" class="action primary" type="button">Ustaw antenę</button>
+        <button id="showProfileBtn" class="action" type="button">Profil</button>
+        <button id="showMuxBtn" class="action" type="button">MUX-y</button>
+        <button id="showReportBtn" class="action" type="button">Raport</button>
+      </div>
+
+      <div class="mux-table-wrap">
+        <div class="section-title">Multipleksy nadajnika</div>
+        <div id="muxTable" class="mux-table"></div>
+      </div>
+
+      <div class="profile-box" id="profileBox">
+        <div class="section-title-row">
+          <div class="section-title">Profil terenu</div>
+          <span class="profile-source" id="profileSource">—</span>
+        </div>
+        <div class="profile-controls" aria-label="Ustawienia profilu terenu">
+          <label>
+            Wysokość anteny odbiorczej
+            <span class="input-with-unit"><input id="antennaHeightInput" type="number" min="1" max="40" step="1" value="6"> m</span>
+          </label>
+          <button id="refreshProfileBtn" class="mini-action" type="button">Odśwież profil</button>
+        </div>
+        <canvas id="profileCanvas" width="720" height="230"></canvas>
+        <div class="profile-stats" id="profileStats">Profil zostanie pobrany po wybraniu nadajnika.</div>
+        <div class="profile-warning" id="profileWarning">Etap 11: profil korzysta z internetowego API wysokości. Warstwa pokrycia jest orientacyjna. Bazę nadajników można lokalnie zaimportować w panelu PWA / Dane.</div>
+      </div>
+    </section>
+  </main>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <script src="./js/app.js" type="module"></script>
+</body>
+</html>

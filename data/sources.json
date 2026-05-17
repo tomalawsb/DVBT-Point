@@ -1,0 +1,26 @@
+{
+  "version": "11.0 - 1705261630",
+  "status": "demo-plus-import-ready",
+  "official_sources_to_use": [
+    {
+      "name": "UKE - wykaz pozwoleń radiowych: stacje telewizyjne",
+      "url": "https://bip.uke.gov.pl/pozwolenia-radiowe/wykaz-pozwolen-radiowych-tresci/stacje-telewizyjne,5.html",
+      "purpose": "oficjalne pozwolenia i parametry formalne emisji"
+    },
+    {
+      "name": "Emitel - Strefa widza / tabela parametrów emisji",
+      "url": "https://emitel.pl/strefa-widza/",
+      "purpose": "praktyczne parametry emisji DVB-T/DVB-T2: MUX, kanał, częstotliwość, ERP, polaryzacja"
+    },
+    {
+      "name": "RadioPolska - Wykaz / licencja CC BY 4.0",
+      "url": "https://radiopolska.pl/wykaz/info/licencja",
+      "purpose": "dane pomocnicze i referencyjne, z obowiązkiem podania źródła/licencji"
+    }
+  ],
+  "notes": [
+    "Dane w data/transmitters.json nadal są demonstracyjne.",
+    "Aplikacja potrafi lokalnie zaimportować własny JSON/CSV nadajników przez panel PWA / Offline.",
+    "Gotowe mapy pokrycia z cudzych serwisów nie są kopiowane do aplikacji."
+  ]
+}

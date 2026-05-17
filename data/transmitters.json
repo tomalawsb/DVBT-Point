@@ -1,0 +1,103 @@
+[
+  {
+    "id": "sucha-gora",
+    "name": "Sucha Góra",
+    "site": "RTCN Sucha Góra",
+    "lat": 49.7419,
+    "lon": 21.8786,
+    "height_m": 585,
+    "mast_m": 118,
+    "region": "podkarpackie",
+    "note": "Dane demonstracyjne do testów aplikacji. Do wersji produkcyjnej potrzebny import z oficjalnego źródła.",
+    "muxes": [
+      { "mux": "MUX-1", "channel": "K32", "frequency_mhz": 562, "erp_kw": 100, "polarization": "H", "band": "UHF" },
+      { "mux": "MUX-2", "channel": "K34", "frequency_mhz": 578, "erp_kw": 100, "polarization": "H", "band": "UHF" },
+      { "mux": "MUX-3", "channel": "K29", "frequency_mhz": 538, "erp_kw": 100, "polarization": "H", "band": "UHF" },
+      { "mux": "MUX-8", "channel": "K7", "frequency_mhz": 191.5, "erp_kw": 18, "polarization": "V", "band": "VHF" }
+    ]
+  },
+  {
+    "id": "tarnow-gora-sw-marcina",
+    "name": "Tarnów / Góra Św. Marcina",
+    "site": "RTON Tarnów",
+    "lat": 49.9964,
+    "lon": 20.9957,
+    "height_m": 384,
+    "mast_m": 55,
+    "region": "małopolskie",
+    "note": "Dane demonstracyjne do testów UI.",
+    "muxes": [
+      { "mux": "MUX-1", "channel": "K43", "frequency_mhz": 650, "erp_kw": 50, "polarization": "H", "band": "UHF" },
+      { "mux": "MUX-2", "channel": "K23", "frequency_mhz": 490, "erp_kw": 50, "polarization": "H", "band": "UHF" },
+      { "mux": "MUX-3", "channel": "K45", "frequency_mhz": 666, "erp_kw": 20, "polarization": "H", "band": "UHF" },
+      { "mux": "MUX-8", "channel": "K8", "frequency_mhz": 198.5, "erp_kw": 10, "polarization": "V", "band": "VHF" }
+    ]
+  },
+  {
+    "id": "choragwica",
+    "name": "Chorągwica",
+    "site": "RTCN Kraków / Chorągwica",
+    "lat": 49.9582,
+    "lon": 20.0896,
+    "height_m": 430,
+    "mast_m": 286,
+    "region": "małopolskie",
+    "note": "Dane demonstracyjne do testów UI.",
+    "muxes": [
+      { "mux": "MUX-1", "channel": "K25", "frequency_mhz": 506, "erp_kw": 100, "polarization": "H", "band": "UHF" },
+      { "mux": "MUX-2", "channel": "K23", "frequency_mhz": 490, "erp_kw": 100, "polarization": "H", "band": "UHF" },
+      { "mux": "MUX-3", "channel": "K22", "frequency_mhz": 482, "erp_kw": 100, "polarization": "H", "band": "UHF" },
+      { "mux": "MUX-6", "channel": "K27", "frequency_mhz": 522, "erp_kw": 50, "polarization": "H", "band": "UHF" },
+      { "mux": "MUX-8", "channel": "K7", "frequency_mhz": 191.5, "erp_kw": 20, "polarization": "V", "band": "VHF" }
+    ]
+  },
+  {
+    "id": "lezajsk-giedlarowa",
+    "name": "Leżajsk / Giedlarowa",
+    "site": "RTCN Leżajsk / Giedlarowa",
+    "lat": 50.2812,
+    "lon": 22.4208,
+    "height_m": 197,
+    "mast_m": 120,
+    "region": "podkarpackie",
+    "note": "Dane demonstracyjne do testów UI.",
+    "muxes": [
+      { "mux": "MUX-1", "channel": "K37", "frequency_mhz": 602, "erp_kw": 100, "polarization": "H", "band": "UHF" },
+      { "mux": "MUX-2", "channel": "K43", "frequency_mhz": 650, "erp_kw": 100, "polarization": "H", "band": "UHF" },
+      { "mux": "MUX-3", "channel": "K26", "frequency_mhz": 514, "erp_kw": 100, "polarization": "H", "band": "UHF" },
+      { "mux": "MUX-8", "channel": "K12", "frequency_mhz": 226.5, "erp_kw": 15, "polarization": "V", "band": "VHF" }
+    ]
+  },
+  {
+    "id": "swiety-krzyz",
+    "name": "Święty Krzyż",
+    "site": "RTCN Święty Krzyż",
+    "lat": 50.8594,
+    "lon": 21.0541,
+    "height_m": 594,
+    "mast_m": 157,
+    "region": "świętokrzyskie",
+    "note": "Dane demonstracyjne do testów UI.",
+    "muxes": [
+      { "mux": "MUX-1", "channel": "K30", "frequency_mhz": 546, "erp_kw": 100, "polarization": "H", "band": "UHF" },
+      { "mux": "MUX-2", "channel": "K37", "frequency_mhz": 602, "erp_kw": 100, "polarization": "H", "band": "UHF" },
+      { "mux": "MUX-3", "channel": "K47", "frequency_mhz": 682, "erp_kw": 100, "polarization": "H", "band": "UHF" },
+      { "mux": "MUX-8", "channel": "K8", "frequency_mhz": 198.5, "erp_kw": 20, "polarization": "V", "band": "VHF" }
+    ]
+  },
+  {
+    "id": "rzeszow-baranoowka",
+    "name": "Rzeszów / Baranówka",
+    "site": "RTON Rzeszów",
+    "lat": 50.0587,
+    "lon": 21.9991,
+    "height_m": 225,
+    "mast_m": 85,
+    "region": "podkarpackie",
+    "note": "Dane demonstracyjne do testów UI.",
+    "muxes": [
+      { "mux": "MUX-3", "channel": "K26", "frequency_mhz": 514, "erp_kw": 20, "polarization": "H", "band": "UHF" },
+      { "mux": "MUX-8", "channel": "K12", "frequency_mhz": 226.5, "erp_kw": 7, "polarization": "V", "band": "VHF" }
+    ]
+  }
+]

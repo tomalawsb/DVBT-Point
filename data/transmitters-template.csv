@@ -1,0 +1,4 @@
+name,site,lat,lon,height_m,mast_m,region,mux,channel,frequency_mhz,erp_kw,polarization,band,source
+Przykład / Nadajnik,RTCN Przykład,50.000000,21.000000,300,120,podkarpackie,MUX-1,K32,562,100,H,UHF,import CSV
+Przykład / Nadajnik,RTCN Przykład,50.000000,21.000000,300,120,podkarpackie,MUX-2,K34,578,100,H,UHF,import CSV
+Przykład / Nadajnik,RTCN Przykład,50.000000,21.000000,300,120,podkarpackie,MUX-8,K7,191.5,18,V,VHF,import CSV
