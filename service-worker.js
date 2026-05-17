@@ -1,4 +1,4 @@
-const CACHE_VERSION = "dvbt-mapa-11.0-1705261630";
+const CACHE_VERSION = "dvbt-mapa-12.0-1705260918";
 const APP_SHELL = [
   "./",
   "./index.html",

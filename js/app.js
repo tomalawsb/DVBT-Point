@@ -1,4 +1,4 @@
-const VERSION = "11.0 - 1705261630";
+const VERSION = "12.0 - 1705260918";
 const DEFAULT_HOME = { lat: 50.2865, lon: 21.4239, name: "Mielec / punkt odbioru", source: "default" };
 const ALL_MUX = ["MUX-1", "MUX-2", "MUX-3", "MUX-6", "MUX-8"];
 const STORAGE_KEY = "dvbt-mapa.home";
@@ -57,6 +57,7 @@ async function init() {
   $("locationName").textContent = state.home.name;
   initMap();
   bindUi();
+  bindResponsiveFixes();
   await loadTransmitters();
   selectBestTransmitter();
   $("antennaHeightInput").value = String(state.receiverAntennaHeightM);
@@ -65,32 +66,48 @@ async function init() {
   if (state.coverageVisible) refreshCoverageLayer();
   initPwaStatus();
   registerServiceWorker();
-  showToast(`Uruchomiono Etap 11 — ${VERSION}`);
+  showToast(`Uruchomiono Etap 12 — ${VERSION}`);
 }
 
 function initMap() {
   state.map = L.map("map", {
     zoomControl: false,
     preferCanvas: true,
-    worldCopyJump: true
+    worldCopyJump: true,
+    updateWhenIdle: true,
+    updateWhenZooming: false,
+    fadeAnimation: false,
+    markerZoomAnimation: false
   }).setView([state.home.lat, state.home.lon], 9);
 
+  const fastTileOptions = {
+    updateWhenIdle: true,
+    updateWhenZooming: false,
+    keepBuffer: 1,
+    detectRetina: false,
+    crossOrigin: true
+  };
+
   const osm = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    ...fastTileOptions,
     maxZoom: 19,
     attribution: "&copy; OpenStreetMap"
   });
 
   const topo = L.tileLayer("https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png", {
+    ...fastTileOptions,
     maxZoom: 17,
     attribution: "&copy; OpenStreetMap, SRTM, OpenTopoMap"
   });
 
   const esri = L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", {
+    ...fastTileOptions,
     maxZoom: 19,
     attribution: "Tiles &copy; Esri"
   });
 
   const carto = L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png", {
+    ...fastTileOptions,
     maxZoom: 20,
     attribution: "&copy; OpenStreetMap &copy; CARTO"
   });
@@ -104,6 +121,7 @@ function initMap() {
   state.activeBaseLayer = state.baseLayers[state.activeLayerName] || osm;
   if (!state.baseLayers[state.activeLayerName]) state.activeLayerName = "Mapa standardowa";
   state.activeBaseLayer.addTo(state.map);
+  attachTileDiagnostics(state.activeBaseLayer);
 
   state.homeMarker = L.marker([state.home.lat, state.home.lon], {
     draggable: true,
@@ -121,6 +139,10 @@ function initMap() {
   });
 
   state.map.on("click", (e) => {
+    if (!$('sidePanel').classList.contains('hidden')) {
+      hideSidePanel();
+      return;
+    }
     updateHome({ lat: e.latlng.lat, lon: e.latlng.lng, name: "Punkt wskazany na mapie", source: "map" }, { chooseBest: true, save: true });
     showToast("Ustawiono punkt odbioru z mapy");
   });
@@ -165,6 +187,38 @@ function bindUi() {
     if (e.key === "Enter") handleSearch();
   });
   $("locationChip").addEventListener("click", showLocationPanel);
+}
+
+function bindResponsiveFixes() {
+  const resize = () => forceMapResize();
+  window.addEventListener("resize", resize, { passive: true });
+  window.addEventListener("orientationchange", () => setTimeout(resize, 350), { passive: true });
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden) resize();
+  });
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener("resize", resize, { passive: true });
+    window.visualViewport.addEventListener("scroll", resize, { passive: true });
+  }
+  setTimeout(resize, 80);
+  setTimeout(resize, 450);
+  setTimeout(resize, 1200);
+}
+
+function forceMapResize() {
+  if (!state.map) return;
+  requestAnimationFrame(() => state.map.invalidateSize({ pan: false, debounceMoveend: true }));
+}
+
+function attachTileDiagnostics(layer) {
+  if (!layer || layer._dvbtDiagnosticsAttached) return;
+  layer._dvbtDiagnosticsAttached = true;
+  let failed = 0;
+  layer.on("tileerror", () => {
+    failed += 1;
+    if (failed === 1) showToast("Niektóre kafelki mapy się nie wczytały. Spróbuj podkładu: Mapa standardowa lub Jasna mapa.");
+  });
+  layer.on("load", () => forceMapResize());
 }
 
 async function loadTransmitters() {
@@ -509,6 +563,8 @@ function setBaseLayer(name) {
   state.activeBaseLayer = layer;
   state.activeLayerName = name;
   layer.addTo(state.map);
+  attachTileDiagnostics(layer);
+  forceMapResize();
   showLayersPanel();
   saveBaseLayer(name);
   showToast(`Podkład mapy: ${name}`);
@@ -600,7 +656,7 @@ function showReportPanel() {
         Pokrycie orientacyjne: ${state.coverageSummary?.label || "brak danych"}</span>
       </div>
       <div class="tx-item">
-        <strong>Etap 11</strong>
+        <strong>Etap 12</strong>
         <span>Raport korzysta z aktualnego punktu odbioru, wybranego nadajnika, kompasu antenowego, profilu terenu i orientacyjnej warstwy pokrycia. Baza nadajników może być demonstracyjna albo lokalnie zaimportowana — sprawdź panel PWA / Dane.</span>
       </div>
     </div>`;
@@ -612,17 +668,22 @@ function setSidePanel(title, eyebrow, bodyHtml) {
   $("sidePanelEyebrow").textContent = eyebrow;
   $("sidePanelBody").innerHTML = bodyHtml;
   $("sidePanel").classList.remove("hidden");
+  $("bottomSheet").classList.add("compact-while-panel");
+  forceMapResize();
   $("sidePanelBody").querySelectorAll("button[data-tx-id]").forEach((button) => {
     button.addEventListener("click", () => {
       selectTransmitter(button.dataset.txId, true);
       const tx = state.selectedTx;
       if (tx) state.map.setView([tx.lat, tx.lon], Math.max(state.map.getZoom(), 9), { animate: true });
+      if (window.innerWidth < 700) hideSidePanel();
     });
   });
 }
 
 function hideSidePanel() {
   $("sidePanel").classList.add("hidden");
+  $("bottomSheet").classList.remove("compact-while-panel");
+  forceMapResize();
 }
 
 async function handleSearch() {
@@ -1374,7 +1435,7 @@ function showPwaPanel() {
       <input id="panelImportTxInput" type="file" accept="application/json,.json,text/csv,.csv" hidden>
       <button type="button" class="panel-action danger" id="panelClearTxBtn">Usuń lokalnie zaimportowaną bazę nadajników</button>
       <button type="button" class="panel-action danger" id="panelClearLocalBtn">Wyczyść lokalne ustawienia</button>
-      <div class="hint-box"><strong>Status bazy nadajników:</strong><br>${renderDataSourceStatus()}<br><br>Etap 11 dodaje lokalny import bazy nadajników. Kafelki mapy, wyszukiwarka adresu, profil terenu i dokładniejsze pokrycie nadal wymagają internetu, jeśli dane nie są wcześniej w cache.</div>
+      <div class="hint-box"><strong>Status bazy nadajników:</strong><br>${renderDataSourceStatus()}<br><br>Etap 12 dodaje lokalny import bazy nadajników. Kafelki mapy, wyszukiwarka adresu, profil terenu i dokładniejsze pokrycie nadal wymagają internetu, jeśli dane nie są wcześniej w cache.</div>
     </div>`;
   setSidePanel("PWA / Offline", "Instalacja i pamięć lokalna", body);
   $("panelInstallPwaBtn")?.addEventListener("click", installPwa);
@@ -1721,7 +1782,10 @@ function saveHome(home) {
 
 function loadSavedBaseLayer() {
   try {
-    return localStorage.getItem(BASE_LAYER_STORAGE_KEY) || "Mapa standardowa";
+    const saved = localStorage.getItem(BASE_LAYER_STORAGE_KEY);
+    // Etap 12: nie przejmuj ciężkich/starych podkładów po poprzednich wersjach, bo na telefonie powodowały puste kafle.
+    if (saved === "Jasna mapa" || saved === "Mapa standardowa") return saved;
+    return "Mapa standardowa";
   } catch {
     return "Mapa standardowa";
   }

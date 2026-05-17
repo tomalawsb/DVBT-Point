@@ -1,7 +1,7 @@
 {
   "name": "DVB-T/T2 Mapa Instalatora",
   "short_name": "DVB-T Mapa",
-  "description": "Responsywna mapa nadajników DVB-T/T2 dla instalatora z PWA/offline i orientacyjną warstwą pokrycia i lokalnym importem danych nadajników.",
+  "description": "Responsywna mapa nadajników DVB-T/T2 dla instalatora z PWA/offline i orientacyjną warstwą pokrycia i lokalnym importem danych nadajników oraz przebudowanym lekkim interfejsem mobilnym.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
