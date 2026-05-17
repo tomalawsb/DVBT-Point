@@ -1,4 +1,4 @@
-# DVB-T/T2 Point — 19.0 - 1705261408
+# DVB-T/T2 Point — 19.1 - 1705261458
 
 Etap 19:
 - numer wersji widoczny stale na ekranie,

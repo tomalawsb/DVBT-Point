@@ -1,6 +1,6 @@
 (() => {
   'use strict';
-  const APP_VERSION = '19.0 - 1705261408';
+  const APP_VERSION = '19.1 - 1705261458';
   const STORE = 'dvbt-point-v19-state';
   const $ = id => document.getElementById(id);
   const state = {
@@ -110,12 +110,27 @@
     setTimeout(()=>state.map.invalidateSize(true),80);
     if(persist) save();
   }
+  function isValidTx(t){
+    return t && String(t.id || '').trim() && String(t.name || t.short_name || '').trim() && Number.isFinite(+t.lat) && Number.isFinite(+t.lon) && Array.isArray(t.muxes);
+  }
   async function loadTxs(){
-    const r=await fetch(`data/transmitters.json?v=${Date.now()}`, {cache:'no-store'});
-    const j=await r.json();
-    state.txs=(j.transmitters||j).map(normalizeTx).filter(t=>Number.isFinite(+t.lat)&&Number.isFinite(+t.lon));
-    renderAll();
-    selectTx(state._selectedId || bestTx()?.id, true, false);
+    try{
+      const r=await fetch(`data/transmitters.json?v=${Date.now()}`, {cache:'no-store'});
+      if(!r.ok) throw new Error(`Nie udało się pobrać data/transmitters.json: HTTP ${r.status}`);
+      const j=await r.json();
+      const list = Array.isArray(j) ? j : j.transmitters;
+      if(!Array.isArray(list)) throw new Error('Plik data/transmitters.json nie zawiera listy nadajników.');
+      state.txs=list.map(normalizeTx).filter(isValidTx);
+      if(!state.txs.length) throw new Error('Brak poprawnych nadajników w data/transmitters.json.');
+      renderAll();
+      selectTx(state._selectedId || bestTx()?.id, true, false);
+    }catch(err){
+      console.error(err);
+      state.txs=[];
+      renderAll();
+      toast(err.message || 'Błąd ładowania nadajników.');
+      openPanel('Błąd danych nadajników','Aplikacja działa, ale nie ma poprawnej bazy nadajników.', `<div class="info-card"><strong>Nie wczytano data/transmitters.json</strong><span>${esc(err.message || err)}</span></div>`);
+    }
   }
   function bestTx(){ return sortedTxs()[0]; }
   function sortedTxs(){ return state.txs.map(t=>({...t, distance:dist(state.rx,t), azimuth:az(state.rx,t)})).sort((a,b)=>a.distance-b.distance); }
@@ -195,9 +210,27 @@
   function clearCoverageLayer(){
     if(state.coverageLayer){ state.map.removeLayer(state.coverageLayer); state.coverageLayer=null; }
   }
+  function validateCoverageTileUrl(rawUrl){
+    const value=(rawUrl||'').trim();
+    if(!value) return '';
+    let parsed;
+    try{ parsed = new URL(value); }catch{ throw new Error('Adres kafelków jest niepoprawny.'); }
+    if(parsed.protocol !== 'https:') throw new Error('Adres kafelków musi zaczynać się od https://.');
+    for(const token of ['{z}','{x}','{y}']){
+      if(!value.includes(token)) throw new Error(`Adres kafelków musi zawierać ${token}.`);
+    }
+    return value;
+  }
   function applyCoverageTile(url){
     clearCoverageLayer();
-    state.coverageTileUrl=(url||'').trim();
+    let safeUrl='';
+    try{ safeUrl = validateCoverageTileUrl(url); }catch(err){
+      state.coverageTileUrl='';
+      save();
+      toast(err.message || 'Niepoprawny adres kafelków.');
+      return;
+    }
+    state.coverageTileUrl=safeUrl;
     if(!state.coverageTileUrl){ save(); return; }
     state.coverageLayer=L.tileLayer(state.coverageTileUrl, {
       maxZoom:19, opacity:.58, updateWhenIdle:true, updateWhenZooming:false, keepBuffer:2, attribution:'Warstwa zasięgu: zewnętrzne/licencjonowane źródło'
@@ -205,10 +238,29 @@
     save();
     toast('Podłączono zewnętrzną warstwę prawdziwego zasięgu.');
   }
+  function countGeoJsonPositions(coords){
+    if(!Array.isArray(coords)) return 0;
+    if(typeof coords[0] === 'number' && typeof coords[1] === 'number') return 1;
+    return coords.reduce((sum,item)=>sum+countGeoJsonPositions(item),0);
+  }
+  function validateGeoJson(geo){
+    if(!geo || geo.type !== 'FeatureCollection' || !Array.isArray(geo.features)) throw new Error('Plik musi być GeoJSON typu FeatureCollection.');
+    if(geo.features.length > 5000) throw new Error('GeoJSON ma za dużo obiektów. Limit: 5000 Feature.');
+    let positions=0;
+    for(const f of geo.features){
+      if(!f || f.type !== 'Feature' || !f.geometry) throw new Error('GeoJSON zawiera niepoprawny obiekt Feature.');
+      positions += countGeoJsonPositions(f.geometry.coordinates);
+      if(positions > 200000) throw new Error('GeoJSON ma za dużo punktów geometrii. Limit: 200 000.');
+    }
+  }
   async function importCoverageGeoJson(file){
     if(!file) return;
+    const maxBytes = 10 * 1024 * 1024;
+    if(file.size > maxBytes) throw new Error('Plik GeoJSON jest za duży. Limit: 10 MB.');
     const text=await file.text();
-    const geo=JSON.parse(text);
+    let geo;
+    try{ geo=JSON.parse(text); }catch{ throw new Error('Plik GeoJSON ma błędny JSON.'); }
+    validateGeoJson(geo);
     clearCoverageLayer();
     state.coverageLayer=L.geoJSON(geo,{
       style:f=>{
@@ -228,7 +280,7 @@
       <div class="info-card"><strong>Nadajniki</strong><span>Ładowane z data/transmitters.json. Parametry można podmienić na legalny eksport UKE/Emitel/RadioPolska zgodnie z licencją.</span></div>
       <div class="info-card"><strong>Prawdziwy zasięg masztów</strong><span>Aplikacja nie udaje zasięgu. Wyświetli tylko legalnie podpiętą warstwę: GeoJSON albo licencjonowany XYZ tile URL. Publicznego darmowego API map pokrycia RadioPolska/Emitel nie podłączono, bo nie ma oficjalnej dokumentacji takiego API.</span></div>
       <div class="info-card"><strong>Import GeoJSON zasięgu</strong><input id="coverageGeoJson" type="file" accept=".json,.geojson,application/geo+json,application/json"></div>
-      <div class="info-card"><strong>Licencjonowane kafelki zasięgu</strong><input id="coverageTileUrl" type="url" placeholder="https://.../{z}/{x}/{y}.png" value="${esc(state.coverageTileUrl||'')}"><button id="applyCoverageTile" class="panel-btn primary">Podłącz warstwę</button><button id="clearCoverage" class="panel-btn">Usuń warstwę</button></div>
+      <div class="info-card"><strong>Licencjonowane kafelki zasięgu</strong><input id="coverageTileUrl" type="url" placeholder="https://.../{z}/{x}/{y}.png — wymagane {z}, {x}, {y}" value="${esc(state.coverageTileUrl||'')}"><button id="applyCoverageTile" class="panel-btn primary">Podłącz warstwę</button><button id="clearCoverage" class="panel-btn">Usuń warstwę</button></div>
       <button id="refreshPwa" class="panel-btn primary">Wymuś aktualizację PWA</button>`);
     $('coverageGeoJson').onchange=e=>importCoverageGeoJson(e.target.files?.[0]).catch(err=>toast('Błąd GeoJSON: '+(err.message||err)));
     $('applyCoverageTile').onclick=()=>applyCoverageTile($('coverageTileUrl').value);
@@ -341,6 +393,6 @@
     $('closeStationBtn').onclick=hideStation; $('openStationBtn').onclick=showStation; $('antennaBtn').onclick=()=>{startCompass(false); showCompassPanel();}; $('compassWidget').onclick=()=>{startCompass(false); showCompassPanel();}; $('stationProfileBtn').onclick=showProfile; $('stationMuxBtn').onclick=showMux;
     window.addEventListener('online',()=>{$('onlineChip').textContent='Online';$('onlineChip').classList.add('online-chip');}); window.addEventListener('offline',()=>{$('onlineChip').textContent='Offline';$('onlineChip').classList.remove('online-chip');});
   }
-  async function boot(){ load(); bind(); initMap(); await loadTxs(); if(state.coverageTileUrl) applyCoverageTile(state.coverageTileUrl); startCompass(true); window.addEventListener('pointerdown',()=>startCompass(true),{once:true,passive:true}); if('serviceWorker' in navigator) navigator.serviceWorker.register('./service-worker.js?v=19.0-1705261408').catch(()=>{}); setAppHeight(); }
+  async function boot(){ load(); bind(); initMap(); await loadTxs(); if(state.coverageTileUrl) applyCoverageTile(state.coverageTileUrl); startCompass(true); window.addEventListener('pointerdown',()=>startCompass(true),{once:true,passive:true}); if('serviceWorker' in navigator) navigator.serviceWorker.register('./service-worker.js?v=19.1-1705261458').catch(()=>{}); setAppHeight(); }
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', boot); else boot();
 })();
