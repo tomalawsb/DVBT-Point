@@ -1,0 +1,28 @@
+DVB-T/T2 Point 19.6 - 1705261625
+
+Zakres wersji:
+- dodano diagnostykę lokalnych plików ANT w panelu Dane / API,
+- dodano przycisk „Uruchom diagnostykę ANT”,
+- aplikacja sprawdza data/ant/index.json,
+- aplikacja sprawdza, ile plików ANT jest realnie dostępnych lokalnie,
+- aplikacja sprawdza, czy parser potrafi odczytać pliki ANT,
+- aplikacja ocenia, czy charakterystyka ma pełny lub prawie pełny zakres 360°,
+- aplikacja pokazuje, czy RF faktycznie ma poprawne charakterystyki do użycia,
+- dodano skrypt validate_ant_patterns.py do diagnostyki z konsoli,
+- zaktualizowano numer wersji w UI, index.html, app.js i service-worker.js.
+
+Czego ta wersja jeszcze nie robi:
+- nie dodaje pełnego Longley-Rice/ITM,
+- nie dodaje lokalnej bazy DEM offline,
+- nie generuje kafelków zasięgu offline,
+- nie gwarantuje jeszcze dokładności Radio Mobile,
+- nie weryfikuje ręcznie wszystkich obiektów.
+
+Instrukcja:
+1. Jeżeli masz już pobrane pliki ANT w data/ant/, zachowaj ten katalog przy podmianie wersji.
+2. Uruchom aplikację.
+3. Wejdź w Dane / API.
+4. Kliknij „Uruchom diagnostykę ANT”.
+
+Alternatywnie w konsoli:
+python validate_ant_patterns.py

@@ -1,6 +1,6 @@
 (() => {
   'use strict';
-  const APP_VERSION = '19.5 - 1705261615';
+  const APP_VERSION = '19.6 - 1705261625';
   const STORE = 'dvbt-point-v19-state';
   const $ = id => document.getElementById(id);
   const state = {
@@ -323,13 +323,14 @@
       <div class="info-card"><strong>Profil terenu</strong><span>Prawdziwy profil z Open-Meteo Elevation API. Brak profilu demo.</span></div>
       <div class="info-card"><strong>Nadajniki</strong><span>Baza RadioPolska po oczyszczeniu: ${state.txs.length} obiektów nadawczych i ${muxCount} emisji/MUX-ów. Ładowane z data/transmitters.json.</span></div>
       <div class="info-card"><strong>Własne obliczanie zasięgu RF</strong><span>Aplikacja może sama policzyć poglądowy zasięg wybranego nadajnika z mocy ERP, częstotliwości, wysokości anten, profilu DEM z Open-Meteo i lokalnych plików ANT, jeśli zostały pobrane. To nie jest kopia cudzych map — to własne obliczenie uproszczonym modelem.</span><button id="calcRfCoverage" class="panel-btn primary">Oblicz i narysuj zasięg wybranego nadajnika</button><button id="clearRfCoverage" class="panel-btn">Usuń obliczony zasięg</button></div>
-      <div class="info-card"><strong>Charakterystyki anten ANT</strong><span>Wersja 19.4 ma indeks linków z RadioPolska i obsługę lokalnych plików ANT. Pliki pobierzesz komendą: python download_ant_patterns.py. Bez pobranych plików aplikacja działa dalej, ale bez korekty kierunkowej anteny.</span></div>
+      <div class="info-card"><strong>Charakterystyki anten ANT</strong><span>Wersja 19.6 ma diagnostykę plików ANT: sprawdza indeks, pobrane pliki lokalne, poprawność parsera, zakres azymutów i to, czy RF faktycznie ma z czego korzystać. Pliki pobierzesz komendą: python download_ant_patterns.py.</span><button id="runAntDiagnostics" class="panel-btn primary">Uruchom diagnostykę ANT</button></div>
       <div class="info-card"><strong>Prawdziwy zasięg masztów</strong><span>Warstwa zasięgu może pochodzić z własnego obliczenia RF, importu GeoJSON albo licencjonowanego XYZ tile URL. Gotowych kafelków RadioPolska/Emitel aplikacja nie skrobie.</span></div>
       <div class="info-card"><strong>Import GeoJSON zasięgu</strong><input id="coverageGeoJson" type="file" accept=".json,.geojson,application/geo+json,application/json"></div>
       <div class="info-card"><strong>Licencjonowane kafelki zasięgu</strong><input id="coverageTileUrl" type="url" placeholder="https://.../{z}/{x}/{y}.png — wymagane {z}, {x}, {y}" value="${esc(state.coverageTileUrl||'')}"><button id="applyCoverageTile" class="panel-btn primary">Podłącz warstwę</button><button id="clearCoverage" class="panel-btn">Usuń warstwę</button></div>
       <button id="refreshPwa" class="panel-btn primary">Wymuś aktualizację PWA</button>`);
     $('calcRfCoverage').onclick=()=>calculateRfCoverage().catch(err=>toast('Błąd obliczeń RF: '+(err.message||err)));
     $('clearRfCoverage').onclick=()=>{ clearRfLayer(); toast('Usunięto obliczony zasięg RF.'); };
+    $('runAntDiagnostics').onclick=()=>runAntDiagnostics().catch(err=>toast('Błąd diagnostyki ANT: '+(err.message||err)));
     $('coverageGeoJson').onchange=e=>importCoverageGeoJson(e.target.files?.[0]).catch(err=>toast('Błąd GeoJSON: '+(err.message||err)));
     $('applyCoverageTile').onclick=()=>applyCoverageTile($('coverageTileUrl').value);
     $('clearCoverage').onclick=()=>{ clearCoverageLayer(); state.coverageTileUrl=''; save(); toast('Usunięto warstwę zasięgu.'); };
@@ -367,7 +368,7 @@
     return {mux, freq, erpKw, txHeight};
   }
 
-  function parseAntPattern(text){
+  function analyzeAntPatternText(text){
     const pts=[];
     const lines=String(text||'').split(/\r?\n/);
     for(const line of lines){
@@ -380,10 +381,93 @@
       if(a < 0 || a > 360 || v < -80 || v > 80) continue;
       pts.push({az:normDeg(a), value:v});
     }
-    if(pts.length < 8) return null;
     pts.sort((a,b)=>a.az-b.az);
-    const maxVal=Math.max(...pts.map(p=>p.value));
-    return pts.map(p=>({az:p.az, gainDb:Math.min(0, p.value - maxVal)}));
+    const uniqueAz=[...new Set(pts.map(p=>Math.round(p.az)))];
+    const minAz=uniqueAz.length ? Math.min(...uniqueAz) : null;
+    const maxAz=uniqueAz.length ? Math.max(...uniqueAz) : null;
+    const hasZero=uniqueAz.includes(0);
+    const has360=uniqueAz.includes(360);
+    const approxFull=uniqueAz.length >= 180 || (uniqueAz.length >= 24 && minAz <= 5 && maxAz >= 355);
+    const ok=pts.length >= 8;
+    let gain=[];
+    if(ok){
+      const maxVal=Math.max(...pts.map(p=>p.value));
+      gain=pts.map(p=>({az:p.az, gainDb:Math.min(0, p.value - maxVal)}));
+    }
+    return {ok, points:pts.length, unique_azimuths:uniqueAz.length, min_az:minAz, max_az:maxAz, has_zero:hasZero, has_360:has360, approx_full_360:approxFull, pattern: ok ? gain : null};
+  }
+
+  function parseAntPattern(text){
+    return analyzeAntPatternText(text).pattern;
+  }
+
+  async function loadAntIndex(){
+    const r=await fetch('data/ant/index.json?v='+Date.now(), {cache:'no-store'});
+    if(!r.ok) throw new Error('Nie udało się pobrać data/ant/index.json: HTTP '+r.status);
+    const j=await r.json();
+    if(!j || !Array.isArray(j.items)) throw new Error('data/ant/index.json ma niepoprawny format.');
+    return j;
+  }
+
+  function collectUsedAntPaths(){
+    const used=new Map();
+    for(const tx of state.txs){
+      for(const mux of tx.muxes || []){
+        if(!mux.ant_pattern_path) continue;
+        const key=mux.ant_pattern_path;
+        if(!used.has(key)) used.set(key, {path:key, count:0, examples:[]});
+        const u=used.get(key);
+        u.count += 1;
+        if(u.examples.length < 3) u.examples.push(`${tx.short_name||tx.name} / ${mux.name||'MUX'}`);
+      }
+    }
+    return used;
+  }
+
+  async function runAntDiagnostics(){
+    const index=await loadAntIndex();
+    const used=collectUsedAntPaths();
+    const items=index.items || [];
+    let withUrl=0, withoutUrl=0, fetched=0, missing=0, parsedOk=0, parsedBad=0, full360=0, partial=0;
+    const bad=[];
+    const missingList=[];
+    const notUsed=[];
+    const checked=[];
+    const limit=items.length;
+    toast('Diagnostyka ANT: sprawdzam lokalne pliki...');
+    for(const item of items){
+      if(item.url) withUrl++; else withoutUrl++;
+      const path=item.local_path;
+      if(!path) continue;
+      try{
+        const r=await fetch(path+'?v='+Date.now(), {cache:'no-store'});
+        if(!r.ok){ missing++; if(missingList.length < 30) missingList.push(path); continue; }
+        const txt=await r.text();
+        fetched++;
+        const a=analyzeAntPatternText(txt);
+        if(a.ok){ parsedOk++; if(a.approx_full_360) full360++; else partial++; }
+        else { parsedBad++; if(bad.length < 30) bad.push(`${path} — punktów: ${a.points}`); }
+        checked.push({path, ...a});
+      }catch{
+        missing++;
+        if(missingList.length < 30) missingList.push(path);
+      }
+    }
+    for(const item of items){
+      if(item.local_path && !used.has(item.local_path) && notUsed.length < 20) notUsed.push(item.local_path);
+    }
+    const usedCount=used.size;
+    const usedDownloaded=checked.filter(x=>used.has(x.path)).length;
+    const usedOk=checked.filter(x=>used.has(x.path) && x.ok).length;
+    const rfReady = usedOk > 0;
+    openPanel('Diagnostyka ANT 19.6', 'Sprawdzenie lokalnych charakterystyk anten z RadioPolska.', `
+      <div class="info-card"><strong>Podsumowanie</strong><span>Indeks ANT: ${items.length} wpisów. Linki ANT: ${withUrl}. Bez linku: ${withoutUrl}. Lokalnie dostępne pliki: ${fetched}. Brakujące lokalnie: ${missing}.</span></div>
+      <div class="info-card"><strong>Parser</strong><span>Poprawnie odczytane: ${parsedOk}. Błędny/nieznany format: ${parsedBad}. Pełny lub prawie pełny zakres 360°: ${full360}. Niepełny zakres: ${partial}.</span></div>
+      <div class="info-card"><strong>Użycie w RF</strong><span>Ścieżki ANT używane przez nadajniki: ${usedCount}. Z tych ścieżek lokalnie dostępne: ${usedDownloaded}. Poprawnie parsowane i gotowe dla RF: ${usedOk}. Status: ${rfReady ? 'RF ma dostęp do charakterystyk ANT.' : 'RF nie ma jeszcze poprawnych lokalnych charakterystyk ANT.'}</span></div>
+      <div class="info-card"><strong>Brakujące pliki — pierwsze 30</strong><span>${missingList.length ? esc(missingList.join('\n')) : 'Brak na sprawdzonej liście.'}</span></div>
+      <div class="info-card"><strong>Błędne formaty — pierwsze 30</strong><span>${bad.length ? esc(bad.join('\n')) : 'Nie wykryto błędnych formatów w pobranych plikach.'}</span></div>
+      <div class="info-card"><strong>Wniosek</strong><span>${rfReady ? 'Można przejść do kolejnego etapu: dokładniejszy model propagacji albo DEM offline.' : 'Najpierw trzeba pobrać brakujące pliki poleceniem python download_ant_patterns.py i ponowić diagnostykę.'}</span></div>
+    `);
   }
 
   async function loadAntPattern(mux){
@@ -589,6 +673,6 @@
     $('closeStationBtn').onclick=hideStation; $('openStationBtn').onclick=showStation; $('antennaBtn').onclick=()=>{startCompass(false); showCompassPanel();}; $('compassWidget').onclick=()=>{startCompass(false); showCompassPanel();}; $('stationProfileBtn').onclick=showProfile; $('stationMuxBtn').onclick=showMux;
     window.addEventListener('online',()=>{$('onlineChip').textContent='Online';$('onlineChip').classList.add('online-chip');}); window.addEventListener('offline',()=>{$('onlineChip').textContent='Offline';$('onlineChip').classList.remove('online-chip');});
   }
-  async function boot(){ load(); bind(); initMap(); await loadTxs(); if(state.coverageTileUrl) applyCoverageTile(state.coverageTileUrl); startCompass(true); window.addEventListener('pointerdown',()=>startCompass(true),{once:true,passive:true}); if('serviceWorker' in navigator) navigator.serviceWorker.register('./service-worker.js?v=19.5-1705261615').catch(()=>{}); setAppHeight(); }
+  async function boot(){ load(); bind(); initMap(); await loadTxs(); if(state.coverageTileUrl) applyCoverageTile(state.coverageTileUrl); startCompass(true); window.addEventListener('pointerdown',()=>startCompass(true),{once:true,passive:true}); if('serviceWorker' in navigator) navigator.serviceWorker.register('./service-worker.js?v=19.6-1705261625').catch(()=>{}); setAppHeight(); }
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', boot); else boot();
 })();
