@@ -1,4 +1,4 @@
-# DVB-T/T2 Point — 16.0 - 1705261322
+# DVB-T/T2 Point — 17.0 - 1705261338
 
 Wersja przebudowana na układ mapy zbliżony do działającej aplikacji myBTS: pełnoekranowy `map-stage`, mapa inicjalizowana po ustawieniu realnej wysokości viewportu, wielokrotne `invalidateSize()`, lżejsze panele i zamykany panel nadajnika.
 

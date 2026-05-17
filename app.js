@@ -1,13 +1,36 @@
 (() => {
   'use strict';
-  const APP_VERSION = '16.0 - 1705261322';
-  const STORE = 'dvbt-point-v16-state';
+  const APP_VERSION = '17.0 - 1705261338';
+  const STORE = 'dvbt-point-v17-state';
   const $ = id => document.getElementById(id);
   const state = {
     map:null, baseLayer:null, base:'osm', rx:{lat:50.2871, lon:21.4238, label:'Mielec / punkt odbioru'}, rxHeight:6,
-    txs:[], selected:null, markers:L.layerGroup(), line:null, range:null, homeMarker:null, heading:null, compassOn:false
+    txs:[], selected:null, markers:L.layerGroup(), line:null, range:null, homeMarker:null, headingCone:null,
+    heading:null, rawHeading:null, headingSource:'brak', headingInvert:false, headingOffset:0, compassOn:false, gpsWatchId:null
   };
   let profileAbort = null;
+
+  function normDeg(v){ return ((v % 360) + 360) % 360; }
+  function smoothHeading(prev, next, strength=.22){
+    if(prev==null) return normDeg(next);
+    const delta=((next-prev+540)%360)-180;
+    return normDeg(prev + delta*strength);
+  }
+  function applyHeading(raw, source='sensor'){
+    let h = raw;
+    if(source !== 'ios') h = state.headingInvert ? raw : (360 - raw);
+    h = normDeg(h + (state.headingOffset || 0));
+    state.rawHeading = raw;
+    state.headingSource = source;
+    state.heading = smoothHeading(state.heading, h);
+    updateCompass();
+  }
+  function setManualHeading(value){
+    state.heading = normDeg(+value || 0);
+    state.rawHeading = state.heading;
+    state.headingSource = 'ręczny';
+    updateCompass();
+  }
 
   function setAppHeight(){
     const h = Math.round((window.visualViewport && window.visualViewport.height) || window.innerHeight || document.documentElement.clientHeight);
@@ -19,8 +42,8 @@
   window.visualViewport?.addEventListener('resize', setAppHeight);
   window.addEventListener('orientationchange', () => setTimeout(setAppHeight, 250));
 
-  function save(){ localStorage.setItem(STORE, JSON.stringify({rx:state.rx, rxHeight:state.rxHeight, base:state.base, selectedId:state.selected?.id || null})); }
-  function load(){ try{ const s=JSON.parse(localStorage.getItem(STORE)||'{}'); Object.assign(state, {rx:s.rx||state.rx, rxHeight:s.rxHeight||state.rxHeight, base:s.base||state.base}); state._selectedId=s.selectedId; }catch{} }
+  function save(){ localStorage.setItem(STORE, JSON.stringify({rx:state.rx, rxHeight:state.rxHeight, base:state.base, selectedId:state.selected?.id || null, headingInvert:state.headingInvert, headingOffset:state.headingOffset})); }
+  function load(){ try{ const s=JSON.parse(localStorage.getItem(STORE)||'{}'); Object.assign(state, {rx:s.rx||state.rx, rxHeight:s.rxHeight||state.rxHeight, base:s.base||state.base, headingInvert:!!s.headingInvert, headingOffset:+s.headingOffset||0}); state._selectedId=s.selectedId; }catch{} }
   function toast(msg){ const t=$('toast'); t.textContent=msg; t.hidden=false; clearTimeout(toast._t); toast._t=setTimeout(()=>t.hidden=true,2600); }
   function esc(s){ return String(s ?? '').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
   function rad(d){ return d*Math.PI/180; }
@@ -72,10 +95,18 @@
   function renderAll(){ renderHome(); renderTxMarkers(); }
   function renderHome(){
     if(state.homeMarker) state.map.removeLayer(state.homeMarker);
+    renderHeadingCone();
     const icon=L.divIcon({html:'<div class="home-marker">🏠</div>', className:'', iconSize:[32,32], iconAnchor:[16,16]});
-    state.homeMarker=L.marker([state.rx.lat,state.rx.lon], {icon, draggable:true}).addTo(state.map);
+    state.homeMarker=L.marker([state.rx.lat,state.rx.lon], {icon, draggable:true, zIndexOffset:500}).addTo(state.map);
     state.homeMarker.on('dragend', e=>setRx(e.target.getLatLng().lat, e.target.getLatLng().lng, 'Punkt wskazany na mapie', false));
     $('locationChip').textContent = `🏠 ${state.rx.label || 'Punkt odbioru'}`;
+  }
+  function renderHeadingCone(){
+    if(state.headingCone) state.map.removeLayer(state.headingCone);
+    if(state.heading == null) return;
+    const coneHtml = `<div class="heading-cone" style="transform:rotate(${Math.round(state.heading)}deg)"><svg viewBox="0 0 100 100" aria-hidden="true"><path d="M50 50 L30 2 Q50 -7 70 2 Z"/><circle cx="50" cy="50" r="4"/></svg></div>`;
+    const coneIcon=L.divIcon({html:coneHtml, className:'', iconSize:[110,110], iconAnchor:[55,55]});
+    state.headingCone=L.marker([state.rx.lat,state.rx.lon], {icon:coneIcon, interactive:false, zIndexOffset:100}).addTo(state.map);
   }
   function renderTxMarkers(){
     state.markers.clearLayers();
@@ -159,25 +190,85 @@
   }
 
   function updateCompass(){
-    const t=state.selected; const target=t?Math.round(t.azimuth):0; $('targetNeedle').style.transform=`translate(-50%,-100%) rotate(${target}deg)`; if(state.heading!=null) $('phoneNeedle').style.transform=`translate(-50%,-100%) rotate(${state.heading}deg)`;
-    let txt='Dotknij, aby włączyć'; if(state.heading!=null && t){ const d=diff(state.heading,target); const a=Math.abs(Math.round(d)); txt=a<=5?'Kierunek prawidłowy':`Obróć ${a}° w ${d>0?'prawo':'lewo'}`; }
-    $('turnText').textContent=txt; $('headingText').textContent=`Telefon: ${state.heading==null?'—':Math.round(state.heading)+'°'} · Cel: ${t?target+'°':'—'}`;
+    const t=state.selected; const target=t?Math.round(t.azimuth):0;
+    $('targetNeedle').style.transform=`translate(-50%,-100%) rotate(${target}deg)`;
+    if(state.heading!=null) $('phoneNeedle').style.transform=`translate(-50%,-100%) rotate(${state.heading}deg)`;
+    let txt='Dotknij, aby włączyć';
+    let cls='';
+    if(state.heading!=null && t){
+      const d=diff(state.heading,target);
+      const a=Math.abs(Math.round(d));
+      if(a<=5){ txt='Kierunek prawidłowy'; cls='ok'; }
+      else { txt=`Obróć ${a}° w ${d>0?'prawo':'lewo'}`; cls='turn'; }
+    }
+    $('turnText').textContent=txt;
+    $('turnText').className=cls;
+    $('headingText').textContent=`Tel: ${state.heading==null?'—':Math.round(state.heading)+'°'} · Cel: ${t?target+'°':'—'} · ${state.headingSource}`;
+    renderHeadingCone();
   }
   async function startCompass(){
-    if(window.DeviceOrientationEvent?.requestPermission){ try{ const p=await DeviceOrientationEvent.requestPermission(); if(p!=='granted') return toast('Brak zgody na kompas.'); }catch{return toast('Przeglądarka nie udostępniła kompasu.');} }
-    window.addEventListener('deviceorientationabsolute', onOrientation, true); window.addEventListener('deviceorientation', onOrientation, true); toast('Kompas włączony.');
+    if(window.DeviceOrientationEvent?.requestPermission){
+      try{ const p=await DeviceOrientationEvent.requestPermission(); if(p!=='granted') return toast('Brak zgody na kompas.'); }catch{return toast('Przeglądarka nie udostępniła kompasu.');}
+    }
+    state.compassOn = true;
+    window.addEventListener('deviceorientationabsolute', onOrientation, true);
+    window.addEventListener('deviceorientation', onOrientation, true);
+    toast('Kompas włączony. Porusz telefonem ósemką, jeśli wskazanie pływa.');
+    updateCompass();
   }
-  function onOrientation(e){ let h=null; if(typeof e.webkitCompassHeading==='number') h=e.webkitCompassHeading; else if(typeof e.alpha==='number') h=(360-e.alpha)%360; if(h!=null){state.heading=h; updateCompass();} }
+  function stopCompass(){
+    state.compassOn = false;
+    window.removeEventListener('deviceorientationabsolute', onOrientation, true);
+    window.removeEventListener('deviceorientation', onOrientation, true);
+    toast('Kompas zatrzymany.');
+  }
+  function onOrientation(e){
+    if(typeof e.webkitCompassHeading==='number'){ applyHeading(e.webkitCompassHeading, 'ios'); return; }
+    if(typeof e.alpha==='number'){ applyHeading(e.alpha, e.absolute ? 'absolute' : 'sensor'); }
+  }
+  function startGpsWatch(){
+    if(!navigator.geolocation) return toast('Brak GPS w tej przeglądarce.');
+    if(state.gpsWatchId!=null) navigator.geolocation.clearWatch(state.gpsWatchId);
+    state.gpsWatchId = navigator.geolocation.watchPosition(p=>{
+      const {latitude, longitude, heading} = p.coords;
+      state.rx={lat:latitude, lon:longitude, label:'GPS / punkt odbioru'};
+      if(Number.isFinite(heading) && heading >= 0 && state.headingSource !== 'ios' && state.headingSource !== 'absolute' && state.headingSource !== 'sensor') applyHeading(heading, 'gps');
+      save(); renderHome(); renderConnection(); selectTx(bestTx()?.id,false,false); state.map.panTo([latitude,longitude], {animate:true});
+    },()=>toast('Nie udało się pobrać GPS.'),{enableHighAccuracy:true, timeout:12000, maximumAge:2500});
+  }
+  function showCompassPanel(){
+    const t=state.selected; const target=t?Math.round(t.azimuth):'—';
+    openPanel('Kompas anteny','Stożek na mapie pokazuje kierunek telefonu w punkcie odbioru.', `
+      <div class="compass-panel-head">
+        <div class="big-compass"><i class="target" style="transform:translate(-50%,-100%) rotate(${t?Math.round(t.azimuth):0}deg)"></i><i class="phone" style="transform:translate(-50%,-100%) rotate(${state.heading||0}deg)"></i><b>N</b></div>
+        <div><strong>${esc($('turnText').textContent)}</strong><span>Telefon: ${state.heading==null?'—':Math.round(state.heading)+'°'} · Cel: ${target}°</span><small>Źródło: ${esc(state.headingSource)}</small></div>
+      </div>
+      <div class="panel-grid-2">
+        <button id="startCompassBtn" class="panel-btn primary">Włącz czujnik</button>
+        <button id="stopCompassBtn" class="panel-btn">Zatrzymaj</button>
+      </div>
+      <div class="info-card"><strong>Ręczny kierunek telefonu: <span id="manualHeadingValue">${Math.round(state.heading||0)}°</span></strong><input id="manualHeading" type="range" min="0" max="359" value="${Math.round(state.heading||0)}"></div>
+      <div class="panel-grid-2">
+        <button id="invertCompassBtn" class="panel-btn">Odwróć czujnik</button>
+        <button id="resetCompassBtn" class="panel-btn">Reset korekty</button>
+      </div>
+      <div class="info-card"><strong>Uwaga</strong><span>Kompas telefonu może przekłamywać przy maszcie, antenie, blasze, aucie i magnesach. Skalibruj telefon ruchem ósemki.</span></div>`);
+    $('startCompassBtn').onclick=startCompass;
+    $('stopCompassBtn').onclick=stopCompass;
+    $('manualHeading').oninput=e=>{ $('manualHeadingValue').textContent=`${e.target.value}°`; setManualHeading(e.target.value); };
+    $('invertCompassBtn').onclick=()=>{ state.headingInvert=!state.headingInvert; save(); toast(state.headingInvert?'Odwrócono kierunek czujnika.':'Przywrócono standardowy kierunek czujnika.'); };
+    $('resetCompassBtn').onclick=()=>{ state.headingOffset=0; state.headingInvert=false; save(); updateCompass(); toast('Zresetowano korektę kompasu.'); };
+  }
 
   function setRx(lat,lon,label,pan){ state.rx={lat,lon,label}; save(); renderHome(); renderConnection(); selectTx(bestTx()?.id,false,true); if(pan) state.map.setView([lat,lon],12); }
   async function search(e){ e.preventDefault(); const q=$('searchInput').value.trim(); if(!q) return; try{ const r=await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=pl&q=${encodeURIComponent(q)}`); const j=await r.json(); if(!j[0]) return toast('Nie znaleziono miejsca.'); setRx(+j[0].lat,+j[0].lon,j[0].display_name.split(',').slice(0,2).join(', '),true); }catch{toast('Wyszukiwanie wymaga internetu.');} }
 
   function bind(){
-    $('searchForm').onsubmit=search; $('locateBtn').onclick=()=>navigator.geolocation?.getCurrentPosition(p=>setRx(p.coords.latitude,p.coords.longitude,'GPS / punkt odbioru',true),()=>toast('Nie udało się pobrać GPS.'),{enableHighAccuracy:true,timeout:10000});
+    $('searchForm').onsubmit=search; $('locateBtn').onclick=startGpsWatch;
     $('locationChip').onclick=()=>state.map.setView([state.rx.lat,state.rx.lon],12); $('txListBtn').onclick=showTxList; $('profileBtn').onclick=showProfile; $('layersBtn').onclick=showLayers; $('filtersBtn').onclick=showFilters; $('dataBtn').onclick=showData; $('closePanelBtn').onclick=closePanel;
-    $('closeStationBtn').onclick=hideStation; $('openStationBtn').onclick=showStation; $('antennaBtn').onclick=startCompass; $('compassWidget').onclick=startCompass; $('stationProfileBtn').onclick=showProfile; $('stationMuxBtn').onclick=showMux;
+    $('closeStationBtn').onclick=hideStation; $('openStationBtn').onclick=showStation; $('antennaBtn').onclick=showCompassPanel; $('compassWidget').onclick=showCompassPanel; $('stationProfileBtn').onclick=showProfile; $('stationMuxBtn').onclick=showMux;
     window.addEventListener('online',()=>{$('onlineChip').textContent='Online';$('onlineChip').classList.add('online-chip');}); window.addEventListener('offline',()=>{$('onlineChip').textContent='Offline';$('onlineChip').classList.remove('online-chip');});
   }
-  async function boot(){ load(); bind(); initMap(); await loadTxs(); if('serviceWorker' in navigator) navigator.serviceWorker.register('./service-worker.js?v=16.0-1705261322').catch(()=>{}); setAppHeight(); }
+  async function boot(){ load(); bind(); initMap(); await loadTxs(); if('serviceWorker' in navigator) navigator.serviceWorker.register('./service-worker.js?v=17.0-1705261338').catch(()=>{}); setAppHeight(); }
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', boot); else boot();
 })();
