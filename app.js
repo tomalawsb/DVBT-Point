@@ -1,34 +1,60 @@
 (() => {
   'use strict';
-  const APP_VERSION = '17.0 - 1705261338';
-  const STORE = 'dvbt-point-v17-state';
+  const APP_VERSION = '18.0 - 1705261348';
+  const STORE = 'dvbt-point-v18-state';
   const $ = id => document.getElementById(id);
   const state = {
     map:null, baseLayer:null, base:'osm', rx:{lat:50.2871, lon:21.4238, label:'Mielec / punkt odbioru'}, rxHeight:6,
     txs:[], selected:null, markers:L.layerGroup(), line:null, range:null, homeMarker:null, headingCone:null,
-    heading:null, rawHeading:null, headingSource:'brak', headingInvert:false, headingOffset:0, compassOn:false, gpsWatchId:null
+    heading:null, rawHeading:null, pendingHeading:null, headingSource:'brak', headingInvert:false, headingOffset:0, compassOn:false, gpsWatchId:null, headingRaf:null, headingSamples:[], headingLastTs:0
   };
   let profileAbort = null;
 
   function normDeg(v){ return ((v % 360) + 360) % 360; }
-  function smoothHeading(prev, next, strength=.22){
+  function smoothHeading(prev, next, strength=.075){
     if(prev==null) return normDeg(next);
     const delta=((next-prev+540)%360)-180;
     return normDeg(prev + delta*strength);
   }
+  function circularMeanDeg(values){
+    if(!values.length) return null;
+    let sx=0, sy=0;
+    values.forEach(v=>{ sx += Math.cos(rad(v)); sy += Math.sin(rad(v)); });
+    return normDeg(Math.atan2(sy, sx) * 180 / Math.PI);
+  }
+  function scheduleHeadingApply(){
+    if(state.headingRaf) return;
+    state.headingRaf = requestAnimationFrame(() => {
+      state.headingRaf = null;
+      const now = performance.now();
+      if(now - state.headingLastTs < 90){ scheduleHeadingApply(); return; }
+      state.headingLastTs = now;
+      const mean = circularMeanDeg(state.headingSamples.slice(-7));
+      if(mean == null) return;
+      if(state.heading != null){
+        const jump = Math.abs(diff(state.heading, mean));
+        if(jump < 1.2) return;
+      }
+      state.heading = smoothHeading(state.heading, mean, .075);
+      updateCompass();
+    });
+  }
   function applyHeading(raw, source='sensor'){
+    if(!Number.isFinite(raw)) return;
     let h = raw;
     if(source !== 'ios') h = state.headingInvert ? raw : (360 - raw);
     h = normDeg(h + (state.headingOffset || 0));
     state.rawHeading = raw;
     state.headingSource = source;
-    state.heading = smoothHeading(state.heading, h);
-    updateCompass();
+    state.headingSamples.push(h);
+    if(state.headingSamples.length > 12) state.headingSamples.shift();
+    scheduleHeadingApply();
   }
   function setManualHeading(value){
     state.heading = normDeg(+value || 0);
     state.rawHeading = state.heading;
     state.headingSource = 'ręczny';
+    state.headingSamples = [state.heading];
     updateCompass();
   }
 
@@ -61,11 +87,14 @@
 
   function initMap(){
     state.map = L.map('map', {center:[state.rx.lat,state.rx.lon], zoom:8, minZoom:5, maxZoom:18, zoomControl:false, attributionControl:true, inertia:true, tap:true, preferCanvas:true});
+    state.map.createPane('headingPane');
+    state.map.getPane('headingPane').style.zIndex = 690;
+    state.map.getPane('headingPane').style.pointerEvents = 'none';
     L.control.zoom({position:'bottomright'}).addTo(state.map);
     state.markers.addTo(state.map);
     setBase(state.base, false);
     state.map.on('click', () => { closePanel(); });
-    state.map.on('resize zoomend moveend', () => state.map.invalidateSize(true));
+    state.map.on('resize', () => state.map.invalidateSize(true));
     state.map.on('contextmenu', e => setRx(e.latlng.lat, e.latlng.lng, 'Punkt wskazany na mapie', true));
     for (const ms of [50,180,450,900,1600]) setTimeout(()=>state.map.invalidateSize(true), ms);
   }
@@ -77,6 +106,7 @@
     else if(state.base==='light') state.baseLayer=L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {...opts, subdomains:'abcd', attribution:'&copy; OpenStreetMap &copy; CARTO'});
     else state.baseLayer=L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', opts);
     state.baseLayer.addTo(state.map);
+    renderHeadingCone();
     setTimeout(()=>state.map.invalidateSize(true),80);
     if(persist) save();
   }
@@ -95,10 +125,10 @@
   function renderAll(){ renderHome(); renderTxMarkers(); }
   function renderHome(){
     if(state.homeMarker) state.map.removeLayer(state.homeMarker);
-    renderHeadingCone();
     const icon=L.divIcon({html:'<div class="home-marker">🏠</div>', className:'', iconSize:[32,32], iconAnchor:[16,16]});
     state.homeMarker=L.marker([state.rx.lat,state.rx.lon], {icon, draggable:true, zIndexOffset:500}).addTo(state.map);
     state.homeMarker.on('dragend', e=>setRx(e.target.getLatLng().lat, e.target.getLatLng().lng, 'Punkt wskazany na mapie', false));
+    renderHeadingCone();
     $('locationChip').textContent = `🏠 ${state.rx.label || 'Punkt odbioru'}`;
   }
   function renderHeadingCone(){
@@ -106,7 +136,7 @@
     if(state.heading == null) return;
     const coneHtml = `<div class="heading-cone" style="transform:rotate(${Math.round(state.heading)}deg)"><svg viewBox="0 0 100 100" aria-hidden="true"><path d="M50 50 L30 2 Q50 -7 70 2 Z"/><circle cx="50" cy="50" r="4"/></svg></div>`;
     const coneIcon=L.divIcon({html:coneHtml, className:'', iconSize:[110,110], iconAnchor:[55,55]});
-    state.headingCone=L.marker([state.rx.lat,state.rx.lon], {icon:coneIcon, interactive:false, zIndexOffset:100}).addTo(state.map);
+    state.headingCone=L.marker([state.rx.lat,state.rx.lon], {icon:coneIcon, interactive:false, pane:'headingPane', zIndexOffset:1200}).addTo(state.map);
   }
   function renderTxMarkers(){
     state.markers.clearLayers();
@@ -168,7 +198,7 @@
 
   async function showProfile(){
     const t=state.selected; if(!t) return toast('Najpierw wybierz nadajnik.');
-    openPanel('Profil terenu', `${state.rx.label} → ${t.short_name||t.name}`, `<div class="row info-card"><strong>Wysokość anteny</strong><input id="rxHeight" type="number" min="1" max="40" value="${state.rxHeight}"></div><div id="profileBox" class="info-card"><strong>Pobieram realny profil...</strong><span>Open-Meteo Elevation API</span></div>`);
+    openPanel('Profil terenu', `${state.rx.label} → ${t.short_name||t.name}`, `<div class="row info-card"><strong>Wysokość anteny</strong><input id="rxHeight" type="number" min="1" max="40" value="${state.rxHeight}"></div><div id="profileBox" class="info-card"><strong>Pobieram realny profil...</strong><span>Open-Meteo Elevation API + wysokość obiektu z bazy nadajników, jeśli jest dostępna.</span></div>`);
     $('rxHeight').onchange=e=>{state.rxHeight=Math.max(1,Math.min(40,+e.target.value||6)); save(); showProfile();};
     try{ const p=await fetchProfile(state.rx,t); renderProfile(p,t); }catch(err){ $('profileBox').innerHTML=`<strong>Błąd profilu terenu</strong><span>${esc(err.message||'Nie udało się pobrać realnych danych wysokości.')}</span>`; }
   }
@@ -181,12 +211,21 @@
     return j.elevation.map((e,i)=>({d:t.distance*i/(n-1), e:+e}));
   }
   function renderProfile(p,t){
-    const rxAlt=p[0].e+state.rxHeight, txAlt=p[p.length-1].e+(+t.height||60); const min=Math.min(...p.map(x=>x.e))-30, max=Math.max(txAlt,rxAlt,...p.map(x=>x.e))+40; const W=620,H=210,pad=30;
+    const rxGround = p[0].e;
+    const txGroundFromApi = p[p.length-1].e;
+    const txGround = Number.isFinite(+t.site_elevation_m) ? +t.site_elevation_m : txGroundFromApi;
+    const txGroundSource = Number.isFinite(+t.site_elevation_m) ? 'wysokość obiektu z bazy' : 'wysokość z Open-Meteo';
+    const txHeight = +t.height || 60;
+    const rxAlt = rxGround + state.rxHeight;
+    const txAlt = txGround + txHeight;
+    const terrainForScale = p.map(x=>x.e).concat([txGround, rxGround, rxAlt, txAlt]);
+    const min=Math.min(...terrainForScale)-25, max=Math.max(...terrainForScale)+35; const W=620,H=230,pad=34;
     const x=d=>pad+(W-pad*2)*(d/t.distance), y=e=>H-pad-(H-pad*2)*((e-min)/(max-min));
     const path=p.map((pt,i)=>`${i?'L':'M'}${x(pt.d).toFixed(1)},${y(pt.e).toFixed(1)}`).join(' '); const area=`M${pad},${H-pad} ${path} L${W-pad},${H-pad} Z`;
     let worst=999, worstD=0; for(const pt of p){ const los=rxAlt+(txAlt-rxAlt)*(pt.d/t.distance); const margin=los-pt.e; if(margin<worst){worst=margin; worstD=pt.d;} }
-    const msg=worst<0?'Silne zasłonięcie terenu':worst<20?'Częściowe zasłonięcie terenu':'Profil wygląda czysto';
-    $('profileBox').innerHTML=`<svg class="profile-svg" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none"><path d="${area}" fill="#dcfce7"/><path d="${path}" fill="none" stroke="#16a34a" stroke-width="3"/><line x1="${pad}" y1="${y(rxAlt)}" x2="${W-pad}" y2="${y(txAlt)}" stroke="#2563eb" stroke-dasharray="7 6" stroke-width="2"/><circle cx="${pad}" cy="${y(rxAlt)}" r="5" fill="#2563eb"/><circle cx="${W-pad}" cy="${y(txAlt)}" r="5" fill="#16a34a"/><text x="${pad}" y="18" font-size="13" font-weight="850">Dom +${state.rxHeight} m</text><text x="${W-pad-110}" y="18" font-size="13" font-weight="850">Nadajnik +${t.height||60} m</text></svg><div class="profile-note">${msg}. Najmniejszy zapas: ${Math.round(worst)} m, około ${worstD.toFixed(1)} km od punktu odbioru.</div>`;
+    const msg=worst<0?'Przeszkoda w linii optycznej':worst<10?'Mały zapas nad terenem':'Linia optyczna wygląda czysto';
+    const noteClass=worst<0?'profile-note bad':worst<10?'profile-note warn':'profile-note ok';
+    $('profileBox').innerHTML=`<svg class="profile-svg" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none"><path d="${area}" fill="#e5e7eb"/><path d="${path}" fill="none" stroke="#475569" stroke-width="2.4"/><line x1="${pad}" y1="${y(rxAlt)}" x2="${W-pad}" y2="${y(txAlt)}" stroke="#111827" stroke-width="2"/><circle cx="${pad}" cy="${y(rxAlt)}" r="5" fill="#2563eb"/><circle cx="${W-pad}" cy="${y(txAlt)}" r="5" fill="#16a34a"/><text x="${pad}" y="18" font-size="13" font-weight="850">Dom +${state.rxHeight} m</text><text x="${W-pad-130}" y="18" font-size="13" font-weight="850">Nadajnik +${txHeight} m</text><text x="${pad}" y="${H-8}" font-size="12" fill="#64748b">0 km</text><text x="${W-pad-46}" y="${H-8}" font-size="12" fill="#64748b">${t.distance.toFixed(1)} km</text></svg><div class="${noteClass}">${msg}. Najmniejszy zapas: ${Math.round(worst)} m, około ${worstD.toFixed(1)} km od punktu odbioru.</div><div class="profile-meta">Teren: Open-Meteo Elevation API. Wysokość nadajnika: ${txGroundSource}. To profil geometryczny, bez kopiowania map pokrycia z obcych serwisów.</div>`;
   }
 
   function updateCompass(){
@@ -252,7 +291,7 @@
         <button id="invertCompassBtn" class="panel-btn">Odwróć czujnik</button>
         <button id="resetCompassBtn" class="panel-btn">Reset korekty</button>
       </div>
-      <div class="info-card"><strong>Uwaga</strong><span>Kompas telefonu może przekłamywać przy maszcie, antenie, blasze, aucie i magnesach. Skalibruj telefon ruchem ósemki.</span></div>`);
+      <div class="info-card"><strong>Uwaga</strong><span>Włączyłem mocne wygładzanie, więc wskazanie powinno skakać mniej. Kompas telefonu nadal może przekłamywać przy maszcie, antenie, blasze, aucie i magnesach. Skalibruj telefon ruchem ósemki.</span></div>`);
     $('startCompassBtn').onclick=startCompass;
     $('stopCompassBtn').onclick=stopCompass;
     $('manualHeading').oninput=e=>{ $('manualHeadingValue').textContent=`${e.target.value}°`; setManualHeading(e.target.value); };
@@ -269,6 +308,6 @@
     $('closeStationBtn').onclick=hideStation; $('openStationBtn').onclick=showStation; $('antennaBtn').onclick=showCompassPanel; $('compassWidget').onclick=showCompassPanel; $('stationProfileBtn').onclick=showProfile; $('stationMuxBtn').onclick=showMux;
     window.addEventListener('online',()=>{$('onlineChip').textContent='Online';$('onlineChip').classList.add('online-chip');}); window.addEventListener('offline',()=>{$('onlineChip').textContent='Offline';$('onlineChip').classList.remove('online-chip');});
   }
-  async function boot(){ load(); bind(); initMap(); await loadTxs(); if('serviceWorker' in navigator) navigator.serviceWorker.register('./service-worker.js?v=17.0-1705261338').catch(()=>{}); setAppHeight(); }
+  async function boot(){ load(); bind(); initMap(); await loadTxs(); if('serviceWorker' in navigator) navigator.serviceWorker.register('./service-worker.js?v=18.0-1705261348').catch(()=>{}); setAppHeight(); }
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', boot); else boot();
 })();

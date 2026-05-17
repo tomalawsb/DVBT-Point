@@ -1,119 +1,336 @@
 {
-  "version": "14.0 - 1705261138",
+  "version": "18.0 - 1705261348",
   "source": "Emitel publiczna tabela parametrów emisji DVB-T/DVB-T2 + ręcznie przypisane współrzędne obiektów nadawczych",
   "updated_at": "2026-05-17",
   "is_demo": false,
-  "note": "To nie jest gotowa mapa pokrycia RadioPolska/Emitel. To baza nadajników i parametrów emisji do pracy aplikacji. Pokrycie liczone jest w aplikacji orientacyjnie, profil terenu realnie z Open-Meteo.",
+  "note": "Baza nadajników jest plikiem JSON do podmiany/aktualizacji. Profil terenu używa Open-Meteo Elevation API, a wysokość gruntu nadajnika bierze z pola site_elevation_m, jeśli jest dostępne.",
   "transmitters": [
     {
-      "id":"kielce-swietty-krzyz",
-      "name":"RTCN Kielce / Święty Krzyż",
-      "short_name":"Święty Krzyż",
-      "lat":50.8597,
-      "lon":21.0486,
-      "mast_height_m":157,
-      "site_elevation_m":595,
-      "source":"Emitel publiczna tabela parametrów emisji",
-      "muxes":[
-        {"name":"MUX-1","channel":"K30","frequency_mhz":546,"erp_kw":100,"polarization":"H","band":"UHF","pattern":"dookólna"},
-        {"name":"MUX-2","channel":"K44","frequency_mhz":658,"erp_kw":100,"polarization":"H","band":"UHF","pattern":"dookólna"},
-        {"name":"MUX-3","channel":"K47","frequency_mhz":682,"erp_kw":150,"polarization":"H","band":"UHF","pattern":"dookólna"},
-        {"name":"MUX-6","channel":"K28","frequency_mhz":530,"erp_kw":100,"polarization":"H","band":"UHF","pattern":"dookólna"},
-        {"name":"MUX-8","channel":"K8","frequency_mhz":198.5,"erp_kw":10,"polarization":"V","band":"VHF","pattern":"kierunkowa"}
+      "id": "kielce-swietty-krzyz",
+      "name": "RTCN Kielce / Święty Krzyż",
+      "short_name": "Święty Krzyż",
+      "lat": 50.8597,
+      "lon": 21.0486,
+      "mast_height_m": 157,
+      "site_elevation_m": 595,
+      "source": "Emitel publiczna tabela parametrów emisji",
+      "muxes": [
+        {
+          "name": "MUX-1",
+          "channel": "K30",
+          "frequency_mhz": 546,
+          "erp_kw": 100,
+          "polarization": "H",
+          "band": "UHF",
+          "pattern": "dookólna"
+        },
+        {
+          "name": "MUX-2",
+          "channel": "K44",
+          "frequency_mhz": 658,
+          "erp_kw": 100,
+          "polarization": "H",
+          "band": "UHF",
+          "pattern": "dookólna"
+        },
+        {
+          "name": "MUX-3",
+          "channel": "K47",
+          "frequency_mhz": 682,
+          "erp_kw": 150,
+          "polarization": "H",
+          "band": "UHF",
+          "pattern": "dookólna"
+        },
+        {
+          "name": "MUX-6",
+          "channel": "K28",
+          "frequency_mhz": 530,
+          "erp_kw": 100,
+          "polarization": "H",
+          "band": "UHF",
+          "pattern": "dookólna"
+        },
+        {
+          "name": "MUX-8",
+          "channel": "K8",
+          "frequency_mhz": 198.5,
+          "erp_kw": 10,
+          "polarization": "V",
+          "band": "VHF",
+          "pattern": "kierunkowa"
+        }
       ]
     },
     {
-      "id":"tarnow-sw-marcin",
-      "name":"RTON Tarnów / g. Św. Marcina",
-      "short_name":"Tarnów / Góra Św. Marcina",
-      "lat":49.9996,
-      "lon":20.9882,
-      "mast_height_m":55,
-      "site_elevation_m":384,
-      "source":"Emitel publiczna tabela parametrów emisji",
-      "muxes":[
-        {"name":"MUX-1","channel":"K43","frequency_mhz":650,"erp_kw":50,"polarization":"H","band":"UHF","pattern":"dookólna"},
-        {"name":"MUX-2","channel":"K23","frequency_mhz":490,"erp_kw":45,"polarization":"H","band":"UHF","pattern":"kierunkowa"},
-        {"name":"MUX-3","channel":"K22","frequency_mhz":482,"erp_kw":50,"polarization":"H","band":"UHF","pattern":"dookólna"},
-        {"name":"MUX-6","channel":"K45","frequency_mhz":666,"erp_kw":50,"polarization":"H","band":"UHF","pattern":"dookólna"},
-        {"name":"MUX-8","channel":"K7","frequency_mhz":191.5,"erp_kw":3,"polarization":"H","band":"VHF","pattern":"dookólna"}
+      "id": "tarnow-sw-marcin",
+      "name": "RTON Tarnów / g. Św. Marcina",
+      "short_name": "Tarnów / Góra Św. Marcina",
+      "lat": 49.983799,
+      "lon": 21.012714,
+      "mast_height_m": 55,
+      "site_elevation_m": 384,
+      "source": "Emitel publiczna tabela parametrów emisji",
+      "muxes": [
+        {
+          "name": "MUX-1",
+          "channel": "K43",
+          "frequency_mhz": 650,
+          "erp_kw": 50,
+          "polarization": "H",
+          "band": "UHF",
+          "pattern": "dookólna"
+        },
+        {
+          "name": "MUX-2",
+          "channel": "K23",
+          "frequency_mhz": 490,
+          "erp_kw": 45,
+          "polarization": "H",
+          "band": "UHF",
+          "pattern": "kierunkowa"
+        },
+        {
+          "name": "MUX-3",
+          "channel": "K22",
+          "frequency_mhz": 482,
+          "erp_kw": 50,
+          "polarization": "H",
+          "band": "UHF",
+          "pattern": "dookólna"
+        },
+        {
+          "name": "MUX-6",
+          "channel": "K45",
+          "frequency_mhz": 666,
+          "erp_kw": 50,
+          "polarization": "H",
+          "band": "UHF",
+          "pattern": "dookólna"
+        },
+        {
+          "name": "MUX-8",
+          "channel": "K7",
+          "frequency_mhz": 191.5,
+          "erp_kw": 3,
+          "polarization": "H",
+          "band": "VHF",
+          "pattern": "dookólna"
+        }
+      ],
+      "coordinate_note": "Współrzędne skorygowane według porównania z aplikacją referencyjną użytkownika."
+    },
+    {
+      "id": "rzeszow-sucha-gora",
+      "name": "RTCN Rzeszów / Sucha Góra",
+      "short_name": "Sucha Góra",
+      "lat": 49.742,
+      "lon": 21.8768,
+      "mast_height_m": 130,
+      "site_elevation_m": 585,
+      "source": "Emitel publiczna tabela parametrów emisji",
+      "muxes": [
+        {
+          "name": "MUX-1",
+          "channel": "K43",
+          "frequency_mhz": 650,
+          "erp_kw": 100,
+          "polarization": "H",
+          "band": "UHF",
+          "pattern": "dookólna"
+        },
+        {
+          "name": "MUX-2",
+          "channel": "K32",
+          "frequency_mhz": 562,
+          "erp_kw": 100,
+          "polarization": "H",
+          "band": "UHF",
+          "pattern": "dookólna"
+        },
+        {
+          "name": "MUX-3",
+          "channel": "K29",
+          "frequency_mhz": 538,
+          "erp_kw": 100,
+          "polarization": "H",
+          "band": "UHF",
+          "pattern": "dookólna"
+        },
+        {
+          "name": "MUX-6",
+          "channel": "K35",
+          "frequency_mhz": 586,
+          "erp_kw": 100,
+          "polarization": "H",
+          "band": "UHF",
+          "pattern": "dookólna"
+        },
+        {
+          "name": "MUX-8",
+          "channel": "K6",
+          "frequency_mhz": 184.5,
+          "erp_kw": 8.1,
+          "polarization": "V",
+          "band": "VHF",
+          "pattern": "kierunkowa"
+        }
       ]
     },
     {
-      "id":"rzeszow-sucha-gora",
-      "name":"RTCN Rzeszów / Sucha Góra",
-      "short_name":"Sucha Góra",
-      "lat":49.7420,
-      "lon":21.8768,
-      "mast_height_m":130,
-      "site_elevation_m":585,
-      "source":"Emitel publiczna tabela parametrów emisji",
-      "muxes":[
-        {"name":"MUX-1","channel":"K43","frequency_mhz":650,"erp_kw":100,"polarization":"H","band":"UHF","pattern":"dookólna"},
-        {"name":"MUX-2","channel":"K32","frequency_mhz":562,"erp_kw":100,"polarization":"H","band":"UHF","pattern":"dookólna"},
-        {"name":"MUX-3","channel":"K29","frequency_mhz":538,"erp_kw":100,"polarization":"H","band":"UHF","pattern":"dookólna"},
-        {"name":"MUX-6","channel":"K35","frequency_mhz":586,"erp_kw":100,"polarization":"H","band":"UHF","pattern":"dookólna"},
-        {"name":"MUX-8","channel":"K6","frequency_mhz":184.5,"erp_kw":8.1,"polarization":"V","band":"VHF","pattern":"kierunkowa"}
+      "id": "krakow-choragwica",
+      "name": "RTCN Kraków / Chorągwica",
+      "short_name": "Kraków / Chorągwica",
+      "lat": 49.9586,
+      "lon": 20.103,
+      "mast_height_m": 286,
+      "site_elevation_m": 430,
+      "source": "Emitel publiczna tabela parametrów emisji",
+      "muxes": [
+        {
+          "name": "MUX-1",
+          "channel": "K43",
+          "frequency_mhz": 650,
+          "erp_kw": 100,
+          "polarization": "H",
+          "band": "UHF",
+          "pattern": "dookólna"
+        },
+        {
+          "name": "MUX-2",
+          "channel": "K23",
+          "frequency_mhz": 490,
+          "erp_kw": 100,
+          "polarization": "H",
+          "band": "UHF",
+          "pattern": "dookólna"
+        },
+        {
+          "name": "MUX-8",
+          "channel": "K7",
+          "frequency_mhz": 191.5,
+          "erp_kw": 10,
+          "polarization": "V",
+          "band": "VHF",
+          "pattern": "kierunkowa"
+        }
       ]
     },
     {
-      "id":"krakow-choragwica",
-      "name":"RTCN Kraków / Chorągwica",
-      "short_name":"Kraków / Chorągwica",
-      "lat":49.9586,
-      "lon":20.1030,
-      "mast_height_m":286,
-      "site_elevation_m":430,
-      "source":"Emitel publiczna tabela parametrów emisji",
-      "muxes":[
-        {"name":"MUX-1","channel":"K43","frequency_mhz":650,"erp_kw":100,"polarization":"H","band":"UHF","pattern":"dookólna"},
-        {"name":"MUX-2","channel":"K23","frequency_mhz":490,"erp_kw":100,"polarization":"H","band":"UHF","pattern":"dookólna"},
-        {"name":"MUX-8","channel":"K7","frequency_mhz":191.5,"erp_kw":10,"polarization":"V","band":"VHF","pattern":"kierunkowa"}
+      "id": "lezajsk-giedlarowa",
+      "name": "RTCN Leżajsk / Giedlarowa",
+      "short_name": "Leżajsk / Giedlarowa",
+      "lat": 50.2637,
+      "lon": 22.4057,
+      "mast_height_m": 100,
+      "site_elevation_m": 200,
+      "source": "Emitel publiczna tabela parametrów emisji",
+      "muxes": [
+        {
+          "name": "MUX-1",
+          "channel": "K43",
+          "frequency_mhz": 650,
+          "erp_kw": 100,
+          "polarization": "H",
+          "band": "UHF",
+          "pattern": "dookólna"
+        },
+        {
+          "name": "MUX-2",
+          "channel": "K59",
+          "frequency_mhz": 778,
+          "erp_kw": 100,
+          "polarization": "H",
+          "band": "UHF",
+          "pattern": "dookólna"
+        },
+        {
+          "name": "MUX-8",
+          "channel": "K6",
+          "frequency_mhz": 184.5,
+          "erp_kw": 11,
+          "polarization": "V",
+          "band": "VHF",
+          "pattern": "kierunkowa"
+        }
       ]
     },
     {
-      "id":"lezajsk-giedlarowa",
-      "name":"RTCN Leżajsk / Giedlarowa",
-      "short_name":"Leżajsk / Giedlarowa",
-      "lat":50.2637,
-      "lon":22.4057,
-      "mast_height_m":100,
-      "site_elevation_m":200,
-      "source":"Emitel publiczna tabela parametrów emisji",
-      "muxes":[
-        {"name":"MUX-1","channel":"K43","frequency_mhz":650,"erp_kw":100,"polarization":"H","band":"UHF","pattern":"dookólna"},
-        {"name":"MUX-2","channel":"K59","frequency_mhz":778,"erp_kw":100,"polarization":"H","band":"UHF","pattern":"dookólna"},
-        {"name":"MUX-8","channel":"K6","frequency_mhz":184.5,"erp_kw":11,"polarization":"V","band":"VHF","pattern":"kierunkowa"}
+      "id": "przysucha-kozlowiec",
+      "name": "RTCN Przysucha / Kozłowiec",
+      "short_name": "Przysucha / Kozłowiec",
+      "lat": 51.3106,
+      "lon": 20.6332,
+      "mast_height_m": 100,
+      "site_elevation_m": 350,
+      "source": "Emitel publiczna tabela parametrów emisji",
+      "muxes": [
+        {
+          "name": "MUX-1",
+          "channel": "K30",
+          "frequency_mhz": 546,
+          "erp_kw": 50,
+          "polarization": "H",
+          "band": "UHF",
+          "pattern": "dookólna"
+        },
+        {
+          "name": "MUX-2",
+          "channel": "K44",
+          "frequency_mhz": 658,
+          "erp_kw": 50,
+          "polarization": "H",
+          "band": "UHF",
+          "pattern": "dookólna"
+        },
+        {
+          "name": "MUX-8",
+          "channel": "K8",
+          "frequency_mhz": 198.5,
+          "erp_kw": 15.5,
+          "polarization": "V",
+          "band": "VHF",
+          "pattern": "kierunkowa"
+        }
       ]
     },
     {
-      "id":"przysucha-kozlowiec",
-      "name":"RTCN Przysucha / Kozłowiec",
-      "short_name":"Przysucha / Kozłowiec",
-      "lat":51.3106,
-      "lon":20.6332,
-      "mast_height_m":100,
-      "site_elevation_m":350,
-      "source":"Emitel publiczna tabela parametrów emisji",
-      "muxes":[
-        {"name":"MUX-1","channel":"K30","frequency_mhz":546,"erp_kw":50,"polarization":"H","band":"UHF","pattern":"dookólna"},
-        {"name":"MUX-2","channel":"K44","frequency_mhz":658,"erp_kw":50,"polarization":"H","band":"UHF","pattern":"dookólna"},
-        {"name":"MUX-8","channel":"K8","frequency_mhz":198.5,"erp_kw":15.5,"polarization":"V","band":"VHF","pattern":"kierunkowa"}
-      ]
-    },
-    {
-      "id":"lublin-piaski",
-      "name":"RTCN Lublin / Piaski",
-      "short_name":"Lublin / Piaski",
-      "lat":51.1342,
-      "lon":22.8489,
-      "mast_height_m":342,
-      "site_elevation_m":206,
-      "source":"Emitel publiczna tabela parametrów emisji",
-      "muxes":[
-        {"name":"MUX-1","channel":"K33","frequency_mhz":570,"erp_kw":100,"polarization":"H","band":"UHF","pattern":"dookólna"},
-        {"name":"MUX-2","channel":"K21","frequency_mhz":474,"erp_kw":100,"polarization":"H","band":"UHF","pattern":"dookólna"},
-        {"name":"MUX-8","channel":"K12","frequency_mhz":226.5,"erp_kw":17,"polarization":"V","band":"VHF","pattern":"kierunkowa"}
+      "id": "lublin-piaski",
+      "name": "RTCN Lublin / Piaski",
+      "short_name": "Lublin / Piaski",
+      "lat": 51.1342,
+      "lon": 22.8489,
+      "mast_height_m": 342,
+      "site_elevation_m": 206,
+      "source": "Emitel publiczna tabela parametrów emisji",
+      "muxes": [
+        {
+          "name": "MUX-1",
+          "channel": "K33",
+          "frequency_mhz": 570,
+          "erp_kw": 100,
+          "polarization": "H",
+          "band": "UHF",
+          "pattern": "dookólna"
+        },
+        {
+          "name": "MUX-2",
+          "channel": "K21",
+          "frequency_mhz": 474,
+          "erp_kw": 100,
+          "polarization": "H",
+          "band": "UHF",
+          "pattern": "dookólna"
+        },
+        {
+          "name": "MUX-8",
+          "channel": "K12",
+          "frequency_mhz": 226.5,
+          "erp_kw": 17,
+          "polarization": "V",
+          "band": "VHF",
+          "pattern": "kierunkowa"
+        }
       ]
     }
   ]

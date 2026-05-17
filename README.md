@@ -1,12 +1,16 @@
-# DVB-T/T2 Point — 17.0 - 1705261338
+# DVB-T/T2 Point — Etap 18
 
-Wersja przebudowana na układ mapy zbliżony do działającej aplikacji myBTS: pełnoekranowy `map-stage`, mapa inicjalizowana po ustawieniu realnej wysokości viewportu, wielokrotne `invalidateSize()`, lżejsze panele i zamykany panel nadajnika.
+Wersja: **18.0 - 1705261348**
 
-## Ważne po wrzuceniu na GitHub Pages
-Jeżeli telefon dalej pokazuje starą wersję albo mapa ładuje się kafelkami:
-1. Wejdź w aplikacji w `⚙ Dane/API`.
-2. Kliknij `Wymuś aktualizację PWA`.
-3. Jeśli nadal jest stara wersja: Chrome → Ustawienia witryny → tomalawsb.github.io → Wyczyść dane.
+Zmiany:
 
-## Profil terenu
-Profil terenu jest prawdziwy i pobierany z Open-Meteo Elevation API. Nie ma profilu demonstracyjnego.
+- stabilizacja kompasu: próbkowanie, uśrednianie kołowe i wolniejsze wygładzanie,
+- stożek kierunku rysowany w osobnej warstwie Leaflet `headingPane`, ponad podkładami mapy,
+- poprawiony profil terenu:
+  - teren z Open-Meteo Elevation API,
+  - wysokość gruntu nadajnika z `site_elevation_m`, jeśli jest w bazie,
+  - brak profilu demonstracyjnego,
+  - komunikat o źródle danych pod wykresem,
+- skorygowane współrzędne obiektu Tarnów / Góra Św. Marcina według danych z aplikacji referencyjnej użytkownika.
+
+Uwaga: kompas telefonu nadal zależy od czujników urządzenia i może skakać przy metalowych elementach, aucie, maszcie, antenie i magnesach.
