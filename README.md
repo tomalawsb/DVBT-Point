@@ -1,15 +1,19 @@
-# DVB-T/T2 Point — 19.5 - 1705261615
+# DVB-T/T2 Point — 19.17 - 1705262205
 
-Etap 19:
-- numer wersji widoczny stale na ekranie,
-- czujnik kierunku uruchamiany automatycznie; bez przycisku włącz/wyłącz,
-- stożek kierunku utrzymany nad warstwami mapy,
-- profil terenu pozostaje realny z Open-Meteo Elevation API, bez profilu demo,
-- aplikacja nie pokazuje udawanych zasięgów jako prawdziwych,
-- dodany import prawdziwej warstwy zasięgu GeoJSON oraz opcja licencjonowanego URL kafelków XYZ.
+Etap 19.17:
+- przycisk „Sprawdź ANT wybranego nadajnika” działa tylko dla aktualnie wybranego nadajnika i jego MUX-ów,
+- brakujące ANT są pobierane pojedynczo i zapisywane w cache przeglądarki,
+- obliczanie RF korzysta z ANT zapisanych w cache,
+- profil terenu ma siatkę, opisy osi, linię LOS, przeszkody i 60% strefy Fresnela,
+- usunięto zdublowaną funkcję `showProfile()` z `app.js`,
+- panel warstw ma jasne nazwy: zewnętrzna warstwa zasięgu XYZ albo GeoJSON,
+- UI rozróżnia zasięg orientacyjny liczony przez aplikację od zewnętrznej mapy pokrycia.
 
 Uwaga o zasięgu:
-Gotowe, prawdziwe mapy pokrycia masztów wymagają legalnego źródła warstwy, np. GeoJSON/XYZ/API. Publiczne darmowe źródła pozwalają pozyskać parametry nadajników i dane wysokościowe, ale nie znalazłem oficjalnego publicznego darmowego API RadioPolska/Emitel do pobierania gotowych map pokrycia.
+Zasięg RF/ITM-lite liczony przez aplikację jest orientacyjny. Prawdziwa mapa pokrycia wymaga osobnego, legalnego źródła GeoJSON/XYZ/API.
+
+Uwaga o ANT:
+Aplikacja HTML/JS nie zapisuje pobranych ANT jako fizycznych plików w folderze `data/ant`. Zapisuje je w cache przeglądarki. Fizyczne pliki `.ant` można nadal przygotować skryptem `download_ant_patterns.py`.
 
 ## Wersja 19.3
 

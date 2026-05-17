@@ -1,7 +1,8 @@
 (() => {
   'use strict';
-  const APP_VERSION = '19.16 - 1705262145';
+  const APP_VERSION = '19.17 - 1705262205';
   const STORE = 'dvbt-point-v19-state';
+  const ANT_CACHE_NAME = 'dvbt-ant-files-v1';
   const $ = id => document.getElementById(id);
   const state = {
     map:null, baseLayer:null, base:'osm', rx:{lat:50.2871, lon:21.4238, label:'Mielec / punkt odbioru'}, rxHeight:6,
@@ -258,8 +259,17 @@
     openPanel('MUX-y i moce nadajnika', meta, rows);
   }
   function showLayers(){
-    openPanel('Warstwy','Podkład mapy.', `<button class="tx-item ${state.base==='osm'?'active':''}" data-base="osm"><strong>Plan OSM</strong><span>Najstabilniejsza mapa.</span></button><button class="tx-item ${state.base==='light'?'active':''}" data-base="light"><strong>Jasna CARTO</strong><span>Lżejsza wizualnie.</span></button><button class="tx-item ${state.base==='sat'?'active':''}" data-base="sat"><strong>Satelita Esri</strong><span>Cięższa, wymaga internetu.</span></button>`);
+    openPanel('Warstwy mapy','Podkład oraz zewnętrzna mapa zasięgu GeoJSON/XYZ.', `
+      <button class="tx-item ${state.base==='osm'?'active':''}" data-base="osm"><strong>Plan OSM</strong><span>Najstabilniejsza mapa.</span></button>
+      <button class="tx-item ${state.base==='light'?'active':''}" data-base="light"><strong>Jasna CARTO</strong><span>Lżejsza wizualnie.</span></button>
+      <button class="tx-item ${state.base==='sat'?'active':''}" data-base="sat"><strong>Satelita Esri</strong><span>Cięższa, wymaga internetu.</span></button>
+      <div class="info-card"><strong>Dodaj zewnętrzną warstwę zasięgu XYZ</strong><span>Wklej adres kafelków HTTPS z tokenami {z}/{x}/{y}. To jest osobna mapa pokrycia, nie zasięg orientacyjny liczony przez aplikację.</span><input id="coverageTileInput" type="text" placeholder="https://.../{z}/{x}/{y}.png" value="${esc(state.coverageTileUrl||'')}"><button id="applyCoverageTileBtn" class="panel-btn primary">Dodaj zewnętrzną warstwę zasięgu</button><button id="clearCoverageTileBtn" class="panel-btn">Usuń zewnętrzną warstwę</button></div>
+      <div class="info-card"><strong>Wczytaj mapę zasięgu GeoJSON</strong><span>Wczytuje lokalny plik GeoJSON jako warstwę pomocniczą. Plik musi pochodzić z legalnego źródła.</span><input id="coverageGeoJsonInput" type="file" accept=".geojson,.json,application/geo+json,application/json"><button id="importCoverageGeoJsonBtn" class="panel-btn primary">Wczytaj GeoJSON</button></div>
+    `);
     $('panelContent').querySelectorAll('[data-base]').forEach(b=>b.onclick=()=>{setBase(b.dataset.base); closePanel();});
+    $('applyCoverageTileBtn').onclick=()=>applyCoverageTile($('coverageTileInput').value);
+    $('clearCoverageTileBtn').onclick=()=>{ state.coverageTileUrl=''; clearCoverageLayer(); save(); toast('Usunięto zewnętrzną warstwę zasięgu.'); };
+    $('importCoverageGeoJsonBtn').onclick=()=>importCoverageGeoJson($('coverageGeoJsonInput').files?.[0]).catch(err=>toast('Błąd GeoJSON: '+(err.message||err)));
   }
   function showFilters(){
     toast('Zakładka Filtry została usunięta, bo dublowała funkcje programu.');
@@ -294,7 +304,7 @@
       maxZoom:19, opacity:.58, updateWhenIdle:true, updateWhenZooming:false, keepBuffer:2, attribution:'Warstwa zasięgu: zewnętrzne/licencjonowane źródło'
     }).addTo(state.map);
     save();
-    toast('Podłączono zewnętrzną warstwę prawdziwego zasięgu.');
+    toast('Dodano zewnętrzną warstwę zasięgu.');
   }
   function countGeoJsonPositions(coords){
     if(!Array.isArray(coords)) return 0;
@@ -328,7 +338,7 @@
       },
       pointToLayer:(f,latlng)=>L.circleMarker(latlng,{radius:5, color:'#2563eb', weight:1, fillOpacity:.35})
     }).addTo(state.map);
-    toast('Zaimportowano prawdziwą warstwę zasięgu GeoJSON.');
+    toast('Zaimportowano zewnętrzną warstwę zasięgu GeoJSON.');
   }
 
   function showData(){
@@ -336,16 +346,16 @@
     openPanel('Dane i diagnostyka','Najważniejsze funkcje techniczne bez zbędnych opcji.', `
       <div class="info-card"><strong>Wersja</strong><span>${APP_VERSION}</span></div>
       <div class="info-card"><strong>Baza nadajników</strong><span>Załadowano ${state.txs.length} obiektów nadawczych i ${muxCount} emisji/MUX-ów z data/transmitters.json.</span></div>
-      <div class="info-card"><strong>Profil terenu</strong><span>Profil działa najpierw z lokalnego cache DEM. Jeżeli API Open-Meteo jest zablokowane limitem, aplikacja pokaże profil awaryjny oznaczony jako przybliżony, zamiast zostawiać puste okno.</span><button id="downloadDemSelected" class="panel-btn primary">Pobierz DEM dla wybranego nadajnika</button><button id="showDemStats" class="panel-btn">Stan cache DEM</button></div>
-      <div class="info-card"><strong>Zasięg terenowy RF / ITM-lite</strong><span>Liczenie poglądowego zasięgu z ERP, częstotliwości, wysokości anten, DEM i charakterystyki ANT, jeśli plik ANT jest dostępny lokalnie.</span><button id="calcRfCoverage" class="panel-btn primary">Oblicz zasięg terenowy</button><button id="clearRfCoverage" class="panel-btn">Usuń obliczony zasięg</button></div>
-      <div class="info-card"><strong>Pliki ANT anten</strong><span>Diagnostyka sprawdza, czy w tej konkretnej paczce/na tej stronie są faktycznie dostępne pliki data/ant/*.ant. Sama przeglądarka nie zapisze ich automatycznie na GitHubie — trzeba je pobrać skryptem i wgrać razem z aplikacją.</span><button id="runAntDiagnostics" class="panel-btn primary">Sprawdź pliki ANT</button></div>
+      <div class="info-card"><strong>Profil terenu</strong><span>Profil używa prawdziwych danych wysokości DEM: najpierw lokalny cache, potem kafle Terrarium, a awaryjnie API punktowe. Jeżeli nie ma prawdziwych danych, program pokaże błąd zamiast rysować zmyślony teren.</span><button id="downloadDemSelected" class="panel-btn primary">Pobierz DEM dla wybranego nadajnika</button><button id="showDemStats" class="panel-btn">Stan cache DEM</button></div>
+      <div class="info-card"><strong>Zasięg orientacyjny RF / ITM-lite</strong><span>To jest zasięg obliczony orientacyjnie przez aplikację, a nie oficjalna mapa pokrycia. Program bierze ERP, częstotliwość, wysokość anten, DEM i ANT z cache, jeśli jest dostępny.</span><button id="calcRfCoverage" class="panel-btn primary">Oblicz zasięg orientacyjny</button><button id="clearRfCoverage" class="panel-btn">Usuń obliczony zasięg</button></div>
+      <div class="info-card"><strong>ANT wybranego nadajnika</strong><span>Przycisk sprawdza tylko aktualnie wybrany nadajnik. Program pobiera brakujące pliki ANT dla jego MUX-ów i zapisuje je w cache przeglądarki, żeby następnym razem nie pobierać ich ponownie.</span><button id="runAntDiagnostics" class="panel-btn primary">Sprawdź ANT wybranego nadajnika</button></div>
       <button id="refreshPwa" class="panel-btn primary">Wymuś aktualizację PWA</button>`);
     $('calcRfCoverage').onclick=()=>calculateRfCoverage().catch(err=>toast('Błąd obliczeń RF: '+(err.message||err)));
     $('clearRfCoverage').onclick=()=>{ clearRfLayer(); toast('Usunięto obliczony zasięg RF.'); };
-    $('runAntDiagnostics').onclick=()=>runAntDiagnostics().catch(err=>toast('Błąd diagnostyki ANT: '+(err.message||err)));
+    $('runAntDiagnostics').onclick=()=>checkSelectedTransmitterAnt().catch(err=>toast('Błąd sprawdzania ANT: '+(err.message||err)));
     $('downloadDemSelected').onclick=()=>downloadDemForSelectedTx();
     $('showDemStats').onclick=()=>{ const st=demStats(); toast('Cache DEM: '+st.points+' punktów lokalnie.'); };
-    $('refreshPwa').onclick=async()=>{ const regs=await navigator.serviceWorker?.getRegistrations?.()||[]; for(const r of regs){ await r.unregister(); } const keys=await caches.keys(); await Promise.all(keys.map(k=>caches.delete(k))); location.reload(); };
+    $('refreshPwa').onclick=async()=>{ const regs=await navigator.serviceWorker?.getRegistrations?.()||[]; for(const r of regs){ await r.unregister(); } const keys=await caches.keys(); await Promise.all(keys.filter(k=>k!==ANT_CACHE_NAME).map(k=>caches.delete(k)));  location.reload(); };
   }
 
 
@@ -357,8 +367,8 @@
       <div class="info-card"><strong>2. Wybierz nadajnik</strong><span>Kliknij marker nadajnika albo przycisk z listą nadajników. Na karcie nadajnika zobaczysz azymut, odległość, polaryzację i moc ERP dla emisji/MUX-ów.</span></div>
       <div class="info-card"><strong>3. Ustaw antenę</strong><span>Przycisk „Ustaw antenę” otwiera kompas. Niebieska igła oznacza kierunek do nadajnika, pomarańczowa kierunek telefonu. Stożek na mapie pokazuje orientacyjny kierunek trzymania telefonu.</span></div>
       <div class="info-card"><strong>4. Profil terenu</strong><span>Profil wymaga danych wysokości DEM. Program pobiera je z API wysokości i zapisuje w lokalnym cache przeglądarki. Jeżeli API nie odpowiada, program nie udaje prawdziwego terenu prostą kreską — pokaże informację o braku DEM albo użyje tylko częściowego cache jako profil przybliżony.</span></div>
-      <div class="info-card"><strong>5. DEM i zasięg terenowy</strong><span>Przycisk „Pobierz DEM” zapisuje lokalnie wysokości dla okolicy wybranego nadajnika. Obliczony zasięg RF/ITM-lite jest poglądowy: bierze pod uwagę ERP, częstotliwość, wysokość anten, teren i lokalne pliki ANT, jeśli są dostępne.</span></div>
-      <div class="info-card"><strong>6. Warstwy mapy</strong><span>Warstwy przełączają podkład mapy oraz opcjonalną warstwę zasięgu. Jeżeli warstwa pochodzi z zewnętrznego adresu albo pliku GeoJSON, musi być poprawnie podłączona i dostępna dla przeglądarki.</span></div>
+      <div class="info-card"><strong>5. DEM i zasięg terenowy</strong><span>Przycisk „Pobierz DEM” zapisuje lokalnie wysokości dla okolicy wybranego nadajnika. Obliczony zasięg RF/ITM-lite jest orientacyjny, nie oficjalny. Bierze pod uwagę ERP, częstotliwość, wysokość anten, teren i pliki ANT z cache, jeśli są dostępne.</span></div>
+      <div class="info-card"><strong>6. Warstwy mapy</strong><span>Warstwy przełączają podkład mapy oraz opcjonalną zewnętrzną mapę zasięgu GeoJSON/XYZ. Taka warstwa jest osobnym źródłem danych i nie jest tym samym co orientacyjny zasięg liczony przez aplikację.</span></div>
       <div class="info-card"><strong>7. Dane i diagnostyka</strong><span>Panel „Dane i diagnostyka” pokazuje liczbę nadajników, stan cache DEM, diagnostykę plików ANT, obliczenia zasięgu i przycisk wymuszenia aktualizacji PWA.</span></div>
       <div class="info-card"><strong>Wersja</strong><span>${APP_VERSION}</span></div>`);
   }
@@ -643,67 +653,152 @@
     return used;
   }
 
-  async function runAntDiagnostics(){
-    const index=await loadAntIndex();
-    const used=collectUsedAntPaths();
-    const items=index.items || [];
-    let withUrl=0, withoutUrl=0, fetched=0, missing=0, parsedOk=0, parsedBad=0, full360=0, partial=0;
-    const bad=[];
-    const missingList=[];
-    const notUsed=[];
-    const checked=[];
-    const limit=items.length;
-    toast('Sprawdzam pliki ANT...');
-    openPanel('Sprawdzanie ANT', 'Trwa kontrola plików data/ant/*.ant.', '<div class="info-card"><strong>Pracuję</strong><span>Sprawdzam, które pliki ANT są naprawdę dostępne w tej paczce lub na stronie.</span></div>');
-    for(const item of items){
-      if(item.url) withUrl++; else withoutUrl++;
-      const path=item.local_path;
-      if(!path) continue;
+  function antCacheAvailable(){
+    return typeof caches !== 'undefined' && typeof Response !== 'undefined';
+  }
+
+  async function getAntCache(){
+    if(!antCacheAvailable()) return null;
+    try{ return await caches.open(ANT_CACHE_NAME); }catch{ return null; }
+  }
+
+  async function readAntTextFromCache(path){
+    const cache=await getAntCache();
+    if(!cache || !path) return null;
+    const r=await cache.match(path);
+    if(!r || !r.ok) return null;
+    return await r.text();
+  }
+
+  async function writeAntTextToCache(path, text){
+    const cache=await getAntCache();
+    if(!cache || !path || !text) return false;
+    try{
+      await cache.put(path, new Response(text, {headers:{'Content-Type':'text/plain; charset=utf-8'}}));
+      return true;
+    }catch{ return false; }
+  }
+
+  function antDownloadUrls(mux){
+    const raw=String(mux?.ant_file_url || '').trim();
+    if(!raw) return [];
+    const urls=[];
+    if(raw.startsWith('http://')) urls.push(raw.replace(/^http:\/\//,'https://'));
+    urls.push(raw);
+    return [...new Set(urls)];
+  }
+
+  function collectSelectedAntMuxes(t){
+    const selected=t || state.selected;
+    if(!selected) return [];
+    const out=[];
+    const seen=new Set();
+    for(const mux of selected.muxes || []){
+      const path=String(mux.ant_pattern_path || '').trim();
+      const url=String(mux.ant_file_url || '').trim();
+      const key=path || url || `${mux.name||''}:${mux.channel||''}`;
+      if(!key || seen.has(key)) continue;
+      seen.add(key);
+      out.push({mux, path, url});
+    }
+    return out;
+  }
+
+  async function fetchAntTextForMux(mux, forceDownload=false){
+    const path=String(mux?.ant_pattern_path || '').trim();
+    if(!path && !mux?.ant_file_url) return {status:'no-data', text:null, source:'brak'};
+
+    if(path && !forceDownload){
+      const cached=await readAntTextFromCache(path);
+      if(cached) return {status:'ok', text:cached, source:'cache'};
       try{
         const r=await fetch(path+'?v='+Date.now(), {cache:'no-store'});
-        if(!r.ok){ missing++; if(missingList.length < 30) missingList.push(path); continue; }
+        if(r.ok){
+          const txt=await r.text();
+          await writeAntTextToCache(path, txt);
+          return {status:'ok', text:txt, source:'lokalny plik'};
+        }
+      }catch{}
+    }
+
+    for(const url of antDownloadUrls(mux)){
+      try{
+        const r=await fetch(url, {cache:'no-store', mode:'cors'});
+        if(!r.ok) continue;
         const txt=await r.text();
-        fetched++;
-        const a=analyzeAntPatternText(txt);
-        if(a.ok){ parsedOk++; if(a.approx_full_360) full360++; else partial++; }
-        else { parsedBad++; if(bad.length < 30) bad.push(`${path} — punktów: ${a.points}`); }
-        checked.push({path, ...a});
-      }catch{
+        if(path) await writeAntTextToCache(path, txt);
+        return {status:'ok', text:txt, source:url.startsWith('https://')?'pobrano z internetu HTTPS':'pobrano z internetu'};
+      }catch{}
+    }
+
+    return {status:'missing', text:null, source:'brak dostępu'};
+  }
+
+  async function checkSelectedTransmitterAnt(){
+    const t=state.selected;
+    if(!t) return toast('Najpierw wybierz nadajnik.');
+    const items=collectSelectedAntMuxes(t);
+    if(!items.length){
+      openPanel('ANT wybranego nadajnika', `${t.short_name||t.name}`, '<div class="info-card"><strong>Brak danych ANT</strong><span>Wybrany nadajnik nie ma w bazie linków ani ścieżek do plików ANT.</span></div>');
+      return;
+    }
+    const rows=[];
+    let ok=0, fromCache=0, downloaded=0, missing=0, bad=0;
+    toast('Sprawdzam ANT wybranego nadajnika...');
+    openPanel('Sprawdzanie ANT', `${t.short_name||t.name}`, `<div class="info-card"><strong>Start</strong><span>Sprawdzam tylko MUX-y aktualnie wybranego nadajnika. 0/${items.length}</span></div>`);
+
+    for(let i=0;i<items.length;i++){
+      const {mux, path, url}=items[i];
+      const progress=`${i+1}/${items.length}`;
+      const box=$('panelContent');
+      if(box) box.innerHTML=`<div class="info-card"><strong>Sprawdzam ANT</strong><span>${progress}: ${esc(mux.name||'MUX')} ${esc(mux.channel||'')}</span></div>`;
+      const res=await fetchAntTextForMux(mux, false);
+      if(res.status==='ok'){
+        const a=analyzeAntPatternText(res.text);
+        if(a.ok){
+          ok++;
+          if(res.source==='cache') fromCache++;
+          if(String(res.source).startsWith('pobrano')) downloaded++;
+          if(path) state.antPatterns.set(path, a.pattern);
+          rows.push(`<div class="tx-item"><strong>${esc(mux.name||'MUX')} · ${esc(mux.channel||'')}</strong><span>OK — ${esc(res.source)}. Punktów: ${a.points}. Zakres azymutów: ${a.min_az ?? '—'}–${a.max_az ?? '—'}°. ${a.approx_full_360?'Zakres prawie 360°':'Zakres częściowy'}.</span></div>`);
+        }else{
+          bad++;
+          rows.push(`<div class="tx-item"><strong>${esc(mux.name||'MUX')} · ${esc(mux.channel||'')}</strong><span>Plik znaleziony, ale parser nie rozpoznał poprawnej charakterystyki. Punktów: ${a.points}. Źródło: ${esc(res.source)}.</span></div>`);
+        }
+      }else{
         missing++;
-        if(missingList.length < 30) missingList.push(path);
+        const why = !url ? 'brak linku do pobrania w bazie' : 'nie udało się pobrać; możliwy CORS, blokada HTTP/HTTPS albo brak pliku po stronie źródła';
+        rows.push(`<div class="tx-item"><strong>${esc(mux.name||'MUX')} · ${esc(mux.channel||'')}</strong><span>Brak ANT — ${why}. Ścieżka lokalna: ${esc(path||'—')}.</span></div>`);
       }
+      await new Promise(r=>setTimeout(r, 80));
     }
-    for(const item of items){
-      if(item.local_path && !used.has(item.local_path) && notUsed.length < 20) notUsed.push(item.local_path);
-    }
-    const usedCount=used.size;
-    const usedDownloaded=checked.filter(x=>used.has(x.path)).length;
-    const usedOk=checked.filter(x=>used.has(x.path) && x.ok).length;
-    const rfReady = usedOk > 0;
-    openPanel('Raport ANT', 'Diagnostyka zakończona. To jest wynik końcowy sprawdzenia.', `
-      <div class="info-card"><strong>Podsumowanie</strong><span>Indeks ANT: ${items.length} wpisów. Linki ANT: ${withUrl}. Bez linku: ${withoutUrl}. Lokalnie dostępne pliki: ${fetched}. Brakujące lokalnie: ${missing}.</span></div>
-      <div class="info-card"><strong>Parser</strong><span>Poprawnie odczytane: ${parsedOk}. Błędny/nieznany format: ${parsedBad}. Pełny lub prawie pełny zakres 360°: ${full360}. Niepełny zakres: ${partial}.</span></div>
-      <div class="info-card"><strong>Użycie w RF</strong><span>Ścieżki ANT używane przez nadajniki: ${usedCount}. Z tych ścieżek lokalnie dostępne: ${usedDownloaded}. Poprawnie parsowane i gotowe dla RF: ${usedOk}. Status: ${rfReady ? 'RF ma dostęp do charakterystyk ANT.' : 'RF nie ma jeszcze poprawnych lokalnych charakterystyk ANT.'}</span></div>
-      <div class="info-card"><strong>Brakujące pliki — pierwsze 30</strong><span>${missingList.length ? esc(missingList.join('\n')) : 'Brak na sprawdzonej liście.'}</span></div>
-      <div class="info-card"><strong>Błędne formaty — pierwsze 30</strong><span>${bad.length ? esc(bad.join('\n')) : 'Nie wykryto błędnych formatów w pobranych plikach.'}</span></div>
-      <div class="info-card"><strong>Wniosek końcowy</strong><span>${rfReady ? 'Pliki ANT są dostępne i RF może z nich korzystać.' : 'Brakuje lokalnych plików ANT w tej uruchomionej wersji aplikacji. Uruchom python download_ant_patterns.py, a potem wgraj/skopiuj cały folder data/ant razem z aplikacją. Sama przeglądarka nie zapisze tych plików automatycznie na GitHubie.'}</span></div>
+
+    const conclusion = ok>0
+      ? `Gotowe. Poprawne ANT: ${ok}. Z cache: ${fromCache}. Pobrane teraz: ${downloaded}. Braki: ${missing}. Błędny format: ${bad}. Obliczanie RF może użyć zapisanych danych ANT dla tego nadajnika.`
+      : `Nie mam poprawnego ANT dla tego nadajnika. Braki: ${missing}. Błędny format: ${bad}. RF policzy zasięg bez korekty charakterystyki anteny.`;
+    openPanel('Raport ANT wybranego nadajnika', `${t.short_name||t.name}`, `
+      <div class="info-card"><strong>Podsumowanie</strong><span>${esc(conclusion)}</span></div>
+      <div class="info-card"><strong>Cache</strong><span>Pliki pobrane przez ten przycisk są zapisywane w cache przeglądarki, nie jako fizyczne pliki w folderze data/ant. Dzięki temu następne sprawdzenie tego samego nadajnika nie powinno pobierać ich ponownie.</span></div>
+      ${rows.join('')}
     `);
-    toast('Diagnostyka ANT zakończona.');
+    toast('Sprawdzanie ANT zakończone.');
   }
 
   async function loadAntPattern(mux){
     const path=mux?.ant_pattern_path;
-    if(!path) return null;
-    if(state.antPatterns.has(path)) return state.antPatterns.get(path);
+    if(!path && !mux?.ant_file_url) return null;
+    if(path && state.antPatterns.has(path)) return state.antPatterns.get(path);
     try{
-      const r=await fetch(path, {cache:'force-cache'});
-      if(!r.ok){ state.antPatterns.set(path, null); return null; }
-      const txt=await r.text();
-      const parsed=parseAntPattern(txt);
-      state.antPatterns.set(path, parsed);
+      const res=await fetchAntTextForMux(mux, false);
+      if(res.status !== 'ok' || !res.text){
+        if(path) state.antPatterns.set(path, null);
+        return null;
+      }
+      const parsed=parseAntPattern(res.text);
+      if(path) state.antPatterns.set(path, parsed);
       return parsed;
     }catch{
-      state.antPatterns.set(path, null);
+      if(path) state.antPatterns.set(path, null);
       return null;
     }
   }
@@ -846,13 +941,6 @@
     }
   }
 
-  async function showProfile(){
-    const t=state.selected; if(!t) return toast('Najpierw wybierz nadajnik.');
-    openPanel('Profil terenu', `${state.rx.label} → ${t.short_name||t.name}`, `<div class="row info-card"><strong>Wysokość anteny odbiorczej</strong><input id="rxHeight" type="number" min="1" max="40" value="${state.rxHeight}"></div><button id="profileDownloadDem" class="panel-btn primary" type="button">Pobierz DEM i odśwież profil</button><div id="profileBox" class="info-card"><strong>Ładuję profil terenu...</strong><span>Najpierw używam lokalnego DEM. Przy braku odpowiedzi API profil zostanie narysowany w trybie awaryjnym, z wyraźnym ostrzeżeniem.</span></div>`);
-    $('rxHeight').onchange=e=>{state.rxHeight=Math.max(1,Math.min(40,+e.target.value||6)); save(); showProfile();};
-    $('profileDownloadDem').onclick=async()=>{ await downloadDemForSelectedTx(); showProfile(); };
-    try{ const p=await fetchProfile(state.rx,t); renderProfile(p,t); }catch(err){ $('profileBox').innerHTML=`<strong>Profil nie został wczytany</strong><span>${esc(err.message||'Nie udało się pobrać danych wysokości.')} Kliknij „Pobierz DEM i odśwież profil” albo spróbuj później, jeśli API wysokości jest limitowane.</span>`; }
-  }
   function profileRouteKey(a,t){
     return `profile-v2:${a.lat.toFixed(5)},${a.lon.toFixed(5)}:${t.lat.toFixed(5)},${t.lon.toFixed(5)}:${Math.round(+t.site_elevation_m||0)}:${Math.round(+t.height||0)}`;
   }
@@ -936,7 +1024,7 @@
     const min=Math.floor((minTerrain-span*.20)/10)*10;
     const max=Math.ceil((maxTerrain+span*.16)/10)*10;
 
-    // 19.16: profesjonalny renderer SVG. Bez preserveAspectRatio="none", bo ono optycznie
+    // 19.17: profesjonalny renderer SVG. Bez preserveAspectRatio="none", bo ono optycznie
     // rozciągało wykres i dawało wrażenie przekoszenia/krzywego profilu na telefonie.
     const W=760,H=460,padL=66,padR=34,padT=34,padB=70;
     const chartW=W-padL-padR;
@@ -949,6 +1037,19 @@
     const terrainPath=terrainPts.map((pt,i)=>`${i?'L':'M'}${pt[0].toFixed(1)},${pt[1].toFixed(1)}`).join(' ');
     const terrainArea=`M${padL},${H-padB} ${terrainPath} L${W-padR},${H-padB} Z`;
     const losPath=`M${padL},${y(rxAlt).toFixed(1)} L${W-padR},${y(txAlt).toFixed(1)}`;
+    const muxForFresnel=(t.muxes||[]).find(m=>Number.isFinite(+m.frequency_mhz)) || {};
+    const freqForFresnel=+muxForFresnel.frequency_mhz || 650;
+    const lambda=300/Math.max(1,freqForFresnel);
+    const fresnelUpper=[], fresnelLower=[];
+    for(const pt of p){
+      const d1=Math.max(1, pt.d*1000);
+      const d2=Math.max(1, (totalDistance-pt.d)*1000);
+      const radius=Math.sqrt(lambda*d1*d2/(d1+d2))*0.6;
+      const los=rxAlt+(txAlt-rxAlt)*(pt.d/totalDistance);
+      fresnelUpper.push([x(pt.d), y(los+radius)]);
+      fresnelLower.push([x(pt.d), y(los-radius)]);
+    }
+    const fresnelArea=`M${fresnelUpper.map(pt=>`${pt[0].toFixed(1)},${clamp(pt[1],padT,H-padB).toFixed(1)}`).join(' L')} L${[...fresnelLower].reverse().map(pt=>`${pt[0].toFixed(1)},${clamp(pt[1],padT,H-padB).toFixed(1)}`).join(' L')} Z`;
 
     // Delikatna strefa między profilem terenu a linią LOS. To poprawia czytelność jak w Emitelu,
     // ale nie zastępuje matematyki widoczności — wynik dalej liczymy z realnych próbek DEM.
@@ -1010,6 +1111,10 @@
               <stop offset="0%" stop-color="#ef4444" stop-opacity="0.22"/>
               <stop offset="100%" stop-color="#ef4444" stop-opacity="0.04"/>
             </linearGradient>
+            <linearGradient id="fresnelFill" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.18"/>
+              <stop offset="100%" stop-color="#38bdf8" stop-opacity="0.05"/>
+            </linearGradient>
             <filter id="softShadow" x="-10%" y="-10%" width="120%" height="120%">
               <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="#0f172a" flood-opacity="0.12"/>
             </filter>
@@ -1021,6 +1126,7 @@
           <line x1="${padL}" y1="${H-padB}" x2="${W-padR}" y2="${H-padB}" stroke="#94a3b8" stroke-width="1.4"/>
           <text x="20" y="${H/2}" transform="rotate(-90 20 ${H/2})" text-anchor="middle" font-size="15" fill="#334155">m n.p.m.</text>
           <text x="${W/2}" y="${H-4}" text-anchor="middle" font-size="15" fill="#475569">Odległość</text>
+          <path d="${fresnelArea}" fill="url(#fresnelFill)" stroke="#38bdf8" stroke-width="1.2" stroke-opacity="0.45" vector-effect="non-scaling-stroke"/>
           <path d="${gapArea}" fill="url(#losGapFill)"/>
           ${blockedRects.join('')}
           <path d="${terrainArea}" fill="url(#terrainFill)"/>
@@ -1029,7 +1135,7 @@
           <circle cx="${padL}" cy="${clamp(y(rxAlt),padT,H-padB).toFixed(1)}" r="7" fill="#2563eb" stroke="#fff" stroke-width="2" vector-effect="non-scaling-stroke"/>
           <circle cx="${W-padR}" cy="${clamp(y(txAlt),padT,H-padB).toFixed(1)}" r="7" fill="#16a34a" stroke="#fff" stroke-width="2" vector-effect="non-scaling-stroke"/>
         </svg>
-        <div class="profile-legend"><span><i class="terrain"></i>Profil terenu</span><span><i class="los"></i>Linia LOS</span><span><i class="blocked"></i>Strefa między terenem a LOS</span></div>
+        <div class="profile-legend"><span><i class="terrain"></i>Profil terenu</span><span><i class="los"></i>Linia LOS</span><span><i class="fresnel"></i>60% strefy Fresnela</span><span><i class="blocked"></i>Przeszkody</span></div>
       </div>
       <div class="${noteClass}"><strong>${msg}</strong><span>Najmniejszy zapas: ${worstTxt} m, w odległości ${worstDTxt} km od punktu odbioru.</span></div>
       <div class="profile-stats"><div><span>Długość trasy</span><strong>${totalDistance.toFixed(1).replace('.',',')} km</strong></div><div><span>Różnica wysokości anten</span><strong>${diffElev>0?'+':''}${diffElev} m</strong></div><div><span>Minimalna wysokość</span><strong>${minElev} m</strong></div><div><span>Maksymalna wysokość</span><strong>${maxElev} m</strong></div><div><span>Kąt LOS</span><strong>${losAngle}°</strong></div></div>
@@ -1118,6 +1224,6 @@
     $('closeStationBtn').onclick=hideStation; $('openStationBtn').onclick=showStation; $('antennaBtn').onclick=()=>{startCompass(false); showCompassPanel();}; $('compassWidget').onclick=()=>{startCompass(false); showCompassPanel();}; $('stationProfileBtn').onclick=showProfile; $('stationMuxBtn').onclick=showMux; $('stationDemBtn').onclick=downloadDemForSelectedTx;
     window.addEventListener('online',()=>{$('onlineChip').textContent='Online';$('onlineChip').classList.add('online-chip');}); window.addEventListener('offline',()=>{$('onlineChip').textContent='Offline';$('onlineChip').classList.remove('online-chip');});
   }
-  async function boot(){ load(); bind(); initMap(); await loadTxs(); if(state.coverageTileUrl) applyCoverageTile(state.coverageTileUrl); startCompass(true); window.addEventListener('pointerdown',()=>startCompass(true),{once:true,passive:true}); if('serviceWorker' in navigator) navigator.serviceWorker.register('./service-worker.js?v=19.16-1705262145').catch(()=>{}); setAppHeight(); }
+  async function boot(){ load(); bind(); initMap(); await loadTxs(); if(state.coverageTileUrl) applyCoverageTile(state.coverageTileUrl); startCompass(true); window.addEventListener('pointerdown',()=>startCompass(true),{once:true,passive:true}); if('serviceWorker' in navigator) navigator.serviceWorker.register('./service-worker.js?v=19.17-1705262205').catch(()=>{}); setAppHeight(); }
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', boot); else boot();
 })();

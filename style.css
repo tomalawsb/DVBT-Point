@@ -72,7 +72,7 @@ h1,h2,h3,strong,.tx-item strong,.info-card strong,.station-head strong,.station-
 .profile-svg text{font-weight:600!important;}
 
 
-/* 19.16: profil terenu w stylu profesjonalnej karty, bez optycznego przekoszenia SVG */
+/* 19.17: profil terenu w stylu profesjonalnej karty, bez optycznego przekoszenia SVG */
 .profile-pro-card{padding:14px!important;border-radius:20px!important;background:#fff!important;box-shadow:0 8px 24px rgba(15,23,42,.06)}
 .profile-svg.pro{width:100%!important;height:auto!important;aspect-ratio:760/460!important;display:block!important;background:#fff!important;border:0!important;border-radius:14px!important;overflow:visible!important}
 .profile-head-values{margin-bottom:8px!important}
@@ -94,3 +94,5 @@ h1,h2,h3,strong,.tx-item strong,.info-card strong,.station-head strong,.station-
   .profile-legend{gap:10px!important;font-size:11.5px!important;justify-content:flex-start!important}
   .profile-stats{grid-template-columns:1fr 1fr!important}
 }
+.profile-legend .fresnel{height:10px;width:18px;background:rgba(56,189,248,.24);border:1px solid rgba(56,189,248,.55);border-radius:4px}
+.ant-progress-card{border:1px solid rgba(37,99,235,.18);background:#f8fbff}

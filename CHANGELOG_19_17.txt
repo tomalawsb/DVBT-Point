@@ -1,0 +1,9 @@
+19.17 - 1705262205
+
+- Zmieniono ANT: sprawdzanie/pobieranie działa tylko dla aktualnie wybranego nadajnika.
+- Dodano cache przeglądarki dla pobranych plików ANT.
+- Podpięto cache ANT pod obliczanie zasięgu RF.
+- Usunięto zdublowaną funkcję showProfile() z app.js.
+- Rozbudowano profil terenu o 60% strefy Fresnela i czytelniejsze oznaczenie przeszkód.
+- Poprawiono nazwy warstw zasięgu GeoJSON/XYZ i opisy różnicy między zasięgiem orientacyjnym a zewnętrzną mapą pokrycia.
+- Zaktualizowano numer wersji w app.js, index.html, service-worker.js i README.md.
