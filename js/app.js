@@ -1,1879 +1,724 @@
-const VERSION = "12.0 - 1705260918";
-const DEFAULT_HOME = { lat: 50.2865, lon: 21.4239, name: "Mielec / punkt odbioru", source: "default" };
-const ALL_MUX = ["MUX-1", "MUX-2", "MUX-3", "MUX-6", "MUX-8"];
-const STORAGE_KEY = "dvbt-mapa.home";
-const OVERLAY_STORAGE_KEY = "dvbt-mapa.layers";
-const MUX_STORAGE_KEY = "dvbt-mapa.muxFilters";
-const BASE_LAYER_STORAGE_KEY = "dvbt-mapa.baseLayer";
-const COVERAGE_STORAGE_KEY = "dvbt-mapa.coverage";
-const CUSTOM_TRANSMITTERS_KEY = "dvbt-mapa.customTransmitters";
-const CUSTOM_TRANSMITTERS_META_KEY = "dvbt-mapa.customTransmittersMeta";
+(() => {
+  'use strict';
 
-const state = {
-  map: null,
-  activeLayerName: loadSavedBaseLayer(),
-  baseLayers: {},
-  activeBaseLayer: null,
-  home: loadSavedHome(),
-  homeMarker: null,
-  transmitters: [],
-  txMarkers: new Map(),
-  selectedTx: null,
-  linkLine: null,
-  distanceLabel: null,
-  compassHeading: null,
-  activeMuxFilters: loadSavedMuxFilters(),
-  overlays: loadOverlaySettings(),
-  profileAbortController: null,
-  profileRequestId: 0,
-  profile: null,
-  receiverAntennaHeightM: loadSavedAntennaHeight(),
-  dataAbortController: null,
-  searchAbortController: null,
-  gpsInProgress: false,
-  compassActive: false,
-  compassPermission: "unknown",
-  compassMode: "auto",
-  manualHeading: 0,
-  orientationHandler: null,
-  deferredInstallPrompt: null,
-  swRegistration: null,
-  updateWaiting: false,
-  coverageLayer: null,
-  coverageVisible: loadSavedCoverageVisible(),
-  coverageAbortController: null,
-  coverageRequestId: 0,
-  coverageSummary: null,
-  transmittersMeta: loadTransmittersMeta()
-};
+  const VERSION = '14.0 - 1705261138';
+  const VERSION_Q = '14.0-1705261138';
+  const STORE_KEY = 'dvbt-point-v14-state';
+  const PROFILE_CACHE_PREFIX = 'dvbt-profile-v14:';
+  const DEFAULT_RX = { lat: 50.2871, lon: 21.4238, label: 'Mielec / punkt odbioru' };
+  const UKE_CSV_H = 'https://bip.uke.gov.pl/download/gfx/bip/pl/defaultaktualnosci/140/5/115/pozwolenia_ntc_h_2026-05-07.csv';
+  const UKE_CSV_R = 'https://bip.uke.gov.pl/download/gfx/bip/pl/defaultaktualnosci/140/5/115/pozwolenia_ntc_r_2026-05-07.csv';
 
-const $ = (id) => document.getElementById(id);
-
-window.addEventListener("DOMContentLoaded", init);
-
-async function init() {
-  document.title = `DVB-T/T2 Mapa Instalatora ${VERSION}`;
-  $("versionChip").textContent = VERSION;
-  $("locationName").textContent = state.home.name;
-  initMap();
-  bindUi();
-  bindResponsiveFixes();
-  await loadTransmitters();
-  selectBestTransmitter();
-  $("antennaHeightInput").value = String(state.receiverAntennaHeightM);
-  refreshTerrainProfile();
-  initCoverageLayer();
-  if (state.coverageVisible) refreshCoverageLayer();
-  initPwaStatus();
-  registerServiceWorker();
-  showToast(`Uruchomiono Etap 12 — ${VERSION}`);
-}
-
-function initMap() {
-  state.map = L.map("map", {
-    zoomControl: false,
-    preferCanvas: true,
-    worldCopyJump: true,
-    updateWhenIdle: true,
-    updateWhenZooming: false,
-    fadeAnimation: false,
-    markerZoomAnimation: false
-  }).setView([state.home.lat, state.home.lon], 9);
-
-  const fastTileOptions = {
-    updateWhenIdle: true,
-    updateWhenZooming: false,
-    keepBuffer: 1,
-    detectRetina: false,
-    crossOrigin: true
+  const $ = (id) => document.getElementById(id);
+  const state = {
+    rx: loadState()?.rx || DEFAULT_RX,
+    rxAntennaHeight: loadState()?.rxAntennaHeight || 6,
+    transmitters: [],
+    datasetMeta: null,
+    selected: null,
+    heading: loadState()?.heading ?? null,
+    targetBearing: null,
+    compassEnabled: false,
+    baseLayer: ['std','light','terrain'].includes(loadState()?.baseLayer) ? loadState().baseLayer : 'std',
+    muxFilter: loadState()?.muxFilter || 'ALL',
+    sheetHidden: loadState()?.sheetHidden ?? false,
+    paidCoverageTileUrl: loadState()?.paidCoverageTileUrl || '',
+    paidElevationTemplate: loadState()?.paidElevationTemplate || '',
+    coverageVisible: loadState()?.coverageVisible ?? true,
+    mapReady: false,
   };
 
-  const osm = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-    ...fastTileOptions,
-    maxZoom: 19,
-    attribution: "&copy; OpenStreetMap"
-  });
+  let map, rxMarker, txLayer, coverageLayer, coverageGeoJsonLayer, paidCoverageLayer;
+  let linkLine, distanceLabel, baseLayers = {};
+  let headingHandler = null;
+  let profileAbort = null;
+  let resizeTimer = null;
 
-  const topo = L.tileLayer("https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png", {
-    ...fastTileOptions,
-    maxZoom: 17,
-    attribution: "&copy; OpenStreetMap, SRTM, OpenTopoMap"
-  });
-
-  const esri = L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", {
-    ...fastTileOptions,
-    maxZoom: 19,
-    attribution: "Tiles &copy; Esri"
-  });
-
-  const carto = L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png", {
-    ...fastTileOptions,
-    maxZoom: 20,
-    attribution: "&copy; OpenStreetMap &copy; CARTO"
-  });
-
-  state.baseLayers = {
-    "Mapa standardowa": osm,
-    "Mapa terenowa": topo,
-    "Satelita": esri,
-    "Jasna mapa": carto
-  };
-  state.activeBaseLayer = state.baseLayers[state.activeLayerName] || osm;
-  if (!state.baseLayers[state.activeLayerName]) state.activeLayerName = "Mapa standardowa";
-  state.activeBaseLayer.addTo(state.map);
-  attachTileDiagnostics(state.activeBaseLayer);
-
-  state.homeMarker = L.marker([state.home.lat, state.home.lon], {
-    draggable: true,
-    icon: L.divIcon({
-      className: "",
-      html: `<div class="home-marker">⌂</div>`,
-      iconSize: [36, 36],
-      iconAnchor: [18, 18]
-    })
-  }).addTo(state.map).bindTooltip("Punkt odbioru", { permanent: false });
-
-  state.homeMarker.on("dragend", () => {
-    const pos = state.homeMarker.getLatLng();
-    updateHome({ lat: pos.lat, lon: pos.lng, name: "Punkt przesunięty na mapie", source: "drag" }, { chooseBest: true, save: true });
-  });
-
-  state.map.on("click", (e) => {
-    if (!$('sidePanel').classList.contains('hidden')) {
-      hideSidePanel();
-      return;
-    }
-    updateHome({ lat: e.latlng.lat, lon: e.latlng.lng, name: "Punkt wskazany na mapie", source: "map" }, { chooseBest: true, save: true });
-    showToast("Ustawiono punkt odbioru z mapy");
-  });
-
-  L.control.zoom({ position: "bottomright" }).addTo(state.map);
-}
-
-function bindUi() {
-  $("gpsBtn").addEventListener("click", useGps);
-  $("compassBtn").addEventListener("click", showCompassPanel);
-  $("txBtn").addEventListener("click", showTransmittersPanel);
-  $("layersBtn").addEventListener("click", showLayersPanel);
-  $("filterBtn").addEventListener("click", showFiltersPanel);
-  $("coverageBtn")?.addEventListener("click", showCoveragePanel);
-  $("profileBtn").addEventListener("click", () => {
-    $("bottomSheet").classList.remove("collapsed");
-    $("profileBox").scrollIntoView({ behavior: "smooth", block: "nearest" });
-  });
-  $("reportBtn").addEventListener("click", showReportPanel);
-  $("pwaBtn")?.addEventListener("click", showPwaPanel);
-  $("showMuxBtn").addEventListener("click", () => $("muxTable").scrollIntoView({ behavior: "smooth", block: "nearest" }));
-  $("showProfileBtn").addEventListener("click", () => $("profileBox").scrollIntoView({ behavior: "smooth", block: "nearest" }));
-  $("refreshProfileBtn").addEventListener("click", () => refreshTerrainProfile({ force: true }));
-  $("antennaHeightInput").addEventListener("change", () => {
-    const value = clamp(Number($("antennaHeightInput").value), 1, 40);
-    state.receiverAntennaHeightM = value;
-    $("antennaHeightInput").value = String(value);
-    saveAntennaHeight(value);
-    refreshTerrainProfile({ force: true });
-  });
-  $("showReportBtn").addEventListener("click", showReportPanel);
-  $("aimBtn").addEventListener("click", () => {
-    $("compassCard").classList.add("visible");
-    showCompassPanel();
-    startCompass();
-    updateCompassHint();
-  });
-  $("sheetHandle").addEventListener("click", () => $("bottomSheet").classList.toggle("collapsed"));
-  $("closeSidePanel").addEventListener("click", hideSidePanel);
-  $("searchBtn").addEventListener("click", handleSearch);
-  $("addressInput").addEventListener("keydown", (e) => {
-    if (e.key === "Enter") handleSearch();
-  });
-  $("locationChip").addEventListener("click", showLocationPanel);
-}
-
-function bindResponsiveFixes() {
-  const resize = () => forceMapResize();
-  window.addEventListener("resize", resize, { passive: true });
-  window.addEventListener("orientationchange", () => setTimeout(resize, 350), { passive: true });
-  document.addEventListener("visibilitychange", () => {
-    if (!document.hidden) resize();
-  });
-  if (window.visualViewport) {
-    window.visualViewport.addEventListener("resize", resize, { passive: true });
-    window.visualViewport.addEventListener("scroll", resize, { passive: true });
-  }
-  setTimeout(resize, 80);
-  setTimeout(resize, 450);
-  setTimeout(resize, 1200);
-}
-
-function forceMapResize() {
-  if (!state.map) return;
-  requestAnimationFrame(() => state.map.invalidateSize({ pan: false, debounceMoveend: true }));
-}
-
-function attachTileDiagnostics(layer) {
-  if (!layer || layer._dvbtDiagnosticsAttached) return;
-  layer._dvbtDiagnosticsAttached = true;
-  let failed = 0;
-  layer.on("tileerror", () => {
-    failed += 1;
-    if (failed === 1) showToast("Niektóre kafelki mapy się nie wczytały. Spróbuj podkładu: Mapa standardowa lub Jasna mapa.");
-  });
-  layer.on("load", () => forceMapResize());
-}
-
-async function loadTransmitters() {
-  try {
-    const custom = loadCustomTransmitters();
-    if (custom?.length) {
-      state.transmitters = custom.map(normalizeTransmitter);
-      state.transmittersMeta = loadTransmittersMeta();
-      renderTransmitters();
-      showToast("Wczytano lokalnie zaimportowaną bazę nadajników");
-      return;
-    }
-
-    if (state.dataAbortController) state.dataAbortController.abort();
-    state.dataAbortController = new AbortController();
-    const response = await fetch("./data/transmitters.json", {
-      cache: "no-store",
-      signal: state.dataAbortController.signal
-    });
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    const data = await response.json();
-    state.transmitters = data.map(normalizeTransmitter);
-    state.transmittersMeta = {
-      mode: "demo",
-      source: "Plik demonstracyjny ./data/transmitters.json",
-      updatedAt: "brak — dane testowe",
-      license: "Nie używać jako oficjalnej bazy nadajników",
-      count: state.transmitters.length
-    };
-    renderTransmitters();
-  } catch (error) {
-    if (error.name === "AbortError") return;
-    showToast("Nie udało się wczytać bazy nadajników");
-    console.error(error);
-  }
-}
-
-function normalizeTransmitter(tx) {
-  const muxes = Array.isArray(tx.muxes) ? tx.muxes.map(normalizeMux) : [];
-  const muxNames = muxes.map((item) => item.mux).filter(Boolean);
-  const polarizations = [...new Set(muxes.map((item) => item.polarization).filter(Boolean))].join("/");
-  return {
-    ...tx,
-    id: tx.id || slugify(`${tx.name || tx.site || "nadajnik"}-${tx.lat}-${tx.lon}`),
-    name: tx.name || tx.site || "Nadajnik bez nazwy",
-    site: tx.site || tx.name || "",
-    lat: Number(tx.lat),
-    lon: Number(tx.lon),
-    height_m: Number(tx.height_m || tx.height || 0),
-    mast_m: Number(tx.mast_m || tx.antenna_height_m || tx.mast || 80),
-    muxes,
-    muxNames,
-    polarizations
-  };
-}
-
-function normalizeMux(item) {
-  const frequency = Number(item.frequency_mhz || item.frequency || item.freq_mhz || 0);
-  return {
-    mux: String(item.mux || "").trim(),
-    channel: String(item.channel || item.kanal || "").trim(),
-    frequency_mhz: Number.isFinite(frequency) ? frequency : 0,
-    erp_kw: Number(item.erp_kw || item.erp || item.power_kw || 0),
-    polarization: String(item.polarization || item.polaryzacja || "?").trim().toUpperCase(),
-    band: item.band || inferBand(frequency)
-  };
-}
-
-function inferBand(frequencyMhz) {
-  if (frequencyMhz >= 174 && frequencyMhz <= 230) return "VHF";
-  if (frequencyMhz >= 470 && frequencyMhz <= 694) return "UHF";
-  return "?";
-}
-
-function renderTransmitters() {
-  state.txMarkers.forEach((marker) => marker.remove());
-  state.txMarkers.clear();
-
-  for (const tx of state.transmitters) {
-    const marker = L.marker([tx.lat, tx.lon], { icon: createTxIcon(tx) }).addTo(state.map);
-    marker.bindTooltip(`<span class="tx-tooltip">${escapeHtml(tx.name)}</span>`, { direction: "top", offset: [0, -12] });
-    marker.on("click", () => selectTransmitter(tx.id, true));
-    state.txMarkers.set(tx.id, marker);
-  }
-  applyFilters();
-}
-
-function createTxIcon(tx) {
-  const selected = state.selectedTx?.id === tx.id;
-  return L.divIcon({
-    className: "",
-    html: `<div class="tx-marker${selected ? " selected" : ""}">📡</div>`,
-    iconSize: [34, 34],
-    iconAnchor: [17, 17]
-  });
-}
-
-function selectBestTransmitter() {
-  const visible = getFilteredTransmitters();
-  if (!visible.length) {
-    state.selectedTx = null;
-    updateBottomSheet(null);
-    showToast("Brak nadajników dla wybranych filtrów MUX");
-    return;
-  }
-  const sorted = visible
-    .map((tx) => ({ tx, distance: distanceKm(state.home.lat, state.home.lon, tx.lat, tx.lon) }))
-    .sort((a, b) => a.distance - b.distance);
-  selectTransmitter(sorted[0].tx.id, false);
-}
-
-function selectTransmitter(id, openSheet) {
-  const tx = state.transmitters.find((item) => item.id === id);
-  if (!tx) return;
-  state.selectedTx = tx;
-  state.txMarkers.forEach((marker, txId) => marker.setIcon(createTxIcon(state.transmitters.find((item) => item.id === txId))));
-  updateSelectionMetrics();
-  if (openSheet) $("bottomSheet").classList.remove("collapsed");
-}
-
-function updateHome(home, options = {}) {
-  const nextHome = {
-    lat: Number(home.lat),
-    lon: Number(home.lon),
-    name: home.name || "Punkt odbioru",
-    source: home.source || "manual"
-  };
-  if (!Number.isFinite(nextHome.lat) || !Number.isFinite(nextHome.lon)) {
-    showToast("Nieprawidłowe współrzędne punktu odbioru");
-    return;
-  }
-  state.home = nextHome;
-  state.homeMarker.setLatLng([nextHome.lat, nextHome.lon]);
-  syncOverlayVisibility();
-  $("locationName").textContent = nextHome.name;
-
-  if (options.save !== false) saveHome(nextHome);
-  if (options.center) state.map.setView([nextHome.lat, nextHome.lon], options.zoom || 12, { animate: true });
-  if (options.chooseBest) selectBestTransmitter();
-  else updateSelectionMetrics();
-
-  updateTransmitterListActiveState();
-}
-
-function updateSelectionMetrics() {
-  if (!state.selectedTx) return;
-  updateBottomSheet(state.selectedTx);
-  drawLink();
-  refreshTerrainProfile();
-  if (state.coverageVisible) refreshCoverageLayer();
-  updateCompassHint();
-  updateTransmitterListActiveState();
-}
-
-function updateBottomSheet(tx) {
-  if (!tx) {
-    $("txName").textContent = "Brak nadajnika";
-    $("azimuthValue").textContent = "—";
-    $("distanceValue").textContent = "—";
-    $("polarizationValue").textContent = "—";
-    $("muxValue").textContent = "—";
-    $("muxTable").innerHTML = "";
-    return;
-  }
-  const dist = distanceKm(state.home.lat, state.home.lon, tx.lat, tx.lon);
-  const az = bearingDeg(state.home.lat, state.home.lon, tx.lat, tx.lon);
-  $("txName").textContent = tx.name;
-  $("azimuthValue").textContent = `${Math.round(az)}°`;
-  $("distanceValue").textContent = `${dist.toFixed(dist < 10 ? 1 : 0)} km`;
-  $("polarizationValue").textContent = tx.polarizations;
-  $("muxValue").textContent = tx.muxNames.map((m) => m.replace("MUX-", "")).join(" / ");
-  renderMuxTable(tx);
-}
-
-function renderMuxTable(tx) {
-  const rows = [
-    `<div class="mux-row header"><span>MUX</span><span>Kanał</span><span>Częstotliwość</span><span>ERP</span><span>Pol.</span></div>`,
-    ...tx.muxes.map((m) => `
-      <div class="mux-row">
-        <span data-label="MUX"><strong>${escapeHtml(m.mux)}</strong></span>
-        <span data-label="Kanał">${escapeHtml(m.channel)}</span>
-        <span data-label="Częstotliwość">${m.frequency_mhz} MHz</span>
-        <span data-label="ERP">${m.erp_kw} kW</span>
-        <span data-label="Pol.">${escapeHtml(m.polarization)} / ${escapeHtml(m.band)}</span>
-      </div>`)
-  ];
-  $("muxTable").innerHTML = rows.join("");
-}
-
-function drawLink() {
-  if (!state.selectedTx) return;
-  const points = [[state.home.lat, state.home.lon], [state.selectedTx.lat, state.selectedTx.lon]];
-  if (state.linkLine) state.linkLine.remove();
-  if (state.distanceLabel) state.distanceLabel.remove();
-
-  state.linkLine = L.polyline(points, { color: "#2563eb", weight: 4, opacity: 0.82, dashArray: "8 10" });
-  const mid = [(state.home.lat + state.selectedTx.lat) / 2, (state.home.lon + state.selectedTx.lon) / 2];
-  const dist = distanceKm(state.home.lat, state.home.lon, state.selectedTx.lat, state.selectedTx.lon);
-  state.distanceLabel = L.marker(mid, {
-    icon: L.divIcon({ className: "distance-label", html: `${dist.toFixed(0)} km`, iconAnchor: [22, 12] }),
-    interactive: false
-  });
-  syncOverlayVisibility();
-}
-
-function applyFilters() {
-  for (const tx of state.transmitters) {
-    const marker = state.txMarkers.get(tx.id);
-    if (!marker) continue;
-    const visible = isVisibleByFilter(tx) && state.overlays.transmitters;
-    if (visible) {
-      if (!state.map.hasLayer(marker)) marker.addTo(state.map);
-    } else {
-      if (state.map.hasLayer(marker)) state.map.removeLayer(marker);
+  function setAppHeight() {
+    const h = window.visualViewport?.height || window.innerHeight || document.documentElement.clientHeight;
+    document.documentElement.style.setProperty('--app-h', `${h}px`);
+    const m = $('map');
+    if (m) {
+      m.style.width = `${window.innerWidth}px`;
+      m.style.height = `${h}px`;
     }
   }
-  if (state.selectedTx && !isVisibleByFilter(state.selectedTx)) selectBestTransmitter();
-  updateTransmitterListActiveState();
-}
 
-function isVisibleByFilter(tx) {
-  return tx.muxNames.some((mux) => state.activeMuxFilters.has(mux));
-}
-
-function getFilteredTransmitters() {
-  return state.transmitters.filter(isVisibleByFilter);
-}
-
-function showTransmittersPanel() {
-  setSidePanel("Nadajniki", "Lista według odległości od punktu odbioru", renderTransmittersList());
-}
-
-function renderTransmittersList() {
-  const rows = getFilteredTransmitters()
-    .map((tx) => ({
-      tx,
-      dist: distanceKm(state.home.lat, state.home.lon, tx.lat, tx.lon),
-      az: bearingDeg(state.home.lat, state.home.lon, tx.lat, tx.lon)
-    }))
-    .sort((a, b) => a.dist - b.dist)
-    .map(({ tx, dist, az }) => `
-      <button type="button" class="tx-item ${state.selectedTx?.id === tx.id ? "active" : ""}" data-tx-id="${tx.id}">
-        <strong>${escapeHtml(tx.name)}</strong>
-        <span>${dist.toFixed(dist < 10 ? 1 : 0)} km • azymut ${Math.round(az)}° • ${tx.muxNames.join(", ")} • ${tx.polarizations}</span>
-      </button>`)
-    .join("");
-  return `<div class="tx-list">${rows || "<p>Brak nadajników dla aktywnych filtrów.</p>"}</div>`;
-}
-
-function updateTransmitterListActiveState() {
-  document.querySelectorAll(".tx-item").forEach((button) => {
-    button.classList.toggle("active", button.dataset.txId === state.selectedTx?.id);
-  });
-}
-
-function showLocationPanel() {
-  const body = `
-    <div class="tx-list">
-      <div class="tx-item">
-        <strong>Aktualny punkt odbioru</strong>
-        <span>${escapeHtml(state.home.name)}<br>${state.home.lat.toFixed(6)}, ${state.home.lon.toFixed(6)}<br>Źródło: ${escapeHtml(locationSourceName(state.home.source))}</span>
-      </div>
-      <button type="button" class="panel-action" id="panelGpsBtn">Użyj GPS telefonu</button>
-      <button type="button" class="panel-action" id="panelCenterBtn">Przenieś mapę do punktu odbioru</button>
-      <button type="button" class="panel-action" id="panelResetLocationBtn">Resetuj do Mielca</button>
-      <div class="hint-box">Punkt odbioru możesz też ustawić kliknięciem na mapie albo przeciągając ikonę domu.</div>
-    </div>`;
-  setSidePanel("Lokalizacja", "Punkt odbioru", body);
-  $("panelGpsBtn")?.addEventListener("click", useGps);
-  $("panelCenterBtn")?.addEventListener("click", () => state.map.setView([state.home.lat, state.home.lon], 13, { animate: true }));
-  $("panelResetLocationBtn")?.addEventListener("click", () => {
-    updateHome({ ...DEFAULT_HOME }, { chooseBest: true, center: true, zoom: 10, save: true });
-    showLocationPanel();
-  });
-}
-
-function showFiltersPanel() {
-  const body = `
-    <div class="filter-grid">
-      ${ALL_MUX.map((mux) => `
-        <label class="filter-tile">
-          <span><strong>${mux}</strong><br><small>Pokaż nadajniki z ${mux}</small></span>
-          <input type="checkbox" data-mux="${mux}" ${state.activeMuxFilters.has(mux) ? "checked" : ""}>
-        </label>`).join("")}
-    </div>`;
-  setSidePanel("Filtry MUX", "Widoczność nadajników", body);
-  $("sidePanelBody").querySelectorAll("input[data-mux]").forEach((input) => {
-    input.addEventListener("change", () => {
-      const mux = input.dataset.mux;
-      if (input.checked) state.activeMuxFilters.add(mux);
-      else state.activeMuxFilters.delete(mux);
-      if (state.activeMuxFilters.size === 0) {
-        state.activeMuxFilters.add(mux);
-        input.checked = true;
-        showToast("Musi zostać aktywny przynajmniej jeden MUX");
-      }
-      saveMuxFilters();
-      applyFilters();
-      selectBestTransmitter();
-    });
-  });
-}
-
-function showLayersPanel() {
-  const body = `
-    <div class="layer-section">
-      <div class="panel-subtitle">Podkład mapy</div>
-      <div class="layer-list">${Object.keys(state.baseLayers).map((name) => `
-        <button type="button" class="layer-btn ${name === state.activeLayerName ? "active" : ""}" data-layer="${name}">${name}</button>`).join("")}</div>
-    </div>
-    <div class="layer-section">
-      <div class="panel-subtitle">Warstwy robocze</div>
-      <div class="filter-grid">
-        ${renderOverlayToggle("home", "Punkt odbioru", "Ikona domu / lokalizacja klienta")}
-        ${renderOverlayToggle("transmitters", "Nadajniki", "Znaczniki nadajników zgodne z filtrami MUX")}
-        ${renderOverlayToggle("link", "Linia do nadajnika", "Kierunek od klienta do wybranego nadajnika")}
-        ${renderOverlayToggle("distance", "Etykieta odległości", "Odległość na linii kierunku")}
-        ${renderOverlayToggle("compass", "Mini kompas", "Pływający kompas na mapie")}
-        ${renderOverlayToggle("profile", "Panel profilu", "Widoczność wykresu profilu terenu w dolnym panelu")}
-        ${renderOverlayToggle("coverage", "Pokrycie orientacyjne", "Punkty pokrycia wokół wybranego nadajnika")}
-      </div>
-      <div class="hint-box">Warstwy są zapisywane lokalnie w przeglądarce. Po wrzuceniu na GitHub Pages ustawienia zostaną na danym telefonie/komputerze.</div>
-    </div>`;
-  setSidePanel("Warstwy", "Podkład i widoczność elementów", body);
-  $("sidePanelBody").querySelectorAll("button[data-layer]").forEach((button) => {
-    button.addEventListener("click", () => setBaseLayer(button.dataset.layer));
-  });
-  $("sidePanelBody").querySelectorAll("input[data-overlay]").forEach((input) => {
-    input.addEventListener("change", () => {
-      state.overlays[input.dataset.overlay] = input.checked;
-      saveOverlaySettings();
-      syncOverlayVisibility();
-      applyFilters();
-    });
-  });
-}
-
-function setBaseLayer(name) {
-  const layer = state.baseLayers[name];
-  if (!layer) return;
-  if (state.activeBaseLayer) state.map.removeLayer(state.activeBaseLayer);
-  state.activeBaseLayer = layer;
-  state.activeLayerName = name;
-  layer.addTo(state.map);
-  attachTileDiagnostics(layer);
-  forceMapResize();
-  showLayersPanel();
-  saveBaseLayer(name);
-  showToast(`Podkład mapy: ${name}`);
-}
-
-
-function renderOverlayToggle(key, title, description) {
-  return `
-    <label class="filter-tile layer-toggle">
-      <span><strong>${title}</strong><br><small>${description}</small></span>
-      <input type="checkbox" data-overlay="${key}" ${state.overlays[key] ? "checked" : ""}>
-    </label>`;
-}
-
-function syncOverlayVisibility() {
-  if (!state.map) return;
-  toggleLayer(state.homeMarker, state.overlays.home);
-  toggleLayer(state.linkLine, state.overlays.link && Boolean(state.selectedTx));
-  toggleLayer(state.distanceLabel, state.overlays.distance && state.overlays.link && Boolean(state.selectedTx));
-  toggleLayer(state.coverageLayer, state.overlays.coverage && state.coverageVisible);
-
-  if ($("compassCard")) {
-    $("compassCard").classList.toggle("hidden-by-layer", !state.overlays.compass);
-  }
-  if ($("profileBox")) {
-    $("profileBox").classList.toggle("hidden-by-layer", !state.overlays.profile);
-  }
-  $("layersBtn")?.classList.toggle("active", hasAnyOverlayHidden());
-}
-
-function toggleLayer(layer, shouldShow) {
-  if (!layer || !state.map) return;
-  if (shouldShow) {
-    if (!state.map.hasLayer(layer)) layer.addTo(state.map);
-  } else {
-    if (state.map.hasLayer(layer)) state.map.removeLayer(layer);
-  }
-}
-
-function hasAnyOverlayHidden() {
-  return Object.values(state.overlays).some((value) => value === false);
-}
-
-function loadOverlaySettings() {
-  const defaults = {
-    home: true,
-    transmitters: true,
-    link: true,
-    distance: true,
-    compass: true,
-    profile: true,
-    coverage: true
-  };
-  try {
-    const raw = localStorage.getItem(OVERLAY_STORAGE_KEY);
-    if (!raw) return defaults;
-    return { ...defaults, ...JSON.parse(raw) };
-  } catch {
-    return defaults;
-  }
-}
-
-function saveOverlaySettings() {
-  try {
-    localStorage.setItem(OVERLAY_STORAGE_KEY, JSON.stringify(state.overlays));
-  } catch (error) {
-    console.warn("Nie udało się zapisać ustawień warstw", error);
-  }
-}
-
-function showReportPanel() {
-  const tx = state.selectedTx;
-  if (!tx) return;
-  const dist = distanceKm(state.home.lat, state.home.lon, tx.lat, tx.lon);
-  const az = bearingDeg(state.home.lat, state.home.lon, tx.lat, tx.lon);
-  const body = `
-    <div class="tx-list">
-      <div class="tx-item">
-        <strong>Raport roboczy</strong>
-        <span>Lokalizacja: ${escapeHtml(state.home.name)}<br>
-        Współrzędne: ${state.home.lat.toFixed(6)}, ${state.home.lon.toFixed(6)}<br>
-        Nadajnik: ${escapeHtml(tx.name)}<br>
-        Odległość: ${dist.toFixed(1)} km<br>
-        Azymut: ${Math.round(az)}°<br>
-        MUX: ${tx.muxNames.join(", ")}<br>
-        Polaryzacja: ${tx.polarizations}<br>
-        Profil terenu: ${state.profile?.statusLabel || "brak danych"}<br>
-        Antena odbiorcza: ${state.receiverAntennaHeightM} m<br>
-        Pokrycie orientacyjne: ${state.coverageSummary?.label || "brak danych"}</span>
-      </div>
-      <div class="tx-item">
-        <strong>Etap 12</strong>
-        <span>Raport korzysta z aktualnego punktu odbioru, wybranego nadajnika, kompasu antenowego, profilu terenu i orientacyjnej warstwy pokrycia. Baza nadajników może być demonstracyjna albo lokalnie zaimportowana — sprawdź panel PWA / Dane.</span>
-      </div>
-    </div>`;
-  setSidePanel("Raport", "Podgląd danych", body);
-}
-
-function setSidePanel(title, eyebrow, bodyHtml) {
-  $("sidePanelTitle").textContent = title;
-  $("sidePanelEyebrow").textContent = eyebrow;
-  $("sidePanelBody").innerHTML = bodyHtml;
-  $("sidePanel").classList.remove("hidden");
-  $("bottomSheet").classList.add("compact-while-panel");
-  forceMapResize();
-  $("sidePanelBody").querySelectorAll("button[data-tx-id]").forEach((button) => {
-    button.addEventListener("click", () => {
-      selectTransmitter(button.dataset.txId, true);
-      const tx = state.selectedTx;
-      if (tx) state.map.setView([tx.lat, tx.lon], Math.max(state.map.getZoom(), 9), { animate: true });
-      if (window.innerWidth < 700) hideSidePanel();
-    });
-  });
-}
-
-function hideSidePanel() {
-  $("sidePanel").classList.add("hidden");
-  $("bottomSheet").classList.remove("compact-while-panel");
-  forceMapResize();
-}
-
-async function handleSearch() {
-  const query = $("addressInput").value.trim();
-  if (!query) return;
-
-  const foundTx = state.transmitters.find((tx) => tx.name.toLowerCase().includes(query.toLowerCase()) || tx.site.toLowerCase().includes(query.toLowerCase()));
-  if (foundTx) {
-    state.map.setView([foundTx.lat, foundTx.lon], 10, { animate: true });
-    selectTransmitter(foundTx.id, true);
-    showToast(`Znaleziono nadajnik: ${foundTx.name}`);
-    return;
-  }
-
-  await geocodeAddress(query);
-}
-
-async function geocodeAddress(query) {
-  try {
-    if (state.searchAbortController) state.searchAbortController.abort();
-    state.searchAbortController = new AbortController();
-    showToast("Szukam lokalizacji...");
-    const url = new URL("https://nominatim.openstreetmap.org/search");
-    url.searchParams.set("format", "jsonv2");
-    url.searchParams.set("limit", "1");
-    url.searchParams.set("countrycodes", "pl");
-    url.searchParams.set("q", query);
-    const response = await fetch(url.toString(), {
-      signal: state.searchAbortController.signal,
-      headers: { "Accept": "application/json" }
-    });
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    const results = await response.json();
-    if (!results.length) {
-      showToast("Nie znaleziono adresu. Ustaw punkt kliknięciem na mapie.");
-      return;
-    }
-    const first = results[0];
-    updateHome({
-      lat: Number(first.lat),
-      lon: Number(first.lon),
-      name: first.display_name?.split(",").slice(0, 2).join(",") || query,
-      source: "search"
-    }, { chooseBest: true, center: true, zoom: 13, save: true });
-    showToast("Ustawiono punkt odbioru z wyszukiwarki");
-  } catch (error) {
-    if (error.name === "AbortError") return;
-    console.error(error);
-    showToast("Nie udało się wyszukać adresu. Sprawdź internet albo ustaw punkt na mapie.");
-  }
-}
-
-function useGps() {
-  if (!navigator.geolocation) {
-    showToast("Ta przeglądarka nie udostępnia GPS");
-    return;
-  }
-  if (state.gpsInProgress) return;
-  state.gpsInProgress = true;
-  showToast("Pobieram lokalizację GPS...");
-  navigator.geolocation.getCurrentPosition(
-    (pos) => {
-      state.gpsInProgress = false;
-      const accuracy = Math.round(pos.coords.accuracy || 0);
-      const home = { lat: pos.coords.latitude, lon: pos.coords.longitude, name: `Lokalizacja GPS ±${accuracy} m`, source: "gps" };
-      updateHome(home, { chooseBest: true, center: true, zoom: 13, save: true });
-      showToast("Ustawiono lokalizację GPS");
-    },
-    (error) => {
-      state.gpsInProgress = false;
-      console.warn(error);
-      showToast("Nie udało się pobrać GPS. Sprawdź uprawnienia przeglądarki.");
-    },
-    { enableHighAccuracy: true, timeout: 12000, maximumAge: 30000 }
-  );
-}
-
-function showCompassPanel() {
-  $("compassCard").classList.add("visible");
-  updateCompassHint();
-  const target = state.selectedTx ? bearingDeg(state.home.lat, state.home.lon, state.selectedTx.lat, state.selectedTx.lon) : null;
-  const body = `
-    <div class="compass-control-box">
-      <div class="compass-status-card">
-        <strong>Tryb kompasu antenowego</strong>
-        <span>Telefon pokazuje aktualny kierunek, a aplikacja porównuje go z azymutem wybranego nadajnika. Cel: ${target === null ? "—" : Math.round(target) + "°"}.</span>
-      </div>
-      <div class="compass-actions">
-        <button type="button" class="panel-action" id="panelStartCompassBtn">Włącz kompas telefonu</button>
-        <button type="button" class="panel-action" id="panelStopCompassBtn">Zatrzymaj kompas</button>
-      </div>
-      <div class="manual-heading-wrap">
-        <label for="manualHeadingRange">Ręczny kierunek telefonu: <span id="manualHeadingText">${Math.round(state.manualHeading)}°</span></label>
-        <input id="manualHeadingRange" type="range" min="0" max="359" step="1" value="${Math.round(state.manualHeading)}">
-        <div class="hint-box">To jest tryb awaryjny, gdy przeglądarka albo telefon nie udostępnia czujnika kompasu.</div>
-      </div>
-      <div class="compass-warning">Kompas w telefonie może przekłamywać przy maszcie, antenie, samochodzie, rynnie, dachu z blachy albo przewodach. Traktuj go jako pomoc do wstępnego ustawienia kierunku, nie jako miernik sygnału.</div>
-    </div>`;
-  setSidePanel("Kompas", "Ustawianie anteny", body);
-  $("panelStartCompassBtn")?.addEventListener("click", startCompass);
-  $("panelStopCompassBtn")?.addEventListener("click", stopCompass);
-  const range = $("manualHeadingRange");
-  range?.addEventListener("input", () => {
-    state.compassMode = "manual";
-    state.manualHeading = Number(range.value);
-    state.compassHeading = normalizeDeg(state.manualHeading);
-    $("manualHeadingText").textContent = `${Math.round(state.manualHeading)}°`;
-    $("compassNeedle").style.transform = `rotate(${state.compassHeading}deg)`;
-    updateCompassHint();
-  });
-}
-
-function startCompass() {
-  const start = () => {
-    if (state.compassActive) {
-      showToast("Kompas już działa");
-      return;
-    }
-    state.orientationHandler = handleOrientation;
-    window.addEventListener("deviceorientationabsolute", state.orientationHandler, true);
-    window.addEventListener("deviceorientation", state.orientationHandler, true);
-    state.compassActive = true;
-    state.compassMode = "auto";
-    $("compassBtn").classList.add("active");
-    $("compassCard").classList.add("visible");
-    updateCompassHint();
-    showToast("Kompas włączony. Telefon trzymaj z dala od metalu.");
-  };
-
-  if (!window.DeviceOrientationEvent) {
-    state.compassPermission = "unsupported";
-    updateCompassHint();
-    showToast("Kompas nie jest dostępny w tej przeglądarce. Użyj trybu ręcznego.");
-    return;
-  }
-
-  if (typeof DeviceOrientationEvent.requestPermission === "function") {
-    DeviceOrientationEvent.requestPermission()
-      .then((permission) => {
-        state.compassPermission = permission;
-        if (permission === "granted") start();
-        else {
-          updateCompassHint();
-          showToast("Brak zgody na kompas. Użyj trybu ręcznego.");
-        }
-      })
-      .catch(() => {
-        state.compassPermission = "error";
-        updateCompassHint();
-        showToast("Nie udało się uruchomić kompasu. Użyj trybu ręcznego.");
-      });
-    return;
-  }
-
-  if ("ondeviceorientationabsolute" in window || "ondeviceorientation" in window) start();
-  else {
-    state.compassPermission = "unsupported";
-    updateCompassHint();
-    showToast("Kompas nie jest dostępny w tej przeglądarce. Użyj trybu ręcznego.");
-  }
-}
-
-function stopCompass() {
-  if (state.orientationHandler) {
-    window.removeEventListener("deviceorientationabsolute", state.orientationHandler, true);
-    window.removeEventListener("deviceorientation", state.orientationHandler, true);
-  }
-  state.orientationHandler = null;
-  state.compassActive = false;
-  state.compassMode = "manual";
-  $("compassBtn").classList.remove("active");
-  updateCompassHint();
-  showToast("Kompas zatrzymany. Możesz użyć suwaka ręcznego.");
-}
-
-function handleOrientation(event) {
-  let heading = null;
-  if (typeof event.webkitCompassHeading === "number") heading = event.webkitCompassHeading;
-  else if (typeof event.alpha === "number") heading = event.absolute ? event.alpha : 360 - event.alpha;
-  if (heading === null || Number.isNaN(heading)) return;
-  state.compassMode = "auto";
-  state.compassHeading = normalizeDeg(heading);
-  $("compassNeedle").style.transform = `rotate(${state.compassHeading}deg)`;
-  updateCompassHint();
-}
-
-function updateCompassHint() {
-  const targetEl = $("targetAzimuthValue");
-  const currentEl = $("currentHeadingValue");
-  const noteEl = $("compassNote");
-
-  if (!state.selectedTx) {
-    $("compassHint").textContent = "Wybierz nadajnik";
-    if (targetEl) targetEl.textContent = "—";
-    if (currentEl) currentEl.textContent = state.compassHeading === null ? "—" : `${Math.round(state.compassHeading)}°`;
-    if (noteEl) noteEl.textContent = "Najpierw wybierz nadajnik z listy albo z mapy.";
-    return;
-  }
-
-  const target = bearingDeg(state.home.lat, state.home.lon, state.selectedTx.lat, state.selectedTx.lon);
-  $("targetNeedle").style.transform = `rotate(${target}deg)`;
-  if (targetEl) targetEl.textContent = `${Math.round(target)}°`;
-
-  if (state.compassHeading === null) {
-    $("compassHint").textContent = `Azymut do nadajnika: ${Math.round(target)}°`;
-    if (currentEl) currentEl.textContent = "—";
-    if (noteEl) noteEl.textContent = "Włącz kompas albo ustaw kierunek ręcznie suwakiem.";
-    return;
-  }
-
-  if (currentEl) currentEl.textContent = `${Math.round(state.compassHeading)}°`;
-  const diff = shortestAngle(state.compassHeading, target);
-  const abs = Math.abs(Math.round(diff));
-  if (abs <= 5) $("compassHint").textContent = "Kierunek prawidłowy";
-  else $("compassHint").textContent = `Obróć ${abs}° ${diff > 0 ? "w prawo" : "w lewo"}`;
-
-  if (noteEl) {
-    noteEl.textContent = state.compassMode === "manual"
-      ? "Tryb ręczny — używany, gdy czujnik kompasu jest niedostępny."
-      : "Tryb telefonu — wskazanie zależy od czujników urządzenia.";
-  }
-}
-
-
-async function refreshTerrainProfile(options = {}) {
-  if (!state.selectedTx) {
-    state.profile = null;
-    drawProfilePlaceholder("Wybierz nadajnik, aby pobrać profil terenu.");
-    return;
-  }
-
-  const requestId = ++state.profileRequestId;
-  const tx = state.selectedTx;
-  const distance = distanceKm(state.home.lat, state.home.lon, tx.lat, tx.lon);
-  const pointsCount = clamp(Math.round(distance * 1.7), 36, 90);
-  const samples = buildProfileSamples(state.home, tx, pointsCount);
-
-  if (state.profileAbortController) state.profileAbortController.abort();
-  state.profileAbortController = new AbortController();
-
-  setProfileStatus("Pobieram profil terenu...", "Open-Meteo DEM");
-
-  try {
-    const elevations = await fetchElevations(samples, state.profileAbortController.signal);
-    if (requestId !== state.profileRequestId) return;
-    const profile = analyzeTerrainProfile(samples, elevations, tx, state.receiverAntennaHeightM);
-    state.profile = profile;
-    drawProfile(profile);
-  } catch (error) {
-    if (error.name === "AbortError") return;
-    console.warn("Profil terenu:", error);
-    const fallback = buildDemoProfile(samples, tx, state.receiverAntennaHeightM, "Nie udało się pobrać wysokości terenu. Pokazuję profil demonstracyjny.");
-    state.profile = fallback;
-    drawProfile(fallback);
-  }
-}
-
-function buildProfileSamples(home, tx, count) {
-  const totalDistance = distanceKm(home.lat, home.lon, tx.lat, tx.lon);
-  return Array.from({ length: count }, (_, i) => {
-    const t = i / (count - 1);
-    const lat = home.lat + (tx.lat - home.lat) * t;
-    const lon = home.lon + (tx.lon - home.lon) * t;
-    return { lat, lon, t, distanceKm: totalDistance * t };
-  });
-}
-
-async function fetchElevations(samples, signal) {
-  const url = new URL("https://api.open-meteo.com/v1/elevation");
-  url.searchParams.set("latitude", samples.map((p) => p.lat.toFixed(5)).join(","));
-  url.searchParams.set("longitude", samples.map((p) => p.lon.toFixed(5)).join(","));
-  const response = await fetch(url.toString(), { signal, headers: { "Accept": "application/json" } });
-  if (!response.ok) throw new Error(`Open-Meteo HTTP ${response.status}`);
-  const data = await response.json();
-  const elevations = data.elevation;
-  if (!Array.isArray(elevations) || elevations.length !== samples.length) throw new Error("Brak kompletnego profilu wysokości");
-  const clean = elevations.map((value) => Number(value));
-  if (clean.some((value) => !Number.isFinite(value))) throw new Error("Nieprawidłowe dane wysokości");
-  return clean;
-}
-
-function analyzeTerrainProfile(samples, elevations, tx, receiverHeight) {
-  const totalDistance = samples.at(-1)?.distanceKm || 0;
-  const txMast = Number(tx.mast_m || 0);
-  const receiverTop = elevations[0] + receiverHeight;
-  const transmitterTop = elevations[elevations.length - 1] + txMast;
-  const points = samples.map((sample, index) => {
-    const lineHeight = receiverTop + (transmitterTop - receiverTop) * sample.t;
-    const terrain = elevations[index];
-    const clearance = lineHeight - terrain;
-    return { ...sample, elevation: terrain, lineHeight, clearance };
-  });
-  const innerPoints = points.slice(1, -1);
-  const minClearance = innerPoints.length ? Math.min(...innerPoints.map((p) => p.clearance)) : 0;
-  const worst = innerPoints.find((p) => p.clearance === minClearance) || points[0];
-  let status = "clear";
-  let statusLabel = "Teren wygląda czysto";
-  let warning = "Profil z API wysokości — wynik orientacyjny, nie zastępuje pomiaru miernikiem.";
-  if (minClearance < -15) {
-    status = "blocked";
-    statusLabel = "Silne zasłonięcie terenu";
-    warning = `Silna przeszkoda około ${worst.distanceKm.toFixed(1)} km od punktu odbioru. Rozważ wyższy maszt albo inny nadajnik.`;
-  } else if (minClearance < 10) {
-    status = "partial";
-    statusLabel = "Częściowe zasłonięcie terenu";
-    warning = `Mały zapas nad terenem około ${worst.distanceKm.toFixed(1)} km od punktu odbioru. Odbiór może być niestabilny.`;
-  }
-  return {
-    mode: "real",
-    source: "Open-Meteo elevation API",
-    points,
-    totalDistance,
-    receiverHeight,
-    txMast,
-    minClearance,
-    worst,
-    status,
-    statusLabel,
-    warning
-  };
-}
-
-function buildDemoProfile(samples, tx, receiverHeight, reason) {
-  const seed = Math.abs(hashString(tx.id + state.home.lat.toFixed(2) + state.home.lon.toFixed(2)));
-  const elevations = samples.map((sample, i) => {
-    const base = 210 + ((seed + i * 41) % 110);
-    const hill = 310 * Math.exp(-Math.pow((sample.t - 0.58) / 0.16, 2));
-    const wave = 80 * Math.sin(i / 4 + seed % 5);
-    return Math.max(70, Math.round(base + hill + wave));
-  });
-  const profile = analyzeTerrainProfile(samples, elevations, tx, receiverHeight);
-  profile.mode = "demo";
-  profile.source = "DEMO";
-  profile.statusLabel = "Profil demonstracyjny";
-  profile.warning = reason;
-  return profile;
-}
-
-function drawProfile(profile) {
-  const canvas = $("profileCanvas");
-  if (!canvas || !profile?.points?.length) return;
-  const ctx = canvas.getContext("2d");
-  const width = canvas.width;
-  const height = canvas.height;
-  ctx.clearRect(0, 0, width, height);
-  ctx.fillStyle = "#f8fafc";
-  ctx.fillRect(0, 0, width, height);
-
-  const margin = { left: 46, right: 28, top: 20, bottom: 42 };
-  const plotW = width - margin.left - margin.right;
-  const plotH = height - margin.top - margin.bottom;
-  const allHeights = profile.points.flatMap((p) => [p.elevation, p.lineHeight]);
-  let min = Math.floor((Math.min(...allHeights) - 45) / 50) * 50;
-  let max = Math.ceil((Math.max(...allHeights) + 45) / 50) * 50;
-  if (max - min < 120) max = min + 120;
-
-  const xFor = (p) => margin.left + plotW * (p.distanceKm / Math.max(profile.totalDistance, 0.001));
-  const yFor = (value) => margin.top + plotH - ((value - min) / (max - min)) * plotH;
-
-  ctx.strokeStyle = "#dbe3ef";
-  ctx.lineWidth = 1;
-  ctx.font = "13px system-ui";
-  ctx.fillStyle = "#64748b";
-  for (let i = 0; i <= 4; i++) {
-    const value = min + (max - min) * (1 - i / 4);
-    const y = yFor(value);
-    ctx.beginPath();
-    ctx.moveTo(margin.left, y);
-    ctx.lineTo(width - margin.right, y);
-    ctx.stroke();
-    ctx.fillText(`${Math.round(value)} m`, 4, y + 4);
-  }
-
-  const pts = profile.points.map((p) => ({ ...p, x: xFor(p), y: yFor(p.elevation), ly: yFor(p.lineHeight) }));
-  const grad = ctx.createLinearGradient(0, margin.top, 0, margin.top + plotH);
-  grad.addColorStop(0, profile.status === "blocked" ? "#fdba74" : profile.status === "partial" ? "#fde68a" : "#86efac");
-  grad.addColorStop(1, "#dcfce7");
-  ctx.beginPath();
-  ctx.moveTo(pts[0].x, margin.top + plotH);
-  pts.forEach((p) => ctx.lineTo(p.x, p.y));
-  ctx.lineTo(pts.at(-1).x, margin.top + plotH);
-  ctx.closePath();
-  ctx.fillStyle = grad;
-  ctx.fill();
-
-  ctx.beginPath();
-  ctx.strokeStyle = profile.status === "blocked" ? "#ea580c" : profile.status === "partial" ? "#ca8a04" : "#16a34a";
-  ctx.lineWidth = 3;
-  pts.forEach((p, i) => i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y));
-  ctx.stroke();
-
-  ctx.beginPath();
-  ctx.strokeStyle = "rgba(37,99,235,.72)";
-  ctx.setLineDash([8, 8]);
-  pts.forEach((p, i) => i === 0 ? ctx.moveTo(p.x, p.ly) : ctx.lineTo(p.x, p.ly));
-  ctx.stroke();
-  ctx.setLineDash([]);
-
-  const dangerPoints = pts.filter((p) => p.clearance < 10 && p.distanceKm > 0 && p.distanceKm < profile.totalDistance);
-  if (dangerPoints.length) {
-    ctx.beginPath();
-    ctx.strokeStyle = profile.status === "blocked" ? "#dc2626" : "#f97316";
-    ctx.lineWidth = 5;
-    dangerPoints.forEach((p, i) => i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y));
-    ctx.stroke();
-  }
-
-  ctx.fillStyle = "#0f172a";
-  ctx.font = "bold 14px system-ui";
-  ctx.fillText(`Dom +${profile.receiverHeight} m`, margin.left, height - 13);
-  ctx.fillText(`Nadajnik +${profile.txMast} m`, width - margin.right - 118, height - 13);
-  ctx.fillStyle = "#64748b";
-  ctx.font = "12px system-ui";
-  ctx.fillText("0 km", margin.left, height - 28);
-  ctx.fillText(`${profile.totalDistance.toFixed(1)} km`, width - margin.right - 52, height - 28);
-
-  setProfileStatus(profile.warning, profile.source);
-  $("profileStats").innerHTML = `
-    <span><strong>Ocena:</strong> ${escapeHtml(profile.statusLabel)}</span>
-    <span><strong>Najmniejszy zapas:</strong> ${Math.round(profile.minClearance)} m</span>
-    <span><strong>Odległość:</strong> ${profile.totalDistance.toFixed(1)} km</span>
-  `;
-  $("profileWarning").classList.toggle("demo", profile.mode === "demo");
-}
-
-function drawProfilePlaceholder(message) {
-  const canvas = $("profileCanvas");
-  if (!canvas) return;
-  const ctx = canvas.getContext("2d");
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  ctx.fillStyle = "#f8fafc";
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-  ctx.fillStyle = "#64748b";
-  ctx.font = "bold 18px system-ui";
-  ctx.fillText(message, 38, 110);
-  setProfileStatus(message, "—");
-  $("profileStats").textContent = "Brak profilu.";
-}
-
-function setProfileStatus(message, source) {
-  if ($("profileWarning")) $("profileWarning").textContent = message;
-  if ($("profileSource")) $("profileSource").textContent = source || "—";
-}
-
-
-// Etap 10 — orientacyjne pokrycie zasięgiem
-function initCoverageLayer() {
-  state.coverageLayer = L.layerGroup();
-  if (state.coverageVisible && state.overlays.coverage) state.coverageLayer.addTo(state.map);
-  updateCoverageButton();
-}
-
-function showCoveragePanel() {
-  const summary = state.coverageSummary;
-  const tx = state.selectedTx;
-  const body = `
-    <div class="tx-list">
-      <div class="tx-item">
-        <strong>Pokrycie orientacyjne</strong>
-        <span>Nadajnik: ${tx ? escapeHtml(tx.name) : "brak"}<br>
-        Status: ${summary ? escapeHtml(summary.label) : "nieprzeliczone"}<br>
-        Punkty: ${summary ? summary.total : 0}<br>
-        Dobre: ${summary ? summary.good : 0} • Średnie: ${summary ? summary.medium : 0} • Słabe: ${summary ? summary.weak : 0} • Brak: ${summary ? summary.none : 0}</span>
-      </div>
-      <button type="button" class="panel-action" id="panelBuildCoverageBtn">Przelicz pokrycie dla wybranego nadajnika</button>
-      <button type="button" class="panel-action" id="panelToggleCoverageBtn">${state.coverageVisible ? "Ukryj pokrycie" : "Pokaż pokrycie"}</button>
-      <button type="button" class="panel-action danger" id="panelClearCoverageBtn">Wyczyść warstwę pokrycia</button>
-      <div class="coverage-legend">
-        <span><i class="cov-dot cov-good"></i> dobry</span>
-        <span><i class="cov-dot cov-medium"></i> średni</span>
-        <span><i class="cov-dot cov-weak"></i> słaby</span>
-        <span><i class="cov-dot cov-none"></i> brak / cień</span>
-      </div>
-      <div class="hint-box">To jest warstwa orientacyjna. Aplikacja liczy punkty wokół nadajnika, pobiera wysokości terenu z Open-Meteo i szuka przeszkód na profilu. Nie uwzględnia pełnej charakterystyki anten, odbić, zabudowy, lasu, zakłóceń LTE/5G ani rzeczywistego pomiaru miernikiem.</div>
-    </div>`;
-  setSidePanel("Pokrycie", "Warstwa zasięgu", body);
-  $("panelBuildCoverageBtn")?.addEventListener("click", () => refreshCoverageLayer({ force: true }));
-  $("panelToggleCoverageBtn")?.addEventListener("click", () => {
-    state.coverageVisible = !state.coverageVisible;
-    saveCoverageVisible();
-    syncOverlayVisibility();
-    updateCoverageButton();
-    showCoveragePanel();
-  });
-  $("panelClearCoverageBtn")?.addEventListener("click", clearCoverageLayer);
-}
-
-async function refreshCoverageLayer(options = {}) {
-  if (!state.selectedTx || !state.coverageLayer) return;
-  if (!state.coverageVisible && !options.force) return;
-  if (!navigator.onLine) {
-    showToast("Pokrycie wymaga internetu do pobrania wysokości terenu");
-    return;
-  }
-  const requestId = ++state.coverageRequestId;
-  const tx = state.selectedTx;
-  const samples = buildCoverageSamples(tx);
-  if (state.coverageAbortController) state.coverageAbortController.abort();
-  state.coverageAbortController = new AbortController();
-  state.coverageVisible = true;
-  saveCoverageVisible();
-  updateCoverageButton(true);
-  showToast("Liczę orientacyjne pokrycie terenu...");
-  try {
-    const profiles = buildCoverageProfiles(tx, samples);
-    const uniquePoints = flattenCoveragePoints(profiles);
-    const elevations = await fetchElevationsChunked(uniquePoints, state.coverageAbortController.signal);
-    if (requestId !== state.coverageRequestId) return;
-    const elevationMap = new Map(uniquePoints.map((p, i) => [p.key, elevations[i]]));
-    const results = profiles.map((profile) => evaluateCoverageProfile(tx, profile, elevationMap));
-    renderCoverageResults(results);
-    state.coverageSummary = summarizeCoverage(results);
-    syncOverlayVisibility();
-    updateCoverageButton(false);
-    showToast(state.coverageSummary.label);
-    if ($("sidePanelTitle")?.textContent === "Pokrycie") showCoveragePanel();
-  } catch (error) {
-    if (error.name === "AbortError") return;
-    console.error("Pokrycie:", error);
-    updateCoverageButton(false);
-    showToast("Nie udało się przeliczyć pokrycia. Sprawdź internet albo spróbuj ponownie.");
-  }
-}
-
-function buildCoverageSamples(tx) {
-  const maxKm = estimateCoverageRadiusKm(tx);
-  const distances = [0.25, 0.4, 0.55, 0.72, 0.9, 1].map((f) => Math.max(2, Math.round(maxKm * f)));
-  const bearings = Array.from({ length: 24 }, (_, i) => i * 15);
-  const samples = [];
-  for (const bearing of bearings) {
-    for (const distance of distances) {
-      const point = destinationPoint(tx.lat, tx.lon, distance, bearing);
-      samples.push({ ...point, bearing, distanceKm: distance });
-    }
-  }
-  return samples;
-}
-
-function estimateCoverageRadiusKm(tx) {
-  const maxErp = Math.max(...tx.muxes.map((m) => Number(m.erp_kw) || 1));
-  const base = 18 + Math.sqrt(maxErp) * 6;
-  return clamp(Math.round(base), 24, 85);
-}
-
-function buildCoverageProfiles(tx, samples) {
-  return samples.map((sample) => {
-    const count = sample.distanceKm > 45 ? 7 : 5;
-    const points = Array.from({ length: count }, (_, i) => {
-      const t = i / (count - 1);
-      const lat = tx.lat + (sample.lat - tx.lat) * t;
-      const lon = tx.lon + (sample.lon - tx.lon) * t;
-      return { lat, lon, t, key: coverageKey(lat, lon) };
-    });
-    return { sample, points };
-  });
-}
-
-function flattenCoveragePoints(profiles) {
-  const map = new Map();
-  for (const profile of profiles) {
-    for (const point of profile.points) {
-      if (!map.has(point.key)) map.set(point.key, point);
-    }
-  }
-  return [...map.values()];
-}
-
-async function fetchElevationsChunked(points, signal) {
-  const result = [];
-  const chunkSize = 90;
-  for (let i = 0; i < points.length; i += chunkSize) {
-    const chunk = points.slice(i, i + chunkSize);
-    const elevations = await fetchElevations(chunk, signal);
-    result.push(...elevations);
-    await delay(60);
-  }
-  return result;
-}
-
-function evaluateCoverageProfile(tx, profile, elevationMap) {
-  const elevations = profile.points.map((p) => elevationMap.get(p.key));
-  const txMast = Number(tx.mast_m || 0);
-  const receiverHeight = state.receiverAntennaHeightM;
-  const startTop = elevations[0] + txMast;
-  const endTop = elevations.at(-1) + receiverHeight;
-  const clearances = profile.points.map((p, index) => {
-    const lineHeight = startTop + (endTop - startTop) * p.t;
-    return lineHeight - elevations[index];
-  }).slice(1, -1);
-  const minClearance = clearances.length ? Math.min(...clearances) : 999;
-  const maxErp = Math.max(...tx.muxes.map((m) => Number(m.erp_kw) || 1));
-  const distancePenalty = profile.sample.distanceKm / estimateCoverageRadiusKm(tx);
-  const terrainPenalty = minClearance < -20 ? 1 : minClearance < 0 ? 0.7 : minClearance < 15 ? 0.42 : 0.12;
-  const erpBonus = Math.min(0.25, Math.log10(maxErp + 1) / 10);
-  const score = clamp(1 - distancePenalty - terrainPenalty + erpBonus, 0, 1);
-  let level = "none";
-  if (score >= 0.62) level = "good";
-  else if (score >= 0.42) level = "medium";
-  else if (score >= 0.23) level = "weak";
-  return { ...profile.sample, minClearance, score, level };
-}
-
-function renderCoverageResults(results) {
-  state.coverageLayer.clearLayers();
-  const groups = { good: [], medium: [], weak: [], none: [] };
-  for (const result of results) groups[result.level].push([result.lat, result.lon]);
-  const colors = { good: "#16a34a", medium: "#ca8a04", weak: "#f97316", none: "#dc2626" };
-  for (const [level, latlngs] of Object.entries(groups)) {
-    for (const latlng of latlngs) {
-      L.circleMarker(latlng, {
-        radius: level === "none" ? 5 : 6,
-        color: colors[level],
-        fillColor: colors[level],
-        fillOpacity: level === "good" ? 0.34 : level === "medium" ? 0.42 : 0.55,
-        weight: 1,
-        opacity: 0.74,
-        interactive: false
-      }).addTo(state.coverageLayer);
-    }
-  }
-  if (!state.map.hasLayer(state.coverageLayer) && state.coverageVisible && state.overlays.coverage) state.coverageLayer.addTo(state.map);
-}
-
-function summarizeCoverage(results) {
-  const counts = { good: 0, medium: 0, weak: 0, none: 0 };
-  for (const item of results) counts[item.level]++;
-  const total = results.length;
-  const label = `Pokrycie orientacyjne: ${counts.good} dobrych, ${counts.medium} średnich, ${counts.weak} słabych, ${counts.none} brak/cień`;
-  return { ...counts, total, label };
-}
-
-function clearCoverageLayer() {
-  state.coverageAbortController?.abort();
-  state.coverageLayer?.clearLayers();
-  state.coverageSummary = null;
-  state.coverageVisible = false;
-  saveCoverageVisible();
-  syncOverlayVisibility();
-  updateCoverageButton(false);
-  showCoveragePanel();
-  showToast("Wyczyszczono pokrycie");
-}
-
-function updateCoverageButton(loading = false) {
-  const btn = $("coverageBtn");
-  if (!btn) return;
-  btn.classList.toggle("active", state.coverageVisible || loading);
-  btn.classList.toggle("loading", loading);
-  btn.title = loading ? "Liczenie pokrycia..." : "Pokrycie zasięgiem";
-}
-
-function saveCoverageVisible() {
-  try { localStorage.setItem(COVERAGE_STORAGE_KEY, JSON.stringify({ visible: state.coverageVisible })); } catch {}
-}
-
-function loadSavedCoverageVisible() {
-  try {
-    const raw = localStorage.getItem(COVERAGE_STORAGE_KEY);
-    return raw ? Boolean(JSON.parse(raw).visible) : false;
-  } catch { return false; }
-}
-
-function coverageKey(lat, lon) {
-  return `${Number(lat).toFixed(4)},${Number(lon).toFixed(4)}`;
-}
-
-function destinationPoint(lat, lon, distanceKmValue, bearing) {
-  const radius = 6371;
-  const delta = distanceKmValue / radius;
-  const theta = toRad(bearing);
-  const phi1 = toRad(lat);
-  const lambda1 = toRad(lon);
-  const phi2 = Math.asin(Math.sin(phi1) * Math.cos(delta) + Math.cos(phi1) * Math.sin(delta) * Math.cos(theta));
-  const lambda2 = lambda1 + Math.atan2(Math.sin(theta) * Math.sin(delta) * Math.cos(phi1), Math.cos(delta) - Math.sin(phi1) * Math.sin(phi2));
-  return { lat: toDeg(phi2), lon: normalizeLon(toDeg(lambda2)) };
-}
-
-function normalizeLon(lon) {
-  return ((lon + 540) % 360) - 180;
-}
-
-function delay(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-function initPwaStatus() {
-  updateOnlineStatus();
-  window.addEventListener("online", updateOnlineStatus);
-  window.addEventListener("offline", updateOnlineStatus);
-
-  window.addEventListener("beforeinstallprompt", (event) => {
-    event.preventDefault();
-    state.deferredInstallPrompt = event;
-    updateInstallUi();
-    showToast("Aplikację można zainstalować jako PWA");
-  });
-
-  window.addEventListener("appinstalled", () => {
-    state.deferredInstallPrompt = null;
-    updateInstallUi();
-    showToast("Aplikacja została zainstalowana");
-  });
-}
-
-function updateOnlineStatus() {
-  const online = navigator.onLine;
-  document.body.classList.toggle("is-offline", !online);
-  const status = $("networkStatus");
-  if (status) {
-    status.textContent = online ? "Online" : "Offline";
-    status.title = online ? "Połączenie internetowe działa" : "Brak internetu — mapa, wyszukiwarka i profil mogą być ograniczone";
-  }
-}
-
-function updateInstallUi() {
-  const btn = $("pwaBtn");
-  if (!btn) return;
-  btn.classList.toggle("active", Boolean(state.deferredInstallPrompt || state.updateWaiting));
-}
-
-async function installPwa() {
-  if (!state.deferredInstallPrompt) {
-    showToast("Jeśli przeglądarka pozwala, użyj opcji: Dodaj do ekranu głównego / Zainstaluj aplikację.");
-    return;
-  }
-  state.deferredInstallPrompt.prompt();
-  const result = await state.deferredInstallPrompt.userChoice;
-  state.deferredInstallPrompt = null;
-  updateInstallUi();
-  showToast(result.outcome === "accepted" ? "Instalacja PWA zaakceptowana" : "Instalacja PWA anulowana");
-}
-
-function showPwaPanel() {
-  const online = navigator.onLine ? "Online" : "Offline";
-  const installed = window.matchMedia("(display-mode: standalone)").matches || navigator.standalone ? "Tak" : "Nie / przeglądarka";
-  const body = `
-    <div class="tx-list">
-      <div class="tx-item">
-        <strong>Status PWA</strong>
-        <span>Wersja: ${VERSION}<br>Połączenie: ${online}<br>Tryb zainstalowany: ${installed}<br>Aktualizacja czeka: ${state.updateWaiting ? "tak" : "nie"}</span>
-      </div>
-      <button type="button" class="panel-action" id="panelInstallPwaBtn">Zainstaluj / dodaj do ekranu głównego</button>
-      <button type="button" class="panel-action" id="panelUpdatePwaBtn">Wymuś aktualizację aplikacji</button>
-      <button type="button" class="panel-action" id="panelExportSettingsBtn">Eksportuj ustawienia lokalne</button>
-      <label class="panel-action file-action" for="panelImportSettingsInput">Importuj ustawienia lokalne</label>
-      <input id="panelImportSettingsInput" type="file" accept="application/json" hidden>
-      <button type="button" class="panel-action" id="panelExportTxBtn">Eksportuj bazę nadajników JSON</button>
-      <label class="panel-action file-action" for="panelImportTxInput">Importuj bazę nadajników JSON/CSV</label>
-      <input id="panelImportTxInput" type="file" accept="application/json,.json,text/csv,.csv" hidden>
-      <button type="button" class="panel-action danger" id="panelClearTxBtn">Usuń lokalnie zaimportowaną bazę nadajników</button>
-      <button type="button" class="panel-action danger" id="panelClearLocalBtn">Wyczyść lokalne ustawienia</button>
-      <div class="hint-box"><strong>Status bazy nadajników:</strong><br>${renderDataSourceStatus()}<br><br>Etap 12 dodaje lokalny import bazy nadajników. Kafelki mapy, wyszukiwarka adresu, profil terenu i dokładniejsze pokrycie nadal wymagają internetu, jeśli dane nie są wcześniej w cache.</div>
-    </div>`;
-  setSidePanel("PWA / Offline", "Instalacja i pamięć lokalna", body);
-  $("panelInstallPwaBtn")?.addEventListener("click", installPwa);
-  $("panelUpdatePwaBtn")?.addEventListener("click", forceAppUpdate);
-  $("panelExportSettingsBtn")?.addEventListener("click", exportLocalSettings);
-  $("panelImportSettingsInput")?.addEventListener("change", importLocalSettings);
-  $("panelExportTxBtn")?.addEventListener("click", exportTransmittersJson);
-  $("panelImportTxInput")?.addEventListener("change", importTransmittersFile);
-  $("panelClearTxBtn")?.addEventListener("click", clearCustomTransmitters);
-  $("panelClearLocalBtn")?.addEventListener("click", clearLocalSettings);
-}
-
-
-function renderDataSourceStatus() {
-  const meta = state.transmittersMeta || {};
-  return `Tryb: ${escapeHtml(meta.mode || "demo")}<br>Źródło: ${escapeHtml(meta.source || "brak")}<br>Aktualizacja: ${escapeHtml(meta.updatedAt || "brak")}<br>Licencja/uwagi: ${escapeHtml(meta.license || "brak")}<br>Liczba obiektów: ${state.transmitters.length}`;
-}
-
-function loadCustomTransmitters() {
-  try {
-    const raw = localStorage.getItem(CUSTOM_TRANSMITTERS_KEY);
-    if (!raw) return null;
-    const data = JSON.parse(raw);
-    return Array.isArray(data) ? data : null;
-  } catch (error) {
-    console.warn("Nie udało się odczytać lokalnej bazy nadajników", error);
-    return null;
-  }
-}
-
-function loadTransmittersMeta() {
-  try {
-    const raw = localStorage.getItem(CUSTOM_TRANSMITTERS_META_KEY);
-    if (!raw) return { mode: "demo", source: "Plik demonstracyjny", updatedAt: "brak", license: "dane testowe", count: 0 };
-    return JSON.parse(raw);
-  } catch {
-    return { mode: "demo", source: "Plik demonstracyjny", updatedAt: "brak", license: "dane testowe", count: 0 };
-  }
-}
-
-function saveCustomTransmitters(transmitters, meta) {
-  localStorage.setItem(CUSTOM_TRANSMITTERS_KEY, JSON.stringify(transmitters));
-  localStorage.setItem(CUSTOM_TRANSMITTERS_META_KEY, JSON.stringify(meta));
-}
-
-function clearCustomTransmitters() {
-  localStorage.removeItem(CUSTOM_TRANSMITTERS_KEY);
-  localStorage.removeItem(CUSTOM_TRANSMITTERS_META_KEY);
-  showToast("Usunięto lokalną bazę nadajników. Wczytuję dane z paczki...");
-  setTimeout(() => location.reload(), 600);
-}
-
-function exportTransmittersJson() {
-  const payload = state.transmitters.map((tx) => ({
-    id: tx.id,
-    name: tx.name,
-    site: tx.site,
-    lat: tx.lat,
-    lon: tx.lon,
-    height_m: tx.height_m,
-    mast_m: tx.mast_m,
-    region: tx.region || "",
-    source: tx.source || state.transmittersMeta?.source || "",
-    muxes: tx.muxes
-  }));
-  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `dvbt-mapa-nadajniki-${VERSION.replaceAll(" ", "_")}.json`;
-  a.click();
-  URL.revokeObjectURL(url);
-}
-
-async function importTransmittersFile(event) {
-  const file = event.target.files?.[0];
-  if (!file) return;
-  try {
-    const text = await file.text();
-    let imported;
-    if (file.name.toLowerCase().endsWith(".csv")) {
-      imported = convertCsvRowsToTransmitters(parseCsv(text));
-    } else {
-      const json = JSON.parse(text);
-      imported = Array.isArray(json) ? json : json.transmitters;
-    }
-    if (!Array.isArray(imported) || !imported.length) throw new Error("Brak nadajników w pliku");
-    const normalized = imported.map(normalizeTransmitter).filter((tx) => Number.isFinite(tx.lat) && Number.isFinite(tx.lon) && tx.muxes.length);
-    if (!normalized.length) throw new Error("Nie znaleziono poprawnych nadajników po normalizacji");
-    const meta = {
-      mode: "local-import",
-      source: file.name,
-      updatedAt: new Date().toISOString(),
-      license: "Źródło/licencję musi potwierdzić użytkownik przed użyciem produkcyjnym",
-      count: normalized.length
-    };
-    saveCustomTransmitters(normalized, meta);
-    state.transmitters = normalized;
-    state.transmittersMeta = meta;
-    renderTransmitters();
-    selectBestTransmitter();
-    refreshTerrainProfile({ force: true });
-    if (state.coverageVisible) refreshCoverageLayer();
-    showToast(`Zaimportowano nadajniki: ${normalized.length}`);
-  } catch (error) {
-    console.error(error);
-    showToast("Nie udało się zaimportować bazy nadajników");
-  } finally {
-    event.target.value = "";
-  }
-}
-
-function parseCsv(text) {
-  const rows = [];
-  let row = [];
-  let cell = "";
-  let quoted = false;
-  for (let i = 0; i < text.length; i++) {
-    const ch = text[i];
-    const next = text[i + 1];
-    if (quoted && ch === '"' && next === '"') { cell += '"'; i++; continue; }
-    if (ch === '"') { quoted = !quoted; continue; }
-    if (!quoted && ch === ',') { row.push(cell.trim()); cell = ""; continue; }
-    if (!quoted && (ch === "\n" || ch === "\r")) {
-      if (ch === "\r" && next === "\n") i++;
-      row.push(cell.trim());
-      if (row.some(Boolean)) rows.push(row);
-      row = [];
-      cell = "";
-      continue;
-    }
-    cell += ch;
-  }
-  if (cell || row.length) { row.push(cell.trim()); if (row.some(Boolean)) rows.push(row); }
-  if (!rows.length) return [];
-  const headers = rows.shift().map((h) => slugHeader(h));
-  return rows.map((values) => Object.fromEntries(headers.map((h, i) => [h, values[i] ?? ""])));
-}
-
-function slugHeader(value) {
-  return String(value || "")
-    .trim()
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
-    .replace(/[^a-z0-9]+/g, "_")
-    .replace(/^_|_$/g, "");
-}
-
-function convertCsvRowsToTransmitters(rows) {
-  const grouped = new Map();
-  for (const row of rows) {
-    const name = row.name || row.nazwa || row.obiekt || row.object_name || row.site;
-    const lat = Number(row.lat || row.latitude || row.szerokosc);
-    const lon = Number(row.lon || row.lng || row.longitude || row.dlugosc);
-    const mux = row.mux || row.multipleks || row.multiplex;
-    if (!name || !Number.isFinite(lat) || !Number.isFinite(lon) || !mux) continue;
-    const key = `${slugify(name)}-${lat.toFixed(5)}-${lon.toFixed(5)}`;
-    if (!grouped.has(key)) {
-      grouped.set(key, {
-        id: key,
-        name,
-        site: row.site || row.obiekt || name,
-        lat,
-        lon,
-        height_m: Number(row.height_m || row.wysokosc_terenu_m || 0),
-        mast_m: Number(row.mast_m || row.wysokosc_masztu_m || row.antenna_height_m || 80),
-        region: row.region || row.wojewodztwo || "",
-        source: row.source || row.zrodlo || "import CSV",
-        muxes: []
-      });
-    }
-    grouped.get(key).muxes.push(normalizeMux({
-      mux,
-      channel: row.channel || row.kanal,
-      frequency_mhz: row.frequency_mhz || row.czestotliwosc_mhz || row.frequency,
-      erp_kw: row.erp_kw || row.erp || row.moc_kw,
-      polarization: row.polarization || row.polaryzacja,
-      band: row.band || row.pasmo
+  function saveState() {
+    localStorage.setItem(STORE_KEY, JSON.stringify({
+      rx: state.rx,
+      rxAntennaHeight: state.rxAntennaHeight,
+      baseLayer: state.baseLayer,
+      muxFilter: state.muxFilter,
+      heading: state.heading,
+      sheetHidden: state.sheetHidden,
+      paidCoverageTileUrl: state.paidCoverageTileUrl,
+      paidElevationTemplate: state.paidElevationTemplate,
+      coverageVisible: state.coverageVisible
     }));
   }
-  return [...grouped.values()];
-}
+  function loadState() { try { return JSON.parse(localStorage.getItem(STORE_KEY)); } catch { return null; } }
 
-function slugify(value) {
-  return String(value || "")
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "") || "nadajnik";
-}
-
-function exportLocalSettings() {
-  const payload = {
-    version: VERSION,
-    exportedAt: new Date().toISOString(),
-    home: state.home,
-    antennaHeightM: state.receiverAntennaHeightM,
-    overlays: state.overlays,
-    muxFilters: [...state.activeMuxFilters],
-    baseLayer: state.activeLayerName,
-    coverageVisible: state.coverageVisible
-  };
-  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `dvbt-mapa-ustawienia-${VERSION.replaceAll(" ", "_")}.json`;
-  a.click();
-  URL.revokeObjectURL(url);
-}
-
-async function importLocalSettings(event) {
-  const file = event.target.files?.[0];
-  if (!file) return;
-  try {
-    const data = JSON.parse(await file.text());
-    if (data.home) updateHome(data.home, { chooseBest: true, center: true, zoom: 12, save: true });
-    if (Number.isFinite(Number(data.antennaHeightM))) {
-      state.receiverAntennaHeightM = clamp(Number(data.antennaHeightM), 1, 40);
-      saveAntennaHeight(state.receiverAntennaHeightM);
-      $("antennaHeightInput").value = String(state.receiverAntennaHeightM);
-    }
-    if (data.overlays && typeof data.overlays === "object") {
-      state.overlays = { ...state.overlays, ...data.overlays };
-      saveOverlaySettings();
-      syncOverlayVisibility();
-    }
-    if (Array.isArray(data.muxFilters)) {
-      state.activeMuxFilters = new Set(data.muxFilters.filter((mux) => ALL_MUX.includes(mux)));
-      if (!state.activeMuxFilters.size) state.activeMuxFilters = new Set(ALL_MUX);
-      saveMuxFilters();
-      applyFilters();
-      selectBestTransmitter();
-    }
-    if (data.baseLayer && state.baseLayers[data.baseLayer]) setBaseLayer(data.baseLayer);
-    if (typeof data.coverageVisible === "boolean") { state.coverageVisible = data.coverageVisible; saveCoverageVisible(); syncOverlayVisibility(); updateCoverageButton(); }
-    showToast("Zaimportowano ustawienia lokalne");
-  } catch (error) {
-    console.error(error);
-    showToast("Nie udało się zaimportować ustawień");
-  } finally {
-    event.target.value = "";
+  function toast(msg) {
+    const t = $('toast');
+    t.textContent = msg;
+    t.hidden = false;
+    clearTimeout(toast._timer);
+    toast._timer = setTimeout(() => t.hidden = true, 2600);
   }
-}
 
-async function clearLocalSettings() {
-  [STORAGE_KEY, OVERLAY_STORAGE_KEY, MUX_STORAGE_KEY, BASE_LAYER_STORAGE_KEY, COVERAGE_STORAGE_KEY, "dvbt-mapa.antennaHeightM"].forEach((key) => localStorage.removeItem(key));
-  showToast("Wyczyszczono ustawienia lokalne. Odświeżam aplikację...");
-  setTimeout(() => location.reload(), 600);
-}
+  const rad = d => d * Math.PI / 180;
+  const deg = r => r * 180 / Math.PI;
+  const round = (n, p=0) => Number(n).toFixed(p);
+  const unique = arr => [...new Set(arr.filter(Boolean))];
 
-function forceAppUpdate() {
-  if (state.swRegistration?.waiting) {
-    state.swRegistration.waiting.postMessage({ type: "SKIP_WAITING" });
-    showToast("Aktualizuję aplikację...");
-    return;
+  function km(a, b) {
+    const R = 6371;
+    const dLat = rad(b.lat - a.lat);
+    const dLon = rad(b.lon - a.lon);
+    const la1 = rad(a.lat), la2 = rad(b.lat);
+    const h = Math.sin(dLat / 2) ** 2 + Math.cos(la1) * Math.cos(la2) * Math.sin(dLon / 2) ** 2;
+    return 2 * R * Math.asin(Math.sqrt(h));
   }
-  if (state.swRegistration) {
-    state.swRegistration.update();
-    showToast("Sprawdzam aktualizację...");
-    return;
+  function bearing(a, b) {
+    const φ1 = rad(a.lat), φ2 = rad(b.lat), Δλ = rad(b.lon - a.lon);
+    const y = Math.sin(Δλ) * Math.cos(φ2);
+    const x = Math.cos(φ1) * Math.sin(φ2) - Math.sin(φ1) * Math.cos(φ2) * Math.cos(Δλ);
+    return (deg(Math.atan2(y, x)) + 360) % 360;
   }
-  location.reload();
-}
+  function destinationPoint(start, brng, distanceKm) {
+    const R = 6371;
+    const δ = distanceKm / R;
+    const θ = rad(brng);
+    const φ1 = rad(start.lat), λ1 = rad(start.lon);
+    const φ2 = Math.asin(Math.sin(φ1)*Math.cos(δ)+Math.cos(φ1)*Math.sin(δ)*Math.cos(θ));
+    const λ2 = λ1 + Math.atan2(Math.sin(θ)*Math.sin(δ)*Math.cos(φ1), Math.cos(δ)-Math.sin(φ1)*Math.sin(φ2));
+    return { lat: deg(φ2), lon: ((deg(λ2)+540)%360)-180 };
+  }
+  function signedDiff(from, to) { return ((to - from + 540) % 360) - 180; }
 
-function registerServiceWorker() {
-  if (!("serviceWorker" in navigator)) return;
-  window.addEventListener("load", async () => {
-    try {
-      const registration = await navigator.serviceWorker.register("./service-worker.js");
-      state.swRegistration = registration;
-      if (registration.waiting) {
-        state.updateWaiting = true;
-        updateInstallUi();
+  function initMap() {
+    setAppHeight();
+    map = L.map('map', {
+      zoomControl: false,
+      attributionControl: true,
+      preferCanvas: true,
+      inertia: true,
+      trackResize: true,
+      zoomAnimation: true,
+      fadeAnimation: false,
+      markerZoomAnimation: false,
+      tap: false,
+      maxBoundsViscosity: 0.3
+    }).setView([state.rx.lat, state.rx.lon], 8);
+
+    map.attributionControl.setPrefix('');
+    baseLayers.std = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19, minZoom: 3, keepBuffer: 4, updateWhenIdle: true, updateWhenZooming: false, detectRetina: false,
+      attribution: '&copy; OpenStreetMap'
+    });
+    baseLayers.light = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+      maxZoom: 20, minZoom: 3, keepBuffer: 4, updateWhenIdle: true, updateWhenZooming: false, detectRetina: false,
+      attribution: '&copy; OpenStreetMap & Carto'
+    });
+    baseLayers.terrain = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
+      maxZoom: 17, minZoom: 3, keepBuffer: 3, updateWhenIdle: true, updateWhenZooming: false, detectRetina: false,
+      attribution: '&copy; OpenTopoMap'
+    });
+    (baseLayers[state.baseLayer] || baseLayers.std).addTo(map);
+
+    txLayer = L.layerGroup().addTo(map);
+    coverageLayer = L.layerGroup().addTo(map);
+
+    rxMarker = L.marker([state.rx.lat, state.rx.lon], { draggable: true, icon: divIcon('⌂', 'rx-icon') }).addTo(map);
+    rxMarker.on('dragend', () => {
+      const p = rxMarker.getLatLng();
+      setRx(p.lat, p.lng, 'Punkt wskazany na mapie', { pan: false });
+    });
+
+    map.on('click', (e) => {
+      if (!isUiEvent(e.originalEvent)) {
+        closePopover();
+        if (!$('bottomSheet').classList.contains('is-hidden')) hideSheet(true);
+        setRx(e.latlng.lat, e.latlng.lng, 'Punkt wskazany na mapie', { pan: false });
       }
-      registration.addEventListener("updatefound", () => {
-        const worker = registration.installing;
-        if (!worker) return;
-        worker.addEventListener("statechange", () => {
-          if (worker.state === "installed" && navigator.serviceWorker.controller) {
-            state.updateWaiting = true;
-            updateInstallUi();
-            showToast("Jest nowa wersja aplikacji — otwórz PWA i kliknij aktualizację");
-          }
-        });
-      });
-      navigator.serviceWorker.addEventListener("controllerchange", () => location.reload());
-    } catch (error) {
-      console.warn("Service Worker:", error);
+    });
+
+    ['load','moveend','zoomend','resize'].forEach(ev => map.on(ev, forceMapResize));
+    map.whenReady(() => {
+      state.mapReady = true;
+      renderTransmitters();
+      selectBest(false);
+      loadRealCoverageGeoJson();
+      restorePaidCoverageLayer();
+      if (state.sheetHidden) hideSheet(true); else showSheet(true);
+      forceMapResizeHard();
+    });
+  }
+
+  function isUiEvent(ev) { return ev.target.closest('.topbar,.tools,.bottom-sheet,.popover,.mini-compass,.reopen-sheet,.toast,.leaflet-control'); }
+
+  function forceMapResize() {
+    if (!map) return;
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(forceMapResizeHard, 60);
+  }
+  function forceMapResizeHard() {
+    if (!map) return;
+    setAppHeight();
+    requestAnimationFrame(() => map.invalidateSize({ pan: false, animate: false }));
+    [120, 360, 900, 1600].forEach(ms => setTimeout(() => map.invalidateSize({ pan: false, animate: false }), ms));
+  }
+
+  function divIcon(txt, cls) {
+    return L.divIcon({ className: `dvbt-marker ${cls}`, html: `<span>${txt}</span>`, iconSize: [34, 34], iconAnchor: [17, 17] });
+  }
+  function injectMarkerCss() {
+    const style = document.createElement('style');
+    style.textContent = `
+      .dvbt-marker{background:transparent;border:0}.dvbt-marker span{width:34px;height:34px;border-radius:17px;display:flex;align-items:center;justify-content:center;background:#fff;border:2px solid #fff;box-shadow:0 4px 14px rgba(15,23,42,.22);font-size:16px;font-weight:900}.rx-icon span{background:#2563eb;color:#fff}.tx-icon span{background:#fff;color:#0f172a}.tx-selected span{background:#16a34a;color:#fff;box-shadow:0 0 0 7px rgba(22,163,74,.18),0 4px 14px rgba(15,23,42,.22)}.distance-label{background:#2563eb;color:#fff;border:0;border-radius:999px;box-shadow:0 4px 12px rgba(37,99,235,.25);font-weight:900;font-size:12px;padding:3px 8px}.coverage-real{stroke:#166534;fill:#22c55e;fill-opacity:.16;stroke-opacity:.55;stroke-width:1.4}.coverage-warn{stroke:#ea580c;fill:#f97316;fill-opacity:.13;stroke-opacity:.55;stroke-width:1.3}`;
+    document.head.appendChild(style);
+  }
+
+  async function loadTransmitters() {
+    const res = await fetch(`./data/transmitters.json?v=${VERSION_Q}`, { cache: 'no-cache' });
+    const json = await res.json();
+    state.datasetMeta = json.meta || null;
+    state.transmitters = normalizeTransmitters(json.transmitters || []);
+    updateDatasetChip();
+  }
+  function normalizeTransmitters(list) {
+    return list.map((tx, i) => ({
+      id: tx.id || slug(`${tx.name || 'tx'}-${i}`),
+      name: tx.name || 'Nadajnik',
+      lat: Number(tx.lat), lon: Number(tx.lon),
+      height_m: Number(tx.height_m ?? tx.mast_height_m ?? 50),
+      source: tx.source || state.datasetMeta?.source || 'lokalna baza',
+      muxes: (tx.muxes || []).map(m => ({
+        mux: String(m.mux || m.MUX || '').trim() || 'MUX-?',
+        channel: String(m.channel || m.kanal || m.kanał || '').trim() || '—',
+        frequency_mhz: Number(m.frequency_mhz || m.freq_mhz || m.czestotliwosc || m['częstotliwość'] || 0),
+        erp_kw: Number(m.erp_kw || m.erp || 0),
+        polarization: String(m.polarization || m.polaryzacja || '').trim() || '—',
+        band: String(m.band || m.pasmo || '').trim() || bandFromFreq(Number(m.frequency_mhz || m.freq_mhz || 0))
+      })).filter(m => m.mux !== 'MUX-?' || m.frequency_mhz || m.channel !== '—')
+    })).filter(tx => Number.isFinite(tx.lat) && Number.isFinite(tx.lon));
+  }
+  function slug(s) { return String(s).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,''); }
+  function bandFromFreq(f) { if (!f) return '—'; return f < 300 ? 'VHF' : 'UHF'; }
+  function updateDatasetChip() {
+    const chip = $('onlineChip');
+    const type = state.datasetMeta?.dataset_type || 'local';
+    chip.textContent = navigator.onLine ? 'Online' : 'Offline';
+    chip.title = `Baza: ${type}`;
+  }
+
+  function transmitterScore(tx) {
+    const dist = km(state.rx, { lat: tx.lat, lon: tx.lon });
+    const erp = Math.max(1, ...tx.muxes.map(m => Number(m.erp_kw || 0)));
+    const muxCount = tx.muxes.length;
+    return dist - Math.log10(erp + 1) * 16 - muxCount * 1.8;
+  }
+  function filteredTxs() {
+    return state.transmitters
+      .filter(tx => state.muxFilter === 'ALL' || tx.muxes.some(m => m.mux === state.muxFilter))
+      .map(tx => ({ ...tx, distance: km(state.rx, tx), azimuth: bearing(state.rx, tx), score: transmitterScore(tx) }))
+      .sort((a,b) => a.score - b.score);
+  }
+
+  function renderTransmitters() {
+    txLayer.clearLayers();
+    filteredTxs().forEach(tx => {
+      const marker = L.marker([tx.lat, tx.lon], { icon: divIcon('⌁', state.selected?.id === tx.id ? 'tx-icon tx-selected' : 'tx-icon') }).addTo(txLayer);
+      marker.bindTooltip(`${tx.name}<br>${round(tx.distance,1)} km · ${round(tx.azimuth)}°`, { direction: 'top', opacity: .95, sticky: true });
+      marker.on('click', (e) => { L.DomEvent.stopPropagation(e); selectTx(tx.id, true); });
+    });
+  }
+  function selectBest(openSheet = false) {
+    const list = filteredTxs();
+    if (list[0]) selectTx(list[0].id, openSheet);
+  }
+  function selectTx(id, openSheet = true) {
+    const source = state.transmitters.find(t => t.id === id);
+    if (!source) return;
+    const tx = { ...source, distance: km(state.rx, source), azimuth: bearing(state.rx, source) };
+    state.selected = tx;
+    state.targetBearing = tx.azimuth;
+    renderTransmitters();
+    drawLink();
+    updateStationPanel();
+    updateMiniCompass();
+    renderCoverageSummary();
+    if (openSheet) showSheet(false);
+  }
+  function drawLink() {
+    if (linkLine) map.removeLayer(linkLine);
+    if (distanceLabel) map.removeLayer(distanceLabel);
+    if (!state.selected) return;
+    const a = [state.rx.lat, state.rx.lon], b = [state.selected.lat, state.selected.lon];
+    linkLine = L.polyline([a,b], { color: '#2563eb', weight: 3, opacity: .88 }).addTo(map);
+    const mid = [(a[0]+b[0])/2, (a[1]+b[1])/2];
+    distanceLabel = L.marker(mid, { icon: L.divIcon({ className: 'distance-label', html: `${round(state.selected.distance,1)} km` }) }).addTo(map);
+  }
+  function setRx(lat, lon, label, opts = {}) {
+    state.rx = { lat, lon, label };
+    rxMarker.setLatLng([lat, lon]);
+    $('locationChip').textContent = `🏠 ${label}`;
+    saveState();
+    renderTransmitters();
+    selectBest(false);
+    if (opts.pan !== false) map.setView([lat, lon], Math.max(map.getZoom(), 9));
+    forceMapResizeHard();
+  }
+
+  function updateStationPanel() {
+    const tx = state.selected;
+    if (!tx) return;
+    $('stationName').textContent = tx.name;
+    $('azimuthValue').textContent = `${round(tx.azimuth)}°`;
+    $('distanceValue').textContent = `${round(tx.distance,1)} km`;
+    $('polarizationValue').textContent = unique(tx.muxes.map(m => m.polarization)).join('/') || '—';
+    $('muxValue').textContent = tx.muxes.map(m => m.mux.replace('MUX-','')).join(' / ') || '—';
+    $('stationDetails').innerHTML = `<div class="section-title">Multipleksy nadajnika</div><div class="mux-list">${tx.muxes.map(m => `<div class="mux-card"><div>MUX: <b>${m.mux}</b></div><div>Kanał: <b>${m.channel}</b></div><div>Częst.: ${m.frequency_mhz || '—'} MHz</div><div>ERP: ${m.erp_kw || '—'} kW</div><div>Pol.: ${m.polarization} / ${m.band}</div></div>`).join('')}</div>`;
+  }
+  function showSheet(compact=true) {
+    const s = $('bottomSheet');
+    state.sheetHidden = false;
+    s.classList.remove('is-hidden');
+    s.classList.toggle('is-compact', compact);
+    $('reopenSheet').hidden = true;
+    saveState();
+    setTimeout(forceMapResizeHard, 60);
+  }
+  function hideSheet(showReopen=false) {
+    state.sheetHidden = true;
+    $('bottomSheet').classList.add('is-hidden');
+    $('reopenSheet').hidden = !showReopen;
+    saveState();
+    setTimeout(forceMapResizeHard, 60);
+  }
+  function toggleSheet() { $('bottomSheet').classList.contains('is-hidden') ? showSheet(true) : hideSheet(true); }
+
+  function openPopover(title, html, opts={}) {
+    if (opts.keepSheet !== true) hideSheet(true);
+    $('popoverTitle').textContent = title;
+    $('popoverBody').innerHTML = html;
+    $('popover').hidden = false;
+    setTimeout(forceMapResizeHard, 60);
+  }
+  function closePopover() { $('popover').hidden = true; }
+
+  function panelTransmitters() {
+    const rows = filteredTxs().map(tx => `<button data-tx="${tx.id}"><div><b>${tx.name}</b><br><span>${round(tx.distance,1)} km · ${round(tx.azimuth)}° · ${tx.muxes.map(m=>m.mux.replace('MUX-','')).join('/')}</span></div><span>›</span></button>`).join('');
+    openPopover('Nadajniki', `<p class="muted">Lista jest widoczna także na mapie jako znaczniki. Kliknij nadajnik, żeby wybrać.</p><div class="list">${rows}</div>`);
+    $('popoverBody').querySelectorAll('[data-tx]').forEach(btn => btn.addEventListener('click', () => { closePopover(); selectTx(btn.dataset.tx, true); }));
+  }
+  function panelLayers() {
+    openPopover('Warstwy', `<div class="list">
+      ${['std','light','terrain'].map(k => `<button data-layer="${k}"><b>${k === 'std' ? 'Mapa standardowa OSM' : k === 'light' ? 'Jasna mapa Carto' : 'Mapa terenowa OpenTopoMap'}</b><span>${state.baseLayer===k?'aktywna':''}</span></button>`).join('')}
+      <button id="toggleCoverage"><b>Prawdziwa warstwa zasięgu</b><span>${state.coverageVisible?'włączona':'wyłączona'} · GeoJSON/licencjonowane kafelki</span></button>
+    </div>`);
+    $('popoverBody').querySelectorAll('[data-layer]').forEach(btn => btn.addEventListener('click', () => setLayer(btn.dataset.layer)));
+    $('toggleCoverage').addEventListener('click', () => { state.coverageVisible = !state.coverageVisible; saveState(); applyCoverageVisibility(); closePopover(); });
+  }
+  function setLayer(layer) {
+    Object.values(baseLayers).forEach(l => { if (map.hasLayer(l)) map.removeLayer(l); });
+    state.baseLayer = layer;
+    (baseLayers[layer] || baseLayers.std).addTo(map);
+    saveState(); closePopover(); forceMapResizeHard();
+  }
+  function panelFilters() {
+    const muxes = ['ALL','MUX-1','MUX-2','MUX-3','MUX-6','MUX-8'];
+    openPopover('Filtry', `<div class="list">${muxes.map(m => `<button data-mux="${m}"><b>${m==='ALL'?'Wszystkie MUX-y':m}</b><span>${state.muxFilter===m?'aktywne':''}</span></button>`).join('')}</div>`);
+    $('popoverBody').querySelectorAll('[data-mux]').forEach(btn => btn.addEventListener('click', () => { state.muxFilter = btn.dataset.mux; saveState(); closePopover(); renderTransmitters(); selectBest(true); }));
+  }
+
+  function panelCompass() {
+    openPopover('Kompas', `<div class="compass-panel">
+      <div class="compass-big"><span>N</span><i class="compass-phone" id="bigPhoneNeedle"></i><i class="compass-target" id="bigTargetNeedle"></i></div>
+      <div><b>Cel:</b> ${state.selected ? `${state.selected.name}, ${round(state.selected.azimuth)}°` : 'wybierz nadajnik'}<br><span class="muted">Pomarańczowy: telefon. Niebieski: nadajnik.</span></div>
+    </div>
+    <div class="list">
+      <button id="startCompass"><b>Włącz kompas telefonu</b><span>czujnik kierunku</span></button>
+      <button id="stopCompass"><b>Zatrzymaj kompas</b><span>tryb ręczny</span></button>
+    </div>
+    <div class="form-row"><label>Ręczny kierunek</label><input id="manualHeading" type="range" min="0" max="359" value="${state.heading ?? 0}"></div>
+    <p class="warn">Telefon przy maszcie, antenie, aucie albo blasze może przekłamywać. Do finalnego ustawienia użyj miernika.</p>`);
+    $('startCompass').addEventListener('click', startCompass);
+    $('stopCompass').addEventListener('click', stopCompass);
+    $('manualHeading').addEventListener('input', e => { state.heading = Number(e.target.value); saveState(); updateMiniCompass(); updateBigCompass(); });
+    updateBigCompass();
+  }
+  async function startCompass() {
+    try {
+      if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+        const p = await DeviceOrientationEvent.requestPermission();
+        if (p !== 'granted') throw new Error('Brak zgody na kompas.');
+      }
+      if (headingHandler) window.removeEventListener('deviceorientation', headingHandler, true);
+      headingHandler = (ev) => {
+        const h = ev.webkitCompassHeading ?? (ev.alpha != null ? (360 - ev.alpha) % 360 : null);
+        if (h != null) { state.heading = h; state.compassEnabled = true; saveState(); updateMiniCompass(); updateBigCompass(); }
+      };
+      window.addEventListener('deviceorientation', headingHandler, true);
+      $('miniCompass').hidden = false;
+      toast('Kompas włączony');
+    } catch (err) { toast(err.message || 'Nie udało się włączyć kompasu'); }
+  }
+  function stopCompass() { if (headingHandler) window.removeEventListener('deviceorientation', headingHandler, true); state.compassEnabled = false; updateMiniCompass(); toast('Kompas zatrzymany'); }
+  function updateMiniCompass() {
+    const box = $('miniCompass');
+    if (!state.selected) { box.hidden = true; return; }
+    box.hidden = false;
+    const target = state.selected.azimuth;
+    const phone = state.heading ?? 0;
+    $('phoneNeedle').style.transform = `translate(-50%,-100%) rotate(${phone}deg)`;
+    $('targetNeedle').style.transform = `translate(-50%,-100%) rotate(${target}deg)`;
+    const diff = signedDiff(phone, target), abs = Math.abs(diff);
+    $('turnText').textContent = abs <= 5 ? 'Kierunek prawidłowy' : `Obróć ${round(abs)}° ${diff > 0 ? 'w prawo' : 'w lewo'}`;
+    $('headingText').textContent = `Telefon: ${state.heading == null ? '—' : round(phone)+'°'} · Cel: ${round(target)}°`;
+    $('compassNote').textContent = state.compassEnabled ? 'Tryb kompasu telefonu.' : 'Tryb ręczny / bez czujnika.';
+  }
+  function updateBigCompass() {
+    const a = $('bigPhoneNeedle'), b = $('bigTargetNeedle');
+    if (!a || !b || !state.selected) return;
+    a.style.transform = `translate(-50%,-100%) rotate(${state.heading ?? 0}deg)`;
+    b.style.transform = `translate(-50%,-100%) rotate(${state.selected.azimuth}deg)`;
+  }
+
+  async function locateGps() {
+    if (!navigator.geolocation) return toast('Brak GPS w przeglądarce');
+    navigator.geolocation.getCurrentPosition(pos => {
+      setRx(pos.coords.latitude, pos.coords.longitude, 'GPS / punkt odbioru');
+      map.setView([state.rx.lat, state.rx.lon], 11);
+    }, () => toast('Nie udało się pobrać GPS'), { enableHighAccuracy:true, timeout:10000, maximumAge:5000 });
+  }
+  async function searchAddress(e) {
+    e.preventDefault();
+    const q = $('searchInput').value.trim(); if (!q) return;
+    try {
+      const url = `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(q)}`;
+      const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
+      const data = await res.json();
+      if (!data[0]) return toast('Nie znaleziono adresu');
+      const lat = Number(data[0].lat), lon = Number(data[0].lon);
+      setRx(lat, lon, q); map.setView([lat, lon], 12);
+    } catch { toast('Błąd wyszukiwania adresu'); }
+  }
+
+  function panelProfile() {
+    if (!state.selected) return toast('Najpierw wybierz nadajnik');
+    const tx = state.selected;
+    openPopover('Profil terenu', `<div class="profile-actions">
+      <div class="form-row"><label>Wysokość anteny odbiorczej</label><input id="rxHeightInput" type="number" min="1" max="60" value="${state.rxAntennaHeight}"><span>m</span></div>
+      <button class="primary-btn" id="loadProfileBtn">Wczytaj prawdziwy profil</button>
+    </div>
+    <div id="profileStatus" class="muted">Profil: ${tx.name}, ${round(tx.distance,1)} km. Źródło: Open-Meteo Elevation API / Copernicus DEM.</div>
+    <div id="profileResult" class="profile-result"></div>`);
+    $('rxHeightInput').addEventListener('change', e => { state.rxAntennaHeight = clamp(Number(e.target.value)||6,1,60); saveState(); });
+    $('loadProfileBtn').addEventListener('click', () => loadAndRenderProfile(true));
+    loadAndRenderProfile(false);
+  }
+
+  function clamp(n,a,b){return Math.max(a,Math.min(b,n));}
+  function profileCacheKey(tx) { return PROFILE_CACHE_PREFIX + [round(state.rx.lat,4), round(state.rx.lon,4), round(tx.lat,4), round(tx.lon,4), state.rxAntennaHeight, tx.height_m].join('|'); }
+  async function loadAndRenderProfile(force=false) {
+    const tx = state.selected; if (!tx) return;
+    const status = $('profileStatus'), target = $('profileResult');
+    if (!target) return;
+    const key = profileCacheKey(tx);
+    if (!force) {
+      try { const cached = JSON.parse(sessionStorage.getItem(key)); if (cached) { renderProfile(cached, target, status); return; } } catch {}
     }
-  });
-}
-
-function showToast(message) {
-  const toast = $("toast");
-  toast.textContent = message;
-  toast.classList.add("visible");
-  clearTimeout(showToast.timeoutId);
-  showToast.timeoutId = setTimeout(() => toast.classList.remove("visible"), 2600);
-}
-
-function loadSavedAntennaHeight() {
-  try {
-    const value = Number(localStorage.getItem("dvbt-mapa.antennaHeightM"));
-    return Number.isFinite(value) ? clamp(value, 1, 40) : 6;
-  } catch {
-    return 6;
+    if (profileAbort) profileAbort.abort();
+    profileAbort = new AbortController();
+    status.textContent = 'Pobieram prawdziwy profil terenu...';
+    target.innerHTML = `<div class="loading">Ładowanie wysokości terenu z Open-Meteo...</div>`;
+    try {
+      const profile = await buildRealTerrainProfile(tx, profileAbort.signal);
+      sessionStorage.setItem(key, JSON.stringify(profile));
+      renderProfile(profile, target, status);
+    } catch (err) {
+      if (err.name === 'AbortError') return;
+      status.innerHTML = `<span class="error">Nie udało się pobrać prawdziwego profilu. Nie pokazuję danych wymyślonych.</span>`;
+      target.innerHTML = `<div class="error-box">${escapeHtml(err.message || 'Błąd pobierania profilu.')}</div>`;
+    }
   }
-}
-
-function saveAntennaHeight(value) {
-  try {
-    localStorage.setItem("dvbt-mapa.antennaHeightM", String(value));
-  } catch (error) {
-    console.warn("Nie udało się zapisać wysokości anteny", error);
+  async function buildRealTerrainProfile(tx, signal) {
+    const dist = km(state.rx, tx);
+    const n = clamp(Math.ceil(dist * 1.4), 40, 96);
+    const brg = bearing(state.rx, tx);
+    const pts = Array.from({length:n}, (_,i) => destinationPoint(state.rx, brg, dist * i / (n-1)));
+    const elev = await fetchElevations(pts, signal);
+    if (!elev || elev.length !== pts.length) throw new Error('API zwróciło niepełne dane wysokości.');
+    const rxGround = elev[0], txGround = elev[elev.length-1];
+    const rxTop = rxGround + state.rxAntennaHeight;
+    const txTop = txGround + Number(tx.height_m || 50);
+    const samples = pts.map((p,i) => {
+      const x = dist * i / (n-1);
+      const los = rxTop + (txTop - rxTop) * (i / (n-1));
+      return { lat:p.lat, lon:p.lon, x_km:x, elevation:elev[i], los, clearance: los - elev[i] };
+    });
+    const inner = samples.slice(2,-2);
+    const minSample = inner.reduce((a,b) => b.clearance < a.clearance ? b : a, inner[0] || samples[0]);
+    let status = 'Teren wygląda czysto';
+    if (minSample.clearance < -20) status = 'Silne zasłonięcie terenu';
+    else if (minSample.clearance < 8) status = 'Częściowe zasłonięcie terenu';
+    return { tx: { id:tx.id, name:tx.name, height_m:tx.height_m, lat:tx.lat, lon:tx.lon }, rx: state.rx, rxAntennaHeight: state.rxAntennaHeight, distance_km: dist, samples, minClearance: minSample.clearance, minAtKm: minSample.x_km, status, source: 'Open-Meteo Elevation API / Copernicus DEM GLO-90' };
   }
-}
-
-function clamp(value, min, max) {
-  return Math.min(max, Math.max(min, value));
-}
-
-function loadSavedHome() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return { ...DEFAULT_HOME };
-    const data = JSON.parse(raw);
-    if (!Number.isFinite(Number(data.lat)) || !Number.isFinite(Number(data.lon))) return { ...DEFAULT_HOME };
-    return { lat: Number(data.lat), lon: Number(data.lon), name: data.name || "Zapisany punkt odbioru", source: data.source || "saved" };
-  } catch {
-    return { ...DEFAULT_HOME };
+  async function fetchElevations(points, signal) {
+    if (state.paidElevationTemplate) return fetchPaidElevations(points, signal);
+    const chunks = [];
+    for (let i=0; i<points.length; i+=100) chunks.push(points.slice(i,i+100));
+    const out = [];
+    for (const ch of chunks) {
+      const lat = ch.map(p => round(p.lat,5)).join(',');
+      const lon = ch.map(p => round(p.lon,5)).join(',');
+      const url = `https://api.open-meteo.com/v1/elevation?latitude=${lat}&longitude=${lon}`;
+      const res = await fetch(url, { signal, cache: 'no-store' });
+      if (!res.ok) throw new Error(`Open-Meteo: HTTP ${res.status}`);
+      const json = await res.json();
+      if (!Array.isArray(json.elevation)) throw new Error('Open-Meteo nie zwróciło tablicy elevation.');
+      out.push(...json.elevation.map(Number));
+    }
+    return out;
   }
-}
-
-function saveHome(home) {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(home));
-  } catch (error) {
-    console.warn("Nie udało się zapisać lokalizacji", error);
+  async function fetchPaidElevations(points, signal) {
+    const out=[];
+    for (const p of points) {
+      const url = state.paidElevationTemplate.replaceAll('{lat}', round(p.lat,6)).replaceAll('{lon}', round(p.lon,6));
+      const res = await fetch(url, { signal, cache:'no-store' });
+      if (!res.ok) throw new Error(`Płatne API elewacji: HTTP ${res.status}`);
+      const json = await res.json();
+      const val = Number(json.elevation ?? json.height ?? json.value ?? (Array.isArray(json.elevation) ? json.elevation[0] : NaN));
+      if (!Number.isFinite(val)) throw new Error('Płatne API elewacji zwróciło nieznany format.');
+      out.push(val);
+    }
+    return out;
   }
-}
-
-function loadSavedBaseLayer() {
-  try {
-    const saved = localStorage.getItem(BASE_LAYER_STORAGE_KEY);
-    // Etap 12: nie przejmuj ciężkich/starych podkładów po poprzednich wersjach, bo na telefonie powodowały puste kafle.
-    if (saved === "Jasna mapa" || saved === "Mapa standardowa") return saved;
-    return "Mapa standardowa";
-  } catch {
-    return "Mapa standardowa";
+  function renderProfile(profile, target, status) {
+    status.innerHTML = `Profil prawdziwy. Źródło: <b>${escapeHtml(profile.source)}</b>.`;
+    const w=620,h=230,padL=42,padR=14,padT=16,padB=34;
+    const vals = profile.samples.map(s=>s.elevation).concat(profile.samples.map(s=>s.los));
+    const minY = Math.floor((Math.min(...vals)-30)/50)*50;
+    const maxY = Math.ceil((Math.max(...vals)+30)/50)*50;
+    const maxX = profile.distance_km;
+    const x = s => padL + (s.x_km/maxX)*(w-padL-padR);
+    const y = v => padT + (maxY-v)/(maxY-minY)*(h-padT-padB);
+    const terrain = profile.samples.map(s=>`${x(s)},${y(s.elevation)}`).join(' ');
+    const fill = `${padL},${h-padB} ${terrain} ${w-padR},${h-padB}`;
+    const los = profile.samples.map(s=>`${x(s)},${y(s.los)}`).join(' ');
+    const bad = profile.samples.filter(s=>s.clearance<8).map(s=>`${x(s)},${y(s.elevation)}`).join(' ');
+    const dangerClass = profile.minClearance < -20 ? 'danger' : profile.minClearance < 8 ? 'warn' : 'ok';
+    target.innerHTML = `<div class="profile-card ${dangerClass}">
+      <svg viewBox="0 0 ${w} ${h}" class="profile-svg" role="img" aria-label="Profil terenu">
+        <line x1="${padL}" y1="${y(minY)}" x2="${w-padR}" y2="${y(minY)}" class="grid"/>
+        <line x1="${padL}" y1="${y((minY+maxY)/2)}" x2="${w-padR}" y2="${y((minY+maxY)/2)}" class="grid"/>
+        <line x1="${padL}" y1="${y(maxY)}" x2="${w-padR}" y2="${y(maxY)}" class="grid"/>
+        <text x="4" y="${y(maxY)+4}" class="axis">${maxY} m</text><text x="4" y="${y((minY+maxY)/2)+4}" class="axis">${round((minY+maxY)/2)} m</text><text x="4" y="${y(minY)+4}" class="axis">${minY} m</text>
+        <polygon points="${fill}" class="terrain-fill"/><polyline points="${terrain}" class="terrain-line"/>
+        ${bad ? `<polyline points="${bad}" class="terrain-bad"/>` : ''}
+        <polyline points="${los}" class="los-line"/>
+        <circle cx="${padL}" cy="${y(profile.samples[0].elevation)}" r="4" class="home-dot"/><circle cx="${w-padR}" cy="${y(profile.samples.at(-1).elevation)}" r="4" class="tx-dot"/>
+        <text x="${padL}" y="${h-8}" class="axis">Dom +${profile.rxAntennaHeight} m</text><text x="${w-padR-95}" y="${h-8}" class="axis">Nadajnik +${profile.tx.height_m} m</text>
+      </svg>
+      <div class="profile-summary"><b>${profile.status}</b><span>Najmniejszy zapas: ${round(profile.minClearance,1)} m · miejsce: ${round(profile.minAtKm,1)} km · dystans: ${round(profile.distance_km,1)} km</span></div>
+    </div>`;
   }
-}
 
-function saveBaseLayer(name) {
-  try {
-    localStorage.setItem(BASE_LAYER_STORAGE_KEY, name);
-  } catch (error) {
-    console.warn("Nie udało się zapisać podkładu mapy", error);
+  async function loadRealCoverageGeoJson() {
+    try {
+      const res = await fetch(`./data/coverage.geojson?v=${VERSION_Q}`, { cache: 'no-cache' });
+      if (!res.ok) return;
+      const geo = await res.json();
+      if (!geo.features || !geo.features.length) return;
+      coverageGeoJsonLayer = L.geoJSON(geo, { style: f => ({ className: 'coverage-real', color: f.properties?.color || '#16a34a', weight: 1.4, fillOpacity: Number(f.properties?.opacity ?? 0.18) }) });
+      if (state.coverageVisible) coverageGeoJsonLayer.addTo(coverageLayer);
+    } catch {}
   }
-}
-
-function loadSavedMuxFilters() {
-  try {
-    const raw = localStorage.getItem(MUX_STORAGE_KEY);
-    if (!raw) return new Set(ALL_MUX);
-    const parsed = JSON.parse(raw);
-    if (!Array.isArray(parsed)) return new Set(ALL_MUX);
-    const valid = parsed.filter((mux) => ALL_MUX.includes(mux));
-    return new Set(valid.length ? valid : ALL_MUX);
-  } catch {
-    return new Set(ALL_MUX);
+  function restorePaidCoverageLayer() {
+    if (!state.paidCoverageTileUrl) return;
+    paidCoverageLayer = L.tileLayer(state.paidCoverageTileUrl, { opacity: .55, maxZoom: 19, crossOrigin: true });
+    if (state.coverageVisible) paidCoverageLayer.addTo(coverageLayer);
   }
-}
-
-function saveMuxFilters() {
-  try {
-    localStorage.setItem(MUX_STORAGE_KEY, JSON.stringify([...state.activeMuxFilters]));
-  } catch (error) {
-    console.warn("Nie udało się zapisać filtrów MUX", error);
+  function applyCoverageVisibility() {
+    if (state.coverageVisible) {
+      if (coverageGeoJsonLayer && !coverageLayer.hasLayer(coverageGeoJsonLayer)) coverageGeoJsonLayer.addTo(coverageLayer);
+      if (paidCoverageLayer && !coverageLayer.hasLayer(paidCoverageLayer)) paidCoverageLayer.addTo(coverageLayer);
+    } else coverageLayer.clearLayers();
   }
-}
+  function renderCoverageSummary() { /* miejsce na legalną warstwę pokrycia; nie rysujemy udawanego zasięgu */ }
 
-function locationSourceName(source) {
-  const map = {
-    default: "domyślny",
-    saved: "zapisany",
-    gps: "GPS",
-    map: "kliknięcie mapy",
-    drag: "przeciągnięcie znacznika",
-    search: "wyszukiwarka",
-    manual: "ręcznie"
-  };
-  return map[source] || source || "nieznane";
-}
+  function panelCoverage() {
+    openPopover('Zasięg', `<p class="muted"><b>Nie rysuję udawanego pokrycia.</b> Aplikacja pokazuje prawdziwy zasięg tylko z legalnie wczytanej warstwy GeoJSON albo z licencjonowanych kafelków XYZ/WMS.</p>
+      <div class="list">
+        <button id="loadLocalCoverage"><b>Wczytaj lokalną warstwę GeoJSON</b><span>prawdziwe poligony pokrycia, jeśli masz plik</span></button>
+      </div>
+      <input id="coverageFile" type="file" accept=".geojson,.json" hidden>
+      <div class="form-stack"><label>URL kafelków pokrycia, płatne/licencjonowane</label><input id="coverageUrl" placeholder="https://.../{z}/{x}/{y}.png" value="${escapeAttr(state.paidCoverageTileUrl)}"><button class="primary-btn" id="saveCoverageUrl">Zapisz warstwę</button></div>`);
+    $('loadLocalCoverage').addEventListener('click', () => $('coverageFile').click());
+    $('coverageFile').addEventListener('change', importCoverageFile);
+    $('saveCoverageUrl').addEventListener('click', () => {
+      state.paidCoverageTileUrl = $('coverageUrl').value.trim(); saveState();
+      if (paidCoverageLayer) coverageLayer.removeLayer(paidCoverageLayer);
+      paidCoverageLayer = null;
+      restorePaidCoverageLayer();
+      toast('Zapisano warstwę pokrycia');
+    });
+  }
+  async function importCoverageFile(e) {
+    const file = e.target.files?.[0]; if (!file) return;
+    const text = await file.text();
+    const geo = JSON.parse(text);
+    if (coverageGeoJsonLayer) coverageLayer.removeLayer(coverageGeoJsonLayer);
+    coverageGeoJsonLayer = L.geoJSON(geo, { style: f => ({ color: f.properties?.color || '#16a34a', weight:1.4, fillOpacity:Number(f.properties?.opacity ?? 0.18) }) }).addTo(coverageLayer);
+    state.coverageVisible = true; saveState(); closePopover(); toast('Wczytano warstwę GeoJSON');
+  }
 
-function distanceKm(lat1, lon1, lat2, lon2) {
-  const R = 6371;
-  const dLat = toRad(lat2 - lat1);
-  const dLon = toRad(lon2 - lon1);
-  const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-}
+  function panelData() {
+    const meta = state.datasetMeta || {};
+    openPopover('Dane / API', `<p class="muted">Baza: <b>${escapeHtml(meta.dataset_type || 'lokalna')}</b>. Nadajniki w aplikacji: <b>${state.transmitters.length}</b>.</p>
+      <div class="list">
+        <button id="importFileBtn"><b>Importuj nadajniki z JSON/CSV</b><span>najpewniejsza metoda, bez problemów CORS</span></button>
+        <button id="tryUkeH"><b>Spróbuj pobrać UKE CSV H</b><span>jeśli CORS pozwoli</span></button>
+        <button id="tryUkeR"><b>Spróbuj pobrać UKE CSV R</b><span>jeśli CORS pozwoli</span></button>
+        <button id="exportJson"><b>Eksportuj obecną bazę JSON</b><span>do dalszej edycji</span></button>
+      </div>
+      <input id="importTxFile" type="file" accept=".json,.csv,.txt" hidden>
+      <div class="form-stack"><label>Płatne API elewacji, opcjonalnie</label><input id="paidElevUrl" placeholder="https://.../elevation?lat={lat}&lon={lon}&key=..." value="${escapeAttr(state.paidElevationTemplate)}"><button class="primary-btn" id="savePaidElev">Zapisz API elewacji</button></div>
+      <p class="muted small">Darmowe źródła dodane w paczce: Open-Meteo Elevation, linki UKE CSV, opis licencji RadioPolska. Gotowe mapy pokrycia RadioPolska/Emitel nie są kopiowane bez zgody.</p>`);
+    $('importFileBtn').addEventListener('click', () => $('importTxFile').click());
+    $('importTxFile').addEventListener('change', importTxFile);
+    $('tryUkeH').addEventListener('click', () => tryFetchUke(UKE_CSV_H));
+    $('tryUkeR').addEventListener('click', () => tryFetchUke(UKE_CSV_R));
+    $('exportJson').addEventListener('click', exportCurrentJson);
+    $('savePaidElev').addEventListener('click', () => { state.paidElevationTemplate = $('paidElevUrl').value.trim(); saveState(); toast('Zapisano API elewacji'); });
+  }
+  async function tryFetchUke(url) {
+    try {
+      toast('Pobieram CSV UKE...');
+      const res = await fetch(url, { cache:'no-store' });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const text = await res.text();
+      const imported = parseCsvToTransmitters(text);
+      if (!imported.length) throw new Error('Nie rozpoznałem kolumn CSV. Pobierz plik i dostosuj do szablonu.');
+      applyImportedTransmitters(imported, 'UKE CSV');
+    } catch (err) {
+      toast('Nie udało się pobrać UKE przez CORS. Pobierz CSV i importuj plik ręcznie.');
+      window.open(url, '_blank', 'noopener');
+    }
+  }
+  async function importTxFile(e) {
+    const file = e.target.files?.[0]; if (!file) return;
+    const text = await file.text();
+    try {
+      let imported;
+      if (file.name.toLowerCase().endsWith('.json')) {
+        const json = JSON.parse(text);
+        imported = normalizeTransmitters(json.transmitters || json);
+      } else imported = parseCsvToTransmitters(text);
+      if (!imported.length) throw new Error('Brak rozpoznanych nadajników.');
+      applyImportedTransmitters(imported, file.name);
+    } catch (err) { toast(err.message || 'Błąd importu'); }
+  }
+  function applyImportedTransmitters(imported, source) {
+    state.transmitters = normalizeTransmitters(imported);
+    state.datasetMeta = { version: VERSION, dataset_type: 'imported', source, updated_at: new Date().toISOString() };
+    localStorage.setItem('dvbt-point-transmitters-v14', JSON.stringify({ meta: state.datasetMeta, transmitters: state.transmitters }));
+    renderTransmitters(); selectBest(true); updateDatasetChip(); closePopover(); toast(`Zaimportowano ${state.transmitters.length} nadajników`);
+  }
+  function loadImportedTransmittersIfAny() {
+    try {
+      const saved = JSON.parse(localStorage.getItem('dvbt-point-transmitters-v14'));
+      if (saved?.transmitters?.length) { state.datasetMeta = saved.meta; state.transmitters = normalizeTransmitters(saved.transmitters); return true; }
+    } catch {}
+    return false;
+  }
+  function parseCsvToTransmitters(text) {
+    const rows = parseCsv(text); if (!rows.length) return [];
+    const headers = rows[0].map(h => h.trim().toLowerCase());
+    const idx = (...names) => headers.findIndex(h => names.some(n => h.includes(n)));
+    const iName = idx('obiekt','nazwa','stacja','lokalizacja');
+    const iLat = idx('szer','lat'); const iLon = idx('dł','dl','lon','long');
+    const iMux = idx('mux','multipleks'); const iCh = idx('kanał','kanal','k '); const iFreq = idx('częst','czest','mhz'); const iErp = idx('erp','moc'); const iPol = idx('polaryz','pol.'); const iHeight = idx('wysokość','wysokosc','maszt');
+    if (iName < 0 || iLat < 0 || iLon < 0) return [];
+    const mapByKey = new Map();
+    for (const r of rows.slice(1)) {
+      const name = r[iName]?.trim(); const lat = parseNum(r[iLat]); const lon = parseNum(r[iLon]);
+      if (!name || !Number.isFinite(lat) || !Number.isFinite(lon)) continue;
+      const key = slug(`${name}-${lat}-${lon}`);
+      if (!mapByKey.has(key)) mapByKey.set(key, { id:key, name, lat, lon, height_m: parseNum(r[iHeight]) || 50, source:'import CSV', muxes:[] });
+      const tx = mapByKey.get(key);
+      tx.muxes.push({ mux: r[iMux]?.trim() || 'MUX-?', channel: r[iCh]?.trim() || '—', frequency_mhz: parseNum(r[iFreq]) || 0, erp_kw: parseNum(r[iErp]) || 0, polarization: r[iPol]?.trim() || '—', band: bandFromFreq(parseNum(r[iFreq])) });
+    }
+    return [...mapByKey.values()];
+  }
+  function parseCsv(text) {
+    const sep = text.includes(';') ? ';' : ',';
+    const rows=[]; let row=[], cell='', inQ=false;
+    for (let i=0;i<text.length;i++) {
+      const c=text[i], n=text[i+1];
+      if (c==='"' && inQ && n==='"') { cell+='"'; i++; }
+      else if (c==='"') inQ=!inQ;
+      else if (c===sep && !inQ) { row.push(cell); cell=''; }
+      else if ((c==='\n' || c==='\r') && !inQ) { if (cell || row.length) { row.push(cell); rows.push(row); row=[]; cell=''; } if (c==='\r' && n==='\n') i++; }
+      else cell+=c;
+    }
+    if (cell || row.length) { row.push(cell); rows.push(row); }
+    return rows;
+  }
+  function parseNum(v) { if (v == null) return NaN; return Number(String(v).replace(',','.').replace(/[^0-9.\-]/g,'')); }
+  function exportCurrentJson() {
+    const blob = new Blob([JSON.stringify({ meta: state.datasetMeta || {}, transmitters: state.transmitters }, null, 2)], { type:'application/json' });
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'transmitters-export.json'; a.click(); URL.revokeObjectURL(a.href);
+  }
 
-function bearingDeg(lat1, lon1, lat2, lon2) {
-  const y = Math.sin(toRad(lon2 - lon1)) * Math.cos(toRad(lat2));
-  const x = Math.cos(toRad(lat1)) * Math.sin(toRad(lat2)) - Math.sin(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.cos(toRad(lon2 - lon1));
-  return normalizeDeg(toDeg(Math.atan2(y, x)));
-}
+  function panelPwa() {
+    openPopover('PWA', `<div class="list">
+      <button id="reloadApp"><b>Wymuś aktualizację</b><span>odśwież cache aplikacji</span></button>
+      <button id="clearSettings"><b>Wyczyść ustawienia lokalne</b><span>bez kasowania kodu na GitHub</span></button>
+    </div><p class="muted small">Wersja ${VERSION}. Profil terenu jest prawdziwy z API. Zasięg tylko z legalnej warstwy GeoJSON/kafelków.</p>`);
+    $('reloadApp').addEventListener('click', async () => { if ('serviceWorker' in navigator) { const regs = await navigator.serviceWorker.getRegistrations(); await Promise.all(regs.map(r => r.update())); } location.reload(); });
+    $('clearSettings').addEventListener('click', () => { localStorage.removeItem(STORE_KEY); location.reload(); });
+  }
 
-function shortestAngle(from, to) {
-  return ((to - from + 540) % 360) - 180;
-}
+  function bindEvents() {
+    $('gpsBtn').addEventListener('click', locateGps);
+    $('transmittersBtn').addEventListener('click', panelTransmitters);
+    $('layersBtn').addEventListener('click', panelLayers);
+    $('filtersBtn').addEventListener('click', panelFilters);
+    $('compassBtn').addEventListener('click', panelCompass);
+    $('terrainBtn').addEventListener('click', panelProfile);
+    $('pwaBtn').addEventListener('click', panelPwa);
+    $('dataBtn').addEventListener('click', panelData);
+    $('coverageBtn').addEventListener('click', panelCoverage);
+    $('sheetToggleBtn').addEventListener('click', toggleSheet);
+    $('sheetClose').addEventListener('click', () => hideSheet(true));
+    $('collapseSheetBtn').addEventListener('click', () => hideSheet(true));
+    $('reopenSheet').addEventListener('click', () => showSheet(true));
+    $('sheetHandle').addEventListener('click', () => $('bottomSheet').classList.toggle('is-compact'));
+    $('popoverClose').addEventListener('click', closePopover);
+    $('antennaModeBtn').addEventListener('click', () => { hideSheet(true); panelCompass(); });
+    $('profileQuickBtn').addEventListener('click', panelProfile);
+    $('muxQuickBtn').addEventListener('click', () => { showSheet(false); $('stationDetails').scrollIntoView({ behavior:'smooth', block:'nearest' }); });
+    $('searchForm').addEventListener('submit', searchAddress);
+    $('locationChip').textContent = `🏠 ${state.rx.label}`;
+    window.addEventListener('resize', () => { setAppHeight(); forceMapResizeHard(); });
+    window.visualViewport?.addEventListener('resize', () => { setAppHeight(); forceMapResizeHard(); });
+    window.addEventListener('orientationchange', () => setTimeout(forceMapResizeHard, 450));
+    window.addEventListener('online', updateDatasetChip);
+    window.addEventListener('offline', updateDatasetChip);
+  }
 
-function normalizeDeg(value) {
-  return ((value % 360) + 360) % 360;
-}
+  function escapeHtml(s) { return String(s ?? '').replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c])); }
+  function escapeAttr(s) { return escapeHtml(s).replace(/`/g,'&#96;'); }
 
-function toRad(deg) {
-  return deg * Math.PI / 180;
-}
-
-function toDeg(rad) {
-  return rad * 180 / Math.PI;
-}
-
-function escapeHtml(value) {
-  return String(value)
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
-}
-
-function hashString(value) {
-  let hash = 0;
-  for (let i = 0; i < value.length; i++) hash = ((hash << 5) - hash) + value.charCodeAt(i);
-  return hash | 0;
-}
+  async function boot() {
+    setAppHeight(); injectMarkerCss(); bindEvents();
+    await loadTransmitters();
+    loadImportedTransmittersIfAny();
+    initMap();
+    if ('serviceWorker' in navigator) navigator.serviceWorker.register('./service-worker.js').catch(() => {});
+  }
+  boot().catch(err => { console.error(err); toast('Błąd startu aplikacji'); });
+})();

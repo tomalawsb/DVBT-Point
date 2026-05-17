@@ -1,18 +1,17 @@
 {
-  "name": "DVB-T/T2 Mapa Instalatora",
-  "short_name": "DVB-T Mapa",
-  "description": "Responsywna mapa nadajników DVB-T/T2 dla instalatora z PWA/offline i orientacyjną warstwą pokrycia i lokalnym importem danych nadajników oraz przebudowanym lekkim interfejsem mobilnym.",
+  "name": "DVB-T/T2 Point",
+  "short_name": "DVBT Point",
+  "description": "Mapa instalatora DVB-T/T2 z realnym profilem terenu",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "orientation": "any",
-  "background_color": "#f8fafc",
-  "theme_color": "#f8fafc",
-  "categories": ["utilities", "navigation", "productivity"],
+  "background_color": "#f6f8fb",
+  "theme_color": "#f6f8fb",
   "icons": [
     {
       "src": "./assets/icon.svg",
-      "sizes": "512x512",
+      "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any maskable"
     }

@@ -1,0 +1,24 @@
+{
+  "version": "14.0 - 1705261138",
+  "free": {
+    "elevation": {
+      "name": "Open-Meteo Elevation API",
+      "url": "https://api.open-meteo.com/v1/elevation",
+      "keyRequired": false,
+      "note": "Profil terenu pobierany realnie z API. Brak trybu zmyślonego."
+    },
+    "transmitters": {
+      "name": "Emitel — publiczna tabela parametrów emisji",
+      "url": "https://emitel.pl/strefa-widza/",
+      "note": "W aplikacji wpisano bazę startową z publicznych parametrów emisji dla wybranych nadajników. Dane można później rozszerzać/importować."
+    }
+  },
+  "paidOptional": {
+    "coverageApi": {
+      "enabled": false,
+      "endpoint": "",
+      "apiKey": "",
+      "expectedResponse": "GeoJSON FeatureCollection albo lista punktów {lat, lon, level}."
+    }
+  }
+}
