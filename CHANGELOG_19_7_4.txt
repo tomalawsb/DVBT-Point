@@ -1,0 +1,16 @@
+DVB-T/T2 Point 19.7.4 - 1705261715
+
+Zmiany:
+- Zmieniono podejście do DEM: aplikacja nie pobiera już hurtowo siatki dla całej Polski.
+- Dodano przycisk „Pobierz DEM” w panelu wybranego nadajnika.
+- Dodano przycisk „Pobierz DEM dla wybranego nadajnika” w panelu Dane / API.
+- DEM jest pobierany tylko dla aktualnie wybranego nadajnika, w promieniu dobranym z ERP i wysokości anteny.
+- Dane DEM są zapisywane w lokalnym cache przeglądarki localStorage.
+- Profil terenu i obliczanie RF najpierw używają lokalnego cache DEM, a dopiero przy brakach odpytują Open-Meteo.
+- Pobieranie DEM działa partiami i zapisuje postęp po każdej partii.
+- Jeżeli API zwróci limit 429, dotychczas pobrane punkty zostają w cache i można później wznowić pobieranie tym samym przyciskiem.
+- Zaktualizowano numer wersji w UI, tytule strony, app.js i service-worker.js.
+
+Uwagi:
+- To nadal nie jest pełny Longley-Rice/ITM.
+- DEM jest cache'owany lokalnie w przeglądarce, więc po wyczyszczeniu danych strony trzeba będzie pobrać go ponownie.
