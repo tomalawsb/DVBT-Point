@@ -1,9 +1,20 @@
-const CACHE_NAME = 'dvbt-point-15-1705261308';
-const CORE = ['./','./index.html','./css/style.css?v=15.0-1705261308','./js/app.js?v=15.0-1705261308','./data/transmitters.json','./manifest.json','./assets/icon.svg'];
-self.addEventListener('install', e => { self.skipWaiting(); e.waitUntil(caches.open(CACHE_NAME).then(c => c.addAll(CORE)).catch(()=>{})); });
-self.addEventListener('activate', e => { e.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k))))); self.clients.claim(); });
-self.addEventListener('fetch', e => {
-  const u = new URL(e.request.url);
-  if (u.origin !== location.origin) return;
-  e.respondWith(fetch(e.request).then(r => { const copy = r.clone(); caches.open(CACHE_NAME).then(c => c.put(e.request, copy)); return r; }).catch(() => caches.match(e.request).then(r => r || caches.match('./index.html'))));
+const CACHE_NAME = 'dvbt-point-16-1705261322';
+const CORE = ['./','./index.html','./style.css?v=16.0-1705261322','./app.js?v=16.0-1705261322','./data/transmitters.json','./manifest.json','./assets/icon.svg'];
+self.addEventListener('install', event => { self.skipWaiting(); event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(CORE)).catch(()=>{})); });
+self.addEventListener('activate', event => { event.waitUntil((async()=>{ const keys=await caches.keys(); await Promise.all(keys.filter(k=>k!==CACHE_NAME).map(k=>caches.delete(k))); await self.clients.claim(); })()); });
+self.addEventListener('fetch', event => {
+  const req = event.request;
+  if (req.method !== 'GET') return;
+  const url = new URL(req.url);
+  if (url.origin !== location.origin) return;
+  event.respondWith((async()=>{
+    try {
+      const fresh = await fetch(req, {cache:'no-store'});
+      const cache = await caches.open(CACHE_NAME);
+      cache.put(req, fresh.clone()).catch(()=>{});
+      return fresh;
+    } catch(e) {
+      return (await caches.match(req)) || (await caches.match('./index.html'));
+    }
+  })());
 });

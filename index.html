@@ -3,88 +3,79 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="theme-color" content="#eef5fb" />
-  <title>DVB-T/T2 Point 15.0 - 1705261308</title>
-  <link rel="manifest" href="./manifest.json" />
-  <link rel="icon" href="./assets/icon.svg" />
-  <link rel="preconnect" href="https://tile.openstreetmap.org" />
-  <link rel="preconnect" href="https://a.tile.openstreetmap.org" />
-  <link rel="preconnect" href="https://b.tile.openstreetmap.org" />
-  <link rel="preconnect" href="https://c.tile.openstreetmap.org" />
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIINfQbR2K3ZLkHYPKSlEtN0GLTuuDlD5fM=" crossorigin="" />
-  <link rel="stylesheet" href="./css/style.css?v=15.0-1705261308" />
+  <meta name="theme-color" content="#f6f8fc" />
+  <title>DVB-T/T2 Point 16.0 - 1705261322</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" href="assets/icon.svg" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css" />
+  <link rel="stylesheet" href="style.css?v=16.0-1705261322" />
 </head>
 <body>
-  <div id="map" aria-label="Mapa nadajników DVB-T/T2"></div>
+  <div id="app" class="app-shell">
+    <section class="map-stage" aria-label="Mapa DVB-T/T2">
+      <div id="map" class="map"></div>
 
-  <header class="top-ui" aria-label="Górny panel aplikacji">
-    <form id="searchForm" class="search-box" autocomplete="off">
-      <span aria-hidden="true">⌕</span>
-      <input id="searchInput" type="search" placeholder="Adres lub miejscowość" />
-      <button type="submit" title="Szukaj">🔎</button>
-    </form>
-    <div class="chips-row">
-      <button id="locationChip" type="button" class="chip chip-main">🏠 Mielec / punkt odbioru</button>
-      <span class="chip chip-version">15.0 - 1705261308</span>
-      <span id="onlineChip" class="chip chip-online">Online</span>
-    </div>
-  </header>
+      <form id="searchForm" class="search-card glass-panel" autocomplete="off">
+        <span class="search-ico">⌕</span>
+        <input id="searchInput" type="search" placeholder="Wpisz adres lub miejscowość" />
+        <button type="submit" aria-label="Szukaj">OK</button>
+      </form>
 
-  <nav class="fab-stack left-stack" aria-label="Narzędzia lewe">
-    <button id="gpsBtn" class="fab" type="button" title="Użyj GPS">⌖</button>
-    <button id="compassBtn" class="fab" type="button" title="Kompas">🧭</button>
-    <button id="txListBtn" class="fab" type="button" title="Lista nadajników">📡</button>
-  </nav>
-
-  <nav class="fab-stack right-stack" aria-label="Narzędzia prawe">
-    <button id="layersBtn" class="fab" type="button" title="Warstwy">▤</button>
-    <button id="profileBtn" class="fab" type="button" title="Profil terenu">▱</button>
-    <button id="filtersBtn" class="fab" type="button" title="Filtry MUX">☰</button>
-    <button id="dataBtn" class="fab" type="button" title="Dane i API">⚙</button>
-  </nav>
-
-  <section id="compassOverlay" class="compass-overlay" hidden>
-    <button id="compassClose" class="plain-close" type="button" aria-label="Zamknij kompas">×</button>
-    <div class="compass-modern">
-      <div class="ring"><i id="targetNeedle" class="target-needle"></i><i id="phoneNeedle" class="phone-needle"></i><b>N</b></div>
-      <div class="compass-info">
-        <strong id="turnText">Wybierz nadajnik</strong>
-        <span id="headingText">Telefon: — · Cel: —</span>
-        <em id="compassNote">Tryb ręczny / bez czujnika.</em>
+      <div class="chips-row">
+        <button id="locationChip" class="chip main-chip" type="button">🏠 Mielec / punkt odbioru</button>
+        <span class="chip version-chip">16.0 - 1705261322</span>
+        <span id="onlineChip" class="chip online-chip">Online</span>
       </div>
-    </div>
-  </section>
 
-  <aside id="drawer" class="drawer" hidden aria-label="Panel aplikacji">
-    <div class="drawer-head">
-      <strong id="drawerTitle">Panel</strong>
-      <button id="drawerClose" class="plain-close" type="button" aria-label="Zamknij">×</button>
-    </div>
-    <div id="drawerBody" class="drawer-body"></div>
-  </aside>
+      <button id="locateBtn" class="locate-btn glass-panel" type="button" title="Użyj GPS">⌖</button>
 
-  <section id="stationSheet" class="station-sheet" hidden aria-label="Informacje o nadajniku">
-    <div class="sheet-head">
-      <div><span>Wybrany nadajnik</span><strong id="sheetName">—</strong></div>
-      <button id="sheetClose" class="plain-close" type="button" aria-label="Zamknij panel nadajnika">×</button>
-    </div>
-    <div class="sheet-grid">
-      <div><span>Azymut</span><b id="sheetAzimuth">—</b></div>
-      <div><span>Odległość</span><b id="sheetDistance">—</b></div>
-      <div><span>Polaryzacja</span><b id="sheetPol">—</b></div>
-      <div><span>MUX</span><b id="sheetMux">—</b></div>
-    </div>
-    <div class="sheet-actions">
-      <button id="antennaBtn" type="button">Ustaw antenę</button>
-      <button id="sheetProfileBtn" type="button">Profil</button>
-      <button id="sheetMuxBtn" type="button">MUX-y</button>
-    </div>
-  </section>
+      <button id="compassWidget" class="compass-widget glass-panel" type="button" title="Kompas anteny">
+        <span class="compass-ring"><i id="targetNeedle"></i><i id="phoneNeedle"></i><b>N</b></span>
+        <span class="compass-copy"><strong id="turnText">Kompas</strong><small id="headingText">Telefon: — · Cel: —</small></span>
+      </button>
 
-  <button id="openStationBtn" class="open-station" type="button" hidden>📡 Nadajnik</button>
-  <div id="toast" class="toast" hidden></div>
+      <div class="map-actions">
+        <button id="txListBtn" class="map-btn glass-panel" type="button" title="Nadajniki">📡</button>
+        <button id="profileBtn" class="map-btn glass-panel" type="button" title="Profil terenu">▱</button>
+        <button id="layersBtn" class="map-btn glass-panel" type="button" title="Warstwy">▤</button>
+        <button id="filtersBtn" class="map-btn glass-panel" type="button" title="MUX-y">☰</button>
+        <button id="dataBtn" class="map-btn glass-panel" type="button" title="Dane/API">⚙</button>
+      </div>
 
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-  <script src="./js/app.js?v=15.0-1705261308"></script>
+      <button id="openStationBtn" class="floating-action" type="button" hidden>📡 Nadajnik</button>
+
+      <aside id="appPanel" class="app-panel glass-panel collapsed" aria-label="Panel aplikacji">
+        <div class="panel-handle"></div>
+        <div class="panel-top-row">
+          <div><h2 id="panelTitle">Nadajniki</h2><p id="panelSubtitle">Kliknij marker lub wybierz z listy.</p></div>
+          <button id="closePanelBtn" class="icon-close" type="button">×</button>
+        </div>
+        <div id="panelContent" class="panel-content"></div>
+      </aside>
+
+      <section id="stationCard" class="station-card glass-panel" hidden>
+        <div class="station-head">
+          <div><span>Najlepszy nadajnik</span><strong id="stationName">—</strong></div>
+          <button id="closeStationBtn" class="icon-close" type="button" aria-label="Zamknij">×</button>
+        </div>
+        <div class="station-grid">
+          <div><span>Azymut</span><b id="stationAzimuth">—</b></div>
+          <div><span>Odległość</span><b id="stationDistance">—</b></div>
+          <div><span>Polaryzacja</span><b id="stationPol">—</b></div>
+          <div><span>MUX</span><b id="stationMux">—</b></div>
+        </div>
+        <div class="station-actions">
+          <button id="antennaBtn" class="primary" type="button">Ustaw antenę</button>
+          <button id="stationProfileBtn" type="button">Profil</button>
+          <button id="stationMuxBtn" type="button">MUX-y</button>
+        </div>
+      </section>
+
+      <div id="toast" class="toast" hidden></div>
+    </section>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+  <script src="app.js?v=16.0-1705261322"></script>
 </body>
 </html>
