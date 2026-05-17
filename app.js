@@ -1,6 +1,6 @@
 (() => {
   'use strict';
-  const APP_VERSION = '19.12 - 1705261905';
+  const APP_VERSION = '19.13 - 1705261850';
   const STORE = 'dvbt-point-v19-state';
   const $ = id => document.getElementById(id);
   const state = {
@@ -135,7 +135,7 @@
     setBase(state.base, false);
     state.map.on('click', () => { closePanel(); });
     state.map.on('resize', () => state.map.invalidateSize(true));
-    state.map.on('contextmenu', e => setRx(e.latlng.lat, e.latlng.lng, 'Punkt wskazany na mapie', true));
+    state.map.on('contextmenu', e => setRx(e.latlng.lat, e.latlng.lng, 'Punkt wskazany na mapie', true, true));
     for (const ms of [50,180,450,900,1600]) setTimeout(()=>state.map.invalidateSize(true), ms);
   }
   function setBase(type, persist=true){
@@ -349,6 +349,20 @@
   }
 
 
+
+  function showAbout(){
+    openPanel('O programie','Instrukcja obsługi i opis funkcji.', `
+      <div class="info-card"><strong>Do czego służy program</strong><span>Aplikacja pomaga dobrać nadajnik DVB-T/T2 dla wskazanego punktu odbioru. Pokazuje odległość, azymut, MUX-y, moc ERP, profil terenu, kompas anteny i warstwy pomocnicze.</span></div>
+      <div class="info-card"><strong>1. Ustaw punkt odbioru</strong><span>Wpisz adres w polu wyszukiwania, użyj GPS albo przytrzymaj palec na mapie. Od wersji 19.13 zmiana punktu odbioru nie przełącza automatycznie wcześniej wybranego nadajnika.</span></div>
+      <div class="info-card"><strong>2. Wybierz nadajnik</strong><span>Kliknij marker nadajnika albo przycisk z listą nadajników. Na karcie nadajnika zobaczysz azymut, odległość, polaryzację i moc ERP dla emisji/MUX-ów.</span></div>
+      <div class="info-card"><strong>3. Ustaw antenę</strong><span>Przycisk „Ustaw antenę” otwiera kompas. Niebieska igła oznacza kierunek do nadajnika, pomarańczowa kierunek telefonu. Stożek na mapie pokazuje orientacyjny kierunek trzymania telefonu.</span></div>
+      <div class="info-card"><strong>4. Profil terenu</strong><span>Profil wymaga danych wysokości DEM. Program pobiera je z API wysokości i zapisuje w lokalnym cache przeglądarki. Jeżeli API nie odpowiada, program nie udaje prawdziwego terenu prostą kreską — pokaże informację o braku DEM albo użyje tylko częściowego cache jako profil przybliżony.</span></div>
+      <div class="info-card"><strong>5. DEM i zasięg terenowy</strong><span>Przycisk „Pobierz DEM” zapisuje lokalnie wysokości dla okolicy wybranego nadajnika. Obliczony zasięg RF/ITM-lite jest poglądowy: bierze pod uwagę ERP, częstotliwość, wysokość anten, teren i lokalne pliki ANT, jeśli są dostępne.</span></div>
+      <div class="info-card"><strong>6. Warstwy mapy</strong><span>Warstwy przełączają podkład mapy oraz opcjonalną warstwę zasięgu. Jeżeli warstwa pochodzi z zewnętrznego adresu albo pliku GeoJSON, musi być poprawnie podłączona i dostępna dla przeglądarki.</span></div>
+      <div class="info-card"><strong>7. Dane i diagnostyka</strong><span>Panel „Dane i diagnostyka” pokazuje liczbę nadajników, stan cache DEM, diagnostykę plików ANT, obliczenia zasięgu i przycisk wymuszenia aktualizacji PWA.</span></div>
+      <div class="info-card"><strong>Wersja</strong><span>${APP_VERSION}</span></div>`);
+  }
+
   function clearRfLayer(){
     if(state.rfLayer){ state.map.removeLayer(state.rfLayer); state.rfLayer=null; }
     state.lastRf=null;
@@ -391,33 +405,56 @@
   function demStats(){ const c=loadDemCache(); return {points:Object.keys(c).length}; }
   async function fetchElevationsFromApi(points, errText, opts={}){
     const out=[];
-    const retries = Number.isFinite(+opts.retries) ? Math.max(1, +opts.retries) : 4;
+    const retries = Number.isFinite(+opts.retries) ? Math.max(1, +opts.retries) : 3;
     const chunkSize = Number.isFinite(+opts.chunkSize) ? Math.max(1, +opts.chunkSize) : 20;
-    const timeoutMs = Number.isFinite(+opts.timeoutMs) ? Math.max(1000, +opts.timeoutMs) : 9000;
-    const pauseMs = Number.isFinite(+opts.pauseMs) ? Math.max(0, +opts.pauseMs) : 500;
+    const timeoutMs = Number.isFinite(+opts.timeoutMs) ? Math.max(1000, +opts.timeoutMs) : 8000;
+    const pauseMs = Number.isFinite(+opts.pauseMs) ? Math.max(0, +opts.pauseMs) : 400;
+    async function requestJson(url){
+      const timeout = withTimeoutSignal(timeoutMs);
+      try{
+        const r=await fetch(url, {cache:'no-store', signal: timeout.signal});
+        timeout.clear();
+        if(r.status === 429) throw new Error('limit API 429');
+        if(!r.ok) throw new Error('HTTP '+r.status);
+        return await r.json();
+      }catch(e){
+        timeout.clear();
+        throw e;
+      }
+    }
+    async function fetchChunk(chunk){
+      const openMeteo=`https://api.open-meteo.com/v1/elevation?latitude=${chunk.map(p=>p.lat.toFixed(5)).join(',')}&longitude=${chunk.map(p=>p.lon.toFixed(5)).join(',')}`;
+      try{
+        const j=await requestJson(openMeteo);
+        if(Array.isArray(j.elevation) && j.elevation.length === chunk.length) return j.elevation.map(x=>+x);
+        throw new Error('Open-Meteo zwróciło niepełne dane');
+      }catch(firstErr){
+        const locations=chunk.map(p=>`${p.lat.toFixed(5)},${p.lon.toFixed(5)}`).join('|');
+        const openTopo=`https://api.opentopodata.org/v1/srtm90m?locations=${locations}`;
+        try{
+          const j=await requestJson(openTopo);
+          const vals=(j.results||[]).map(x=>+x.elevation);
+          if(vals.length === chunk.length && vals.every(Number.isFinite)) return vals;
+          throw new Error('OpenTopoData zwróciło niepełne dane');
+        }catch(secondErr){
+          throw new Error(`${firstErr.message || firstErr}; zapasowe API: ${secondErr.message || secondErr}`);
+        }
+      }
+    }
     for(let i=0;i<points.length;i+=chunkSize){
       const chunk=points.slice(i,i+chunkSize);
-      const url=`https://api.open-meteo.com/v1/elevation?latitude=${chunk.map(p=>p.lat.toFixed(5)).join(',')}&longitude=${chunk.map(p=>p.lon.toFixed(5)).join(',')}`;
-      let ok=false, lastErr='';
+      let vals=null, lastErr='';
       for(let attempt=1; attempt<=retries; attempt++){
-        const timeout = withTimeoutSignal(timeoutMs);
         try{
-          const r=await fetch(url, {cache:'no-store', signal: timeout.signal});
-          timeout.clear();
-          if(r.status === 429){ lastErr='Limit Open-Meteo 429'; await sleep(Math.min(2500*attempt, 7000)); continue; }
-          if(!r.ok) throw new Error('HTTP '+r.status);
-          const j=await r.json();
-          if(!Array.isArray(j.elevation) || j.elevation.length !== chunk.length) throw new Error('API wysokości zwróciło niepełne dane.');
-          out.push(...j.elevation.map(x=>+x));
-          ok=true;
+          vals=await fetchChunk(chunk);
           break;
         }catch(e){
-          timeout.clear();
-          lastErr = e?.name === 'AbortError' ? 'przekroczono czas oczekiwania' : (e.message||String(e));
+          lastErr=e.message||String(e);
           if(attempt < retries) await sleep(Math.min(900*attempt, 2500));
         }
       }
-      if(!ok) throw new Error((errText || 'Nie udało się pobrać wysokości DEM.') + ' ' + lastErr);
+      if(!vals) throw new Error((errText || 'Nie udało się pobrać wysokości DEM.') + ' ' + lastErr);
+      out.push(...vals);
       if(pauseMs) await sleep(pauseMs);
     }
     return out;
@@ -764,7 +801,8 @@
   }
   async function fetchProfile(a,t){
     if(profileAbort) profileAbort.abort(); profileAbort=new AbortController();
-    const n=26, points=[];
+    const n=42, points=[];
+    const totalDistance = Math.max(0.1, Number.isFinite(+t.distance) ? +t.distance : dist(a,t));
     for(let i=0;i<n;i++){ const f=i/(n-1); points.push({lat:a.lat+(t.lat-a.lat)*f, lon:a.lon+(t.lon-a.lon)*f}); }
     const cache=loadDemCache();
     const elev=new Array(points.length).fill(null);
@@ -777,7 +815,7 @@
     let apiOk=false, apiError='';
     if(missing.length){
       try{
-        const apiElev=await fetchElevationsFromApi(missing, 'Open-Meteo Elevation API nie odpowiedziało podczas pobierania profilu.', {retries:1, timeoutMs:4500, chunkSize:26, pauseMs:0});
+        const apiElev=await fetchElevationsFromApi(missing, 'Nie udało się pobrać prawdziwego profilu DEM.', {retries:2, timeoutMs:7000, chunkSize:20, pauseMs:150});
         missing.forEach((p,idx)=>{ elev[p.i]=+apiElev[idx]; cache[p.key]=+apiElev[idx]; });
         saveDemCache();
         apiOk=true;
@@ -786,16 +824,24 @@
       }
     }
     const known=elev.map((v,i)=>Number.isFinite(+v)?{i,v:+v}:null).filter(Boolean);
-    const txKnown=Number.isFinite(+t.site_elevation_m) ? +t.site_elevation_m : (known.length ? known[known.length-1].v : 200);
-    const rxKnown=known.length ? known[0].v : txKnown;
-    for(let i=0;i<elev.length;i++){
-      if(!Number.isFinite(+elev[i])){
-        const f=i/(elev.length-1);
-        elev[i]=rxKnown + (txKnown-rxKnown)*f;
+    if(!known.length){
+      throw new Error(`Brak danych DEM dla tej trasy. API wysokości nie odpowiedziało: ${apiError || 'brak odpowiedzi'}. Kliknij „Pobierz DEM i odśwież profil” albo spróbuj za chwilę.`);
+    }
+    for(let k=0;k<known.length-1;k++){
+      const a0=known[k], b0=known[k+1];
+      for(let i=a0.i+1;i<b0.i;i++){
+        const f=(i-a0.i)/(b0.i-a0.i);
+        elev[i]=a0.v+(b0.v-a0.v)*f;
       }
     }
-    const result=elev.map((e,i)=>({d:t.distance*i/(n-1), e:+e}));
-    result.meta={source: missing.length===0 ? 'cache' : (apiOk ? 'cache-api' : 'fallback'), missing:missing.length, apiError};
+    for(let i=0;i<elev.length;i++){
+      if(!Number.isFinite(+elev[i])){
+        const nearest=known.reduce((best,item)=>Math.abs(item.i-i)<Math.abs(best.i-i)?item:best, known[0]);
+        elev[i]=nearest.v;
+      }
+    }
+    const result=elev.map((e,i)=>({d:totalDistance*i/(n-1), e:+e}));
+    result.meta={source: missing.length===0 ? 'cache' : (apiOk ? 'cache-api' : 'partial-cache'), missing:missing.length, apiError};
     return result;
   }
   function renderProfile(p,t){
@@ -815,10 +861,10 @@
     const msg=worst<0?'Przeszkoda w linii optycznej':worst<10?'Mały zapas nad terenem':'Linia optyczna wygląda czysto';
     const noteClass=worst<0?'profile-note bad':worst<10?'profile-note warn':'profile-note ok';
     const meta=p.meta||{};
-    const sourceText = meta.source === 'fallback'
-      ? `Uwaga: API wysokości nie odpowiedziało, więc narysowano profil awaryjny z dostępnych danych. To NIE jest pełny DEM. ${esc(meta.apiError||'')}`
-      : (meta.source === 'cache' ? 'Teren: lokalny cache DEM.' : 'Teren: lokalny cache DEM + brakujące punkty z Open-Meteo.');
-    $('profileBox').innerHTML=`<svg class="profile-svg" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none"><path d="${area}" fill="#e5e7eb"/><path d="${path}" fill="none" stroke="#475569" stroke-width="2.4"/><line x1="${pad}" y1="${y(rxAlt)}" x2="${W-pad}" y2="${y(txAlt)}" stroke="#111827" stroke-width="2"/><circle cx="${pad}" cy="${y(rxAlt)}" r="5" fill="#2563eb"/><circle cx="${W-pad}" cy="${y(txAlt)}" r="5" fill="#16a34a"/><text x="${pad}" y="18" font-size="13" font-weight="850">Dom +${state.rxHeight} m</text><text x="${W-pad-130}" y="18" font-size="13" font-weight="850">Nadajnik +${txHeight} m</text><text x="${pad}" y="${H-8}" font-size="12" fill="#64748b">0 km</text><text x="${W-pad-46}" y="${H-8}" font-size="12" fill="#64748b">${totalDistance.toFixed(1)} km</text></svg><div class="${noteClass}">${msg}. Najmniejszy zapas: ${Math.round(worst)} m, około ${worstD.toFixed(1)} km od punktu odbioru.</div><div class="profile-meta">${sourceText} Wysokość nadajnika: ${txGroundSource}.</div>`;
+    const sourceText = meta.source === 'partial-cache'
+      ? `Teren: częściowy lokalny cache DEM; brakujące punkty zostały tylko interpolowane. To profil przybliżony. ${esc(meta.apiError||'')}`
+      : (meta.source === 'cache' ? 'Teren: lokalny cache DEM.' : 'Teren: lokalny cache DEM + brakujące punkty pobrane z API wysokości.');
+    $('profileBox').innerHTML=`<svg class="profile-svg" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none"><path d="${area}" fill="#e5e7eb"/><path d="${path}" fill="none" stroke="#475569" stroke-width="2.4"/><line x1="${pad}" y1="${y(rxAlt)}" x2="${W-pad}" y2="${y(txAlt)}" stroke="#111827" stroke-width="2"/><circle cx="${pad}" cy="${y(rxAlt)}" r="5" fill="#2563eb"/><circle cx="${W-pad}" cy="${y(txAlt)}" r="5" fill="#16a34a"/><text x="${pad}" y="18" font-size="13" font-weight="700">Dom +${state.rxHeight} m</text><text x="${W-pad-130}" y="18" font-size="13" font-weight="700">Nadajnik +${txHeight} m</text><text x="${pad}" y="${H-8}" font-size="12" fill="#64748b">0 km</text><text x="${W-pad-46}" y="${H-8}" font-size="12" fill="#64748b">${totalDistance.toFixed(1)} km</text></svg><div class="${noteClass}">${msg}. Najmniejszy zapas: ${Math.round(worst)} m, około ${worstD.toFixed(1)} km od punktu odbioru.</div><div class="profile-meta">${sourceText} Wysokość nadajnika: ${txGroundSource}.</div>`;
   }
 
   function updateCompass(){
@@ -862,7 +908,7 @@
       const {latitude, longitude, heading} = p.coords;
       state.rx={lat:latitude, lon:longitude, label:'GPS / punkt odbioru'};
       if(Number.isFinite(heading) && heading >= 0 && state.headingSource !== 'ios' && state.headingSource !== 'absolute' && state.headingSource !== 'sensor') applyHeading(heading, 'gps');
-      save(); renderHome(); renderConnection(); selectTx(bestTx()?.id,false,false); state.map.panTo([latitude,longitude], {animate:true});
+      save(); renderHome(); renderConnection(); selectTx(state.selected?.id || bestTx()?.id,false,false); state.map.panTo([latitude,longitude], {animate:true});
     },()=>toast('Nie udało się pobrać GPS.'),{enableHighAccuracy:true, timeout:12000, maximumAge:2500});
   }
   function showCompassPanel(){
@@ -885,16 +931,24 @@
     $('resetCompassBtn').onclick=()=>{ state.headingOffset=0; state.headingInvert=false; save(); updateCompass(); toast('Zresetowano korektę kompasu.'); };
   }
 
-  function setRx(lat,lon,label,pan){ state.rx={lat,lon,label}; save(); renderHome(); renderConnection(); selectTx(bestTx()?.id,false,true); if(pan) state.map.setView([lat,lon],12); }
+  function setRx(lat,lon,label,pan,preserveSelected=true){
+    const keepId = preserveSelected && state.selected?.id ? state.selected.id : null;
+    state.rx={lat,lon,label};
+    save();
+    renderHome();
+    renderConnection();
+    selectTx(keepId || bestTx()?.id,false,true);
+    if(pan) state.map.setView([lat,lon],12);
+  }
   async function search(e){ e.preventDefault(); const q=$('searchInput').value.trim(); if(!q) return; try{ const r=await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=pl&q=${encodeURIComponent(q)}`); const j=await r.json(); if(!j[0]) return toast('Nie znaleziono miejsca.'); setRx(+j[0].lat,+j[0].lon,j[0].display_name.split(',').slice(0,2).join(', '),true); }catch{toast('Wyszukiwanie wymaga internetu.');} }
 
   function bind(){
     setDisplayedVersion();
     $('searchForm').onsubmit=search; $('locateBtn').onclick=startGpsWatch;
-    const locationChipBtn = $('locationChip'); if(locationChipBtn) locationChipBtn.onclick=()=>state.map.setView([state.rx.lat,state.rx.lon],12); $('txListBtn').onclick=showTxList; $('profileBtn').onclick=showProfile; $('layersBtn').onclick=showLayers; $('dataBtn').onclick=showData; $('closePanelBtn').onclick=closePanel;
+    const locationChipBtn = $('locationChip'); if(locationChipBtn) locationChipBtn.onclick=()=>state.map.setView([state.rx.lat,state.rx.lon],12); $('txListBtn').onclick=showTxList; $('profileBtn').onclick=showProfile; $('layersBtn').onclick=showLayers; $('dataBtn').onclick=showData; const aboutBtn=$('aboutBtn'); if(aboutBtn) aboutBtn.onclick=showAbout; $('closePanelBtn').onclick=closePanel;
     $('closeStationBtn').onclick=hideStation; $('openStationBtn').onclick=showStation; $('antennaBtn').onclick=()=>{startCompass(false); showCompassPanel();}; $('compassWidget').onclick=()=>{startCompass(false); showCompassPanel();}; $('stationProfileBtn').onclick=showProfile; $('stationMuxBtn').onclick=showMux; $('stationDemBtn').onclick=downloadDemForSelectedTx;
     window.addEventListener('online',()=>{$('onlineChip').textContent='Online';$('onlineChip').classList.add('online-chip');}); window.addEventListener('offline',()=>{$('onlineChip').textContent='Offline';$('onlineChip').classList.remove('online-chip');});
   }
-  async function boot(){ load(); bind(); initMap(); await loadTxs(); if(state.coverageTileUrl) applyCoverageTile(state.coverageTileUrl); startCompass(true); window.addEventListener('pointerdown',()=>startCompass(true),{once:true,passive:true}); if('serviceWorker' in navigator) navigator.serviceWorker.register('./service-worker.js?v=19.12-1705261905').catch(()=>{}); setAppHeight(); }
+  async function boot(){ load(); bind(); initMap(); await loadTxs(); if(state.coverageTileUrl) applyCoverageTile(state.coverageTileUrl); startCompass(true); window.addEventListener('pointerdown',()=>startCompass(true),{once:true,passive:true}); if('serviceWorker' in navigator) navigator.serviceWorker.register('./service-worker.js?v=19.13-1705261850').catch(()=>{}); setAppHeight(); }
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', boot); else boot();
 })();

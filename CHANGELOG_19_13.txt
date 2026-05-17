@@ -1,0 +1,9 @@
+DVB-T/T2 Point 19.13 - 1705261850
+
+Zmiany:
+- poprawiono profil terenu: aplikacja nie rysuje już fałszywego pełnego profilu jako prostej linii, gdy brak danych DEM;
+- dodano zapasowe API wysokości OpenTopoData/SRTM90m, gdy Open-Meteo nie odpowiada;
+- zmiana punktu odbioru przez dłuższe przytrzymanie mapy nie przełącza już ręcznie wybranego nadajnika na najbliższy;
+- dodano panel „O programie” z instrukcją obsługi i opisem funkcji;
+- odchudzono podstawową czcionkę: pogrubione pozostają głównie nagłówki i ważne etykiety;
+- usunięto stare pliki tekstowe zmian, zostawiono tylko trzy ostatnie changelogi.
