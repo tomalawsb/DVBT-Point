@@ -70,3 +70,27 @@ body,.leaflet-container,button,input,select,.tx-item span,.info-card span,.profi
 .search-card input,.compass-copy small,.station-grid span,.panel-top-row p,.status-chip,.version-floating{font-weight:500!important;}
 h1,h2,h3,strong,.tx-item strong,.info-card strong,.station-head strong,.station-grid b,.panel-top-row h2,.profile-note,.panel-btn,.station-actions button,.primary,.icon-close{font-weight:700!important;}
 .profile-svg text{font-weight:600!important;}
+
+
+/* 19.16: profil terenu w stylu profesjonalnej karty, bez optycznego przekoszenia SVG */
+.profile-pro-card{padding:14px!important;border-radius:20px!important;background:#fff!important;box-shadow:0 8px 24px rgba(15,23,42,.06)}
+.profile-svg.pro{width:100%!important;height:auto!important;aspect-ratio:760/460!important;display:block!important;background:#fff!important;border:0!important;border-radius:14px!important;overflow:visible!important}
+.profile-head-values{margin-bottom:8px!important}
+.profile-head-values strong{font-size:13.5px!important;font-weight:700!important;color:#0f172a!important}
+.profile-head-values span{font-size:12.5px!important;font-weight:400!important;color:#475569!important}
+.profile-legend{justify-content:center!important;gap:20px!important;margin:12px 2px 0!important;font-size:13px!important;color:#334155!important}
+.profile-legend span{font-weight:400!important}
+.profile-stats{grid-template-columns:repeat(5,1fr)!important;border-radius:17px!important;margin-top:12px!important}
+.profile-stats div{padding:11px 7px!important}
+.profile-stats span{font-weight:400!important;font-size:10.8px!important}
+.profile-stats strong{font-weight:700!important;font-size:14.5px!important}
+.profile-note{font-weight:400!important;display:grid!important;gap:4px!important;margin-top:12px!important;border-radius:17px!important;padding:13px 15px!important}
+.profile-note strong{font-weight:700!important;font-size:15px!important}
+.profile-note span{font-weight:400!important;font-size:13px!important}
+.profile-meta{font-weight:400!important;font-size:12px!important;line-height:1.45!important;margin-top:10px!important}
+@media(max-width:760px){
+  .profile-pro-card{padding:12px!important;border-radius:18px!important}
+  .profile-svg.pro{aspect-ratio:760/500!important}
+  .profile-legend{gap:10px!important;font-size:11.5px!important;justify-content:flex-start!important}
+  .profile-stats{grid-template-columns:1fr 1fr!important}
+}

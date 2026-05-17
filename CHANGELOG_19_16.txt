@@ -1,0 +1,5 @@
+19.16 - 1705262145
+- Przepisano renderer wykresu profilu terenu na profesjonalny układ SVG.
+- Usunięto optyczne przekoszenie wykresu: SVG nie jest już rozciągane przez preserveAspectRatio="none".
+- Dodano pełniejszą siatkę, osie, skalę, wypełnienie terenu, linię LOS, strefę między profilem a LOS oraz statystyki.
+- Poprawiono wygląd profilu na telefonach: większy wykres, lepsze marginesy, czytelniejsza legenda.

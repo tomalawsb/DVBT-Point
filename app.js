@@ -1,6 +1,6 @@
 (() => {
   'use strict';
-  const APP_VERSION = '19.15 - 1705262135';
+  const APP_VERSION = '19.16 - 1705262145';
   const STORE = 'dvbt-point-v19-state';
   const $ = id => document.getElementById(id);
   const state = {
@@ -932,16 +932,28 @@
     const terrain=p.map(x=>x.e);
     const minTerrain=Math.min(...terrain, rxAlt, txAlt);
     const maxTerrain=Math.max(...terrain, rxAlt, txAlt);
-    const span=Math.max(40, maxTerrain-minTerrain);
-    const min=Math.floor((minTerrain-span*.18)/10)*10;
-    const max=Math.ceil((maxTerrain+span*.20)/10)*10;
-    const W=680,H=350,padL=54,padR=28,padT=42,padB=54;
-    const x=d=>padL+(W-padL-padR)*(d/totalDistance);
-    const y=e=>H-padB-(H-padT-padB)*((e-min)/(max-min));
-    const path=p.map((pt,i)=>`${i?'L':'M'}${x(pt.d).toFixed(1)},${y(pt.e).toFixed(1)}`).join(' ');
-    const area=`M${padL},${H-padB} ${path} L${W-padR},${H-padB} Z`;
-    const losY=d=>y(rxAlt+(txAlt-rxAlt)*(d/totalDistance));
+    const span=Math.max(60, maxTerrain-minTerrain);
+    const min=Math.floor((minTerrain-span*.20)/10)*10;
+    const max=Math.ceil((maxTerrain+span*.16)/10)*10;
+
+    // 19.16: profesjonalny renderer SVG. Bez preserveAspectRatio="none", bo ono optycznie
+    // rozciągało wykres i dawało wrażenie przekoszenia/krzywego profilu na telefonie.
+    const W=760,H=460,padL=66,padR=34,padT=34,padB=70;
+    const chartW=W-padL-padR;
+    const chartH=H-padT-padB;
+    const x=d=>padL+chartW*(d/totalDistance);
+    const y=e=>H-padB-chartH*((e-min)/(max-min));
+    const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+    const terrainPts=p.map(pt=>[x(pt.d), y(pt.e)]);
+    const losPts=p.map(pt=>[x(pt.d), y(rxAlt+(txAlt-rxAlt)*(pt.d/totalDistance))]);
+    const terrainPath=terrainPts.map((pt,i)=>`${i?'L':'M'}${pt[0].toFixed(1)},${pt[1].toFixed(1)}`).join(' ');
+    const terrainArea=`M${padL},${H-padB} ${terrainPath} L${W-padR},${H-padB} Z`;
     const losPath=`M${padL},${y(rxAlt).toFixed(1)} L${W-padR},${y(txAlt).toFixed(1)}`;
+
+    // Delikatna strefa między profilem terenu a linią LOS. To poprawia czytelność jak w Emitelu,
+    // ale nie zastępuje matematyki widoczności — wynik dalej liczymy z realnych próbek DEM.
+    const gapArea = `M${terrainPts.map(pt=>`${pt[0].toFixed(1)},${pt[1].toFixed(1)}`).join(' L')} L${[...losPts].reverse().map(pt=>`${pt[0].toFixed(1)},${pt[1].toFixed(1)}`).join(' L')} Z`;
+
     let worst=999, worstD=0, blocked=false;
     const blockedRects=[];
     for(let i=0;i<p.length;i++){
@@ -951,22 +963,25 @@
       if(margin<worst){worst=margin; worstD=pt.d;}
       if(margin<0){
         blocked=true;
-        const w=(W-padL-padR)/(p.length-1)+1;
-        blockedRects.push(`<rect x="${(x(pt.d)-w/2).toFixed(1)}" y="${padT}" width="${w.toFixed(1)}" height="${(H-padT-padB)}" fill="rgba(239,68,68,.18)"/>`);
+        const w=chartW/(p.length-1)+2;
+        blockedRects.push(`<rect x="${(x(pt.d)-w/2).toFixed(1)}" y="${padT}" width="${w.toFixed(1)}" height="${chartH}" fill="rgba(239,68,68,.24)"/>`);
       }
     }
+
     const ticks=[];
     const tickCount=5;
     for(let i=0;i<=tickCount;i++){
       const val=min+(max-min)*i/tickCount;
       const yy=y(val);
-      ticks.push(`<line x1="${padL}" y1="${yy.toFixed(1)}" x2="${W-padR}" y2="${yy.toFixed(1)}" stroke="#e5e7eb"/><text x="${padL-10}" y="${(yy+4).toFixed(1)}" text-anchor="end" font-size="12" fill="#475569">${Math.round(val)}</text>`);
+      ticks.push(`<line x1="${padL}" y1="${yy.toFixed(1)}" x2="${W-padR}" y2="${yy.toFixed(1)}" stroke="#e5e7eb" stroke-width="1"/>`);
+      ticks.push(`<text x="${padL-12}" y="${(yy+4).toFixed(1)}" text-anchor="end" font-size="14" fill="#334155">${Math.round(val)}</text>`);
     }
     const dTicks=[];
     for(let i=0;i<=4;i++){
       const d=totalDistance*i/4;
       const xx=x(d);
-      dTicks.push(`<line x1="${xx.toFixed(1)}" y1="${H-padB}" x2="${xx.toFixed(1)}" y2="${H-padB+5}" stroke="#94a3b8"/><text x="${xx.toFixed(1)}" y="${H-18}" text-anchor="middle" font-size="12" fill="#475569">${i===0?'0':d.toFixed(1)} km</text>`);
+      dTicks.push(`<line x1="${xx.toFixed(1)}" y1="${H-padB}" x2="${xx.toFixed(1)}" y2="${H-padB+7}" stroke="#94a3b8" stroke-width="1"/>`);
+      dTicks.push(`<text x="${xx.toFixed(1)}" y="${H-28}" text-anchor="middle" font-size="14" fill="#334155">${i===0?'0':d.toFixed(1).replace('.',',')} km</text>`);
     }
     const msg=blocked?'Widoczność: NIE':worst<10?'Widoczność: warunkowa':'Widoczność: TAK';
     const noteClass=blocked?'profile-note bad':worst<10?'profile-note warn':'profile-note ok';
@@ -975,24 +990,49 @@
     const minElev=Math.round(Math.min(...terrain));
     const maxElev=Math.round(Math.max(...terrain));
     const diffElev=Math.round(txAlt-rxAlt);
+    const losAngle=(Math.atan2(txAlt-rxAlt,totalDistance*1000)*180/Math.PI).toFixed(2).replace('.',',');
+    const worstTxt = Number.isFinite(worst) ? worst.toFixed(1).replace('.',',') : 'brak';
+    const worstDTxt = Number.isFinite(worstD) ? worstD.toFixed(1).replace('.',',') : 'brak';
+
     $('profileBox').innerHTML=`
-      <div class="profile-chart-card">
-        <div class="profile-head-values"><div><strong>Dom +${state.rxHeight} m</strong><span>${Math.round(rxGround)} m n.p.m.</span></div><div><strong>Nadajnik +${txHeight} m</strong><span>${Math.round(txGround)} m n.p.m.</span></div></div>
-        <svg class="profile-svg pro" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="Profil terenu">
-          ${blockedRects.join('')}
+      <div class="profile-chart-card profile-pro-card">
+        <div class="profile-head-values">
+          <div><strong>Dom +${state.rxHeight} m</strong><span>${Math.round(rxGround)} m n.p.m.</span></div>
+          <div><strong>Nadajnik +${txHeight} m</strong><span>${Math.round(txGround)} m n.p.m.</span></div>
+        </div>
+        <svg class="profile-svg pro" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Profil terenu">
+          <defs>
+            <linearGradient id="terrainFill" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#22c55e" stop-opacity="0.34"/>
+              <stop offset="100%" stop-color="#22c55e" stop-opacity="0.05"/>
+            </linearGradient>
+            <linearGradient id="losGapFill" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#ef4444" stop-opacity="0.22"/>
+              <stop offset="100%" stop-color="#ef4444" stop-opacity="0.04"/>
+            </linearGradient>
+            <filter id="softShadow" x="-10%" y="-10%" width="120%" height="120%">
+              <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="#0f172a" flood-opacity="0.12"/>
+            </filter>
+          </defs>
+          <rect x="${padL}" y="${padT}" width="${chartW}" height="${chartH}" rx="0" fill="#ffffff"/>
           ${ticks.join('')}
           ${dTicks.join('')}
-          <text x="18" y="${H/2}" transform="rotate(-90 18 ${H/2})" text-anchor="middle" font-size="12" fill="#475569">m n.p.m.</text>
-          <path d="${area}" fill="rgba(34,197,94,.18)"/>
-          <path d="${path}" fill="none" stroke="#16a34a" stroke-width="3" vector-effect="non-scaling-stroke"/>
-          <path d="${losPath}" fill="none" stroke="#64748b" stroke-width="2" stroke-dasharray="8 8" vector-effect="non-scaling-stroke"/>
-          <circle cx="${padL}" cy="${y(rxAlt)}" r="6" fill="#2563eb"/>
-          <circle cx="${W-padR}" cy="${y(txAlt)}" r="6" fill="#16a34a"/>
+          <line x1="${padL}" y1="${padT}" x2="${padL}" y2="${H-padB}" stroke="#94a3b8" stroke-width="1.4"/>
+          <line x1="${padL}" y1="${H-padB}" x2="${W-padR}" y2="${H-padB}" stroke="#94a3b8" stroke-width="1.4"/>
+          <text x="20" y="${H/2}" transform="rotate(-90 20 ${H/2})" text-anchor="middle" font-size="15" fill="#334155">m n.p.m.</text>
+          <text x="${W/2}" y="${H-4}" text-anchor="middle" font-size="15" fill="#475569">Odległość</text>
+          <path d="${gapArea}" fill="url(#losGapFill)"/>
+          ${blockedRects.join('')}
+          <path d="${terrainArea}" fill="url(#terrainFill)"/>
+          <path d="${terrainPath}" fill="none" stroke="#16a34a" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke" filter="url(#softShadow)"/>
+          <path d="${losPath}" fill="none" stroke="#64748b" stroke-width="2.6" stroke-linecap="round" stroke-dasharray="10 12" vector-effect="non-scaling-stroke"/>
+          <circle cx="${padL}" cy="${clamp(y(rxAlt),padT,H-padB).toFixed(1)}" r="7" fill="#2563eb" stroke="#fff" stroke-width="2" vector-effect="non-scaling-stroke"/>
+          <circle cx="${W-padR}" cy="${clamp(y(txAlt),padT,H-padB).toFixed(1)}" r="7" fill="#16a34a" stroke="#fff" stroke-width="2" vector-effect="non-scaling-stroke"/>
         </svg>
-        <div class="profile-legend"><span><i class="terrain"></i>Profil terenu</span><span><i class="los"></i>Linia LOS</span><span><i class="blocked"></i>Strefa zasłonięta</span></div>
+        <div class="profile-legend"><span><i class="terrain"></i>Profil terenu</span><span><i class="los"></i>Linia LOS</span><span><i class="blocked"></i>Strefa między terenem a LOS</span></div>
       </div>
-      <div class="${noteClass}"><strong>${msg}</strong><span>Najmniejszy zapas: ${worst.toFixed(1)} m, w odległości ${worstD.toFixed(1)} km od punktu odbioru.</span></div>
-      <div class="profile-stats"><div><span>Długość trasy</span><strong>${totalDistance.toFixed(1)} km</strong></div><div><span>Różnica wysokości anten</span><strong>${diffElev>0?'+':''}${diffElev} m</strong></div><div><span>Minimalna wysokość</span><strong>${minElev} m</strong></div><div><span>Maksymalna wysokość</span><strong>${maxElev} m</strong></div></div>
+      <div class="${noteClass}"><strong>${msg}</strong><span>Najmniejszy zapas: ${worstTxt} m, w odległości ${worstDTxt} km od punktu odbioru.</span></div>
+      <div class="profile-stats"><div><span>Długość trasy</span><strong>${totalDistance.toFixed(1).replace('.',',')} km</strong></div><div><span>Różnica wysokości anten</span><strong>${diffElev>0?'+':''}${diffElev} m</strong></div><div><span>Minimalna wysokość</span><strong>${minElev} m</strong></div><div><span>Maksymalna wysokość</span><strong>${maxElev} m</strong></div><div><span>Kąt LOS</span><strong>${losAngle}°</strong></div></div>
       <div class="profile-meta">${sourceText} Wysokość nadajnika: ${txGroundSource}. Dane DEM są zewnętrzne i mogą mieć ograniczoną dokładność lokalną.</div>`;
   }
 
@@ -1078,6 +1118,6 @@
     $('closeStationBtn').onclick=hideStation; $('openStationBtn').onclick=showStation; $('antennaBtn').onclick=()=>{startCompass(false); showCompassPanel();}; $('compassWidget').onclick=()=>{startCompass(false); showCompassPanel();}; $('stationProfileBtn').onclick=showProfile; $('stationMuxBtn').onclick=showMux; $('stationDemBtn').onclick=downloadDemForSelectedTx;
     window.addEventListener('online',()=>{$('onlineChip').textContent='Online';$('onlineChip').classList.add('online-chip');}); window.addEventListener('offline',()=>{$('onlineChip').textContent='Offline';$('onlineChip').classList.remove('online-chip');});
   }
-  async function boot(){ load(); bind(); initMap(); await loadTxs(); if(state.coverageTileUrl) applyCoverageTile(state.coverageTileUrl); startCompass(true); window.addEventListener('pointerdown',()=>startCompass(true),{once:true,passive:true}); if('serviceWorker' in navigator) navigator.serviceWorker.register('./service-worker.js?v=19.15-1705262135').catch(()=>{}); setAppHeight(); }
+  async function boot(){ load(); bind(); initMap(); await loadTxs(); if(state.coverageTileUrl) applyCoverageTile(state.coverageTileUrl); startCompass(true); window.addEventListener('pointerdown',()=>startCompass(true),{once:true,passive:true}); if('serviceWorker' in navigator) navigator.serviceWorker.register('./service-worker.js?v=19.16-1705262145').catch(()=>{}); setAppHeight(); }
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', boot); else boot();
 })();
