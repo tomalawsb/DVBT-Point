@@ -1,0 +1,10 @@
+DVB-T/T2 Point 19.10 - 1705261810
+
+Zmiany:
+- Usunięto niepotrzebną zakładkę/przycisk Filtry z prawej listy narzędzi.
+- Poprawiono czytelność czcionek, odstępy, cienie i wygląd kart/paneli.
+- W karcie wybranego nadajnika zamiast zdublowanego pola MUX pokazuje się moc ERP.
+- Panel MUX pokazuje teraz wyraźnie ERP przy każdej emisji.
+- Profil terenu dostał czytelniejszy opis i przycisk: Pobierz DEM i odśwież profil.
+- Profil używa mniejszej liczby punktów, żeby ograniczyć błędy API/limity i szybciej się ładować.
+- Nie zmieniano danych nadajników, ANT ani logiki bazowej RF poza opisem modelu 19.10.
