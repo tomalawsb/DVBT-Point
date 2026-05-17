@@ -1,0 +1,4117 @@
+{
+  "version": "19.5",
+  "source": "Link_ANT z eksportu RadioPolska",
+  "count": 587,
+  "downloaded_count": 0,
+  "items": [
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-3 Rzeszow - Kalnica Gora Wideta",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_ae563f9081bd.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1547/MUX-3 Rzeszow - Stuposiany Wilcza Gora",
+      "ant_file_id": "1547",
+      "local_path": "data/ant/1547_MUX-3_Rzeszow_-_Stuposiany_Wilcza_Gora.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1540/MUX-3 Rzeszow - Majdan Gora Kiczarka",
+      "ant_file_id": "1540",
+      "local_path": "data/ant/1540_MUX-3_Rzeszow_-_Majdan_Gora_Kiczarka.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1531/MUX-3 Rzeszow - Cisna Gora Potoczyszcze",
+      "ant_file_id": "1531",
+      "local_path": "data/ant/1531_MUX-3_Rzeszow_-_Cisna_Gora_Potoczyszcze.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-3 Rzeszow - Zatwarnica Gora Wierszek",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_2ef7e6fce29d.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1539/MUX-3 Rzeszow - Lutowiska",
+      "ant_file_id": "1539",
+      "local_path": "data/ant/1539_MUX-3_Rzeszow_-_Lutowiska.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1542/MUX-3 Rzeszow - Polana Szeroka Laka",
+      "ant_file_id": "1542",
+      "local_path": "data/ant/1542_MUX-3_Rzeszow_-_Polana_Szeroka_Laka.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/476/MUX-1 - Zakopane Gora Gubalowka",
+      "ant_file_id": "476",
+      "local_path": "data/ant/476_MUX-1_-_Zakopane_Gora_Gubalowka.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1461/MUX-2 - Zakopane Gora Gubalowka",
+      "ant_file_id": "1461",
+      "local_path": "data/ant/1461_MUX-2_-_Zakopane_Gora_Gubalowka.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1578/MUX-3 Krakow - Zakopane Gora Gubalowka",
+      "ant_file_id": "1578",
+      "local_path": "data/ant/1578_MUX-3_Krakow_-_Zakopane_Gora_Gubalowka.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/2051/MUX-6 - Zakopane Gora Gubalowka",
+      "ant_file_id": "2051",
+      "local_path": "data/ant/2051_MUX-6_-_Zakopane_Gora_Gubalowka.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1795/MUX-8 - Zakopane Gora Gubalowka",
+      "ant_file_id": "1795",
+      "local_path": "data/ant/1795_MUX-8_-_Zakopane_Gora_Gubalowka.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1532/MUX-3 Rzeszow - Czarna",
+      "ant_file_id": "1532",
+      "local_path": "data/ant/1532_MUX-3_Rzeszow_-_Czarna.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-3 Rzeszow - Wolkowyja Gora Czakow",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_f259b9a2c636.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1537/MUX-3 Rzeszow - Komancza Gora Krymieniec",
+      "ant_file_id": "1537",
+      "local_path": "data/ant/1537_MUX-3_Rzeszow_-_Komancza_Gora_Krymieniec.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1529/MUX-3 Rzeszow - Baligrod Gora Kiczera",
+      "ant_file_id": "1529",
+      "local_path": "data/ant/1529_MUX-3_Rzeszow_-_Baligrod_Gora_Kiczera.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-3 Krakow - Zegiestow-Zdroj Gora Kiczera",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_cd2f2191f950.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1587/MUX-3 Krakow - Muszyna Gora Malnik",
+      "ant_file_id": "1587",
+      "local_path": "data/ant/1587_MUX-3_Krakow_-_Muszyna_Gora_Malnik.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1544/MUX-3 Rzeszow - Rzepedz Gora Sokoliska",
+      "ant_file_id": "1544",
+      "local_path": "data/ant/1544_MUX-3_Rzeszow_-_Rzepedz_Gora_Sokoliska.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-3 Krakow - Zegiestow Wies Gora Cypel",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_2832958f6098.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-1 - Solina Gora Jawor h90",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_f3acfea68cf4.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-2 - Solina Gora Jawor h90",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_2eb9db7e6da2.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-3 Rzeszow - Solina Gora Jawor h90",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_3b455dbd492d.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-4 - Solina Gora Jawor h90",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_aabcb229fa6d.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-6 - Solina Gora Jawor h90",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_cdb2fb21941e.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1746/MUX-8 - Solina Gora Jawor h90",
+      "ant_file_id": "1746",
+      "local_path": "data/ant/1746_MUX-8_-_Solina_Gora_Jawor_h90.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1593/MUX-3 Krakow - Tylicz Gora Horb",
+      "ant_file_id": "1593",
+      "local_path": "data/ant/1593_MUX-3_Krakow_-_Tylicz_Gora_Horb.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-3 Rzeszow - Zahoczewie Gora Szerokie",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_6cdab344a0e4.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1556/MUX-3 Rzeszow - Solina Gora Plasza",
+      "ant_file_id": "1556",
+      "local_path": "data/ant/1556_MUX-3_Rzeszow_-_Solina_Gora_Plasza.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1584/MUX-3 Krakow - Lapsze Wyzne Gora Grandeus",
+      "ant_file_id": "1584",
+      "local_path": "data/ant/1584_MUX-3_Krakow_-_Lapsze_Wyzne_Gora_Grandeus.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1576/MUX-3 Krakow - Szczawnica Gora Jarmuta",
+      "ant_file_id": "1576",
+      "local_path": "data/ant/1576_MUX-3_Krakow_-_Szczawnica_Gora_Jarmuta.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1583/MUX-3 Krakow - Krynica Gora Parkowa h65",
+      "ant_file_id": "1583",
+      "local_path": "data/ant/1583_MUX-3_Krakow_-_Krynica_Gora_Parkowa_h65.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1400/MUX-3 Krakow - Krynica Gora Jaworzyna",
+      "ant_file_id": "1400",
+      "local_path": "data/ant/1400_MUX-3_Krakow_-_Krynica_Gora_Jaworzyna.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1588/MUX-3 Krakow - Niedzica Gora Biala",
+      "ant_file_id": "1588",
+      "local_path": "data/ant/1588_MUX-3_Krakow_-_Niedzica_Gora_Biala.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-3 Rzeszow - Ustrzyki Dolne Gora Gromadzyn",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_afe1d5cd751c.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1555/MUX-3 Rzeszow - Jasliska Posada Jasliska",
+      "ant_file_id": "1555",
+      "local_path": "data/ant/1555_MUX-3_Rzeszow_-_Jasliska_Posada_Jasliska.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1635/MUX-3 Krakow - Piwniczna Gora Kicarz",
+      "ant_file_id": "1635",
+      "local_path": "data/ant/1635_MUX-3_Krakow_-_Piwniczna_Gora_Kicarz.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-3 Rzeszow - Hoczew Czekaj",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_57549cee37d9.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1582/MUX-3 Krakow - Kroscienko Gora Stajkowa",
+      "ant_file_id": "1582",
+      "local_path": "data/ant/1582_MUX-3_Krakow_-_Kroscienko_Gora_Stajkowa.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-3 Rzeszow - Tylawa Gora Dzial h60",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_18e89e853099.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1548/MUX-3 Rzeszow - Tarnawa Gora Makowka",
+      "ant_file_id": "1548",
+      "local_path": "data/ant/1548_MUX-3_Rzeszow_-_Tarnawa_Gora_Makowka.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/466/MUX-1 - Szczawnica Gora Prehyba",
+      "ant_file_id": "466",
+      "local_path": "data/ant/466_MUX-1_-_Szczawnica_Gora_Prehyba.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/486/MUX-2 - Szczawnica Gora Prehyba",
+      "ant_file_id": "486",
+      "local_path": "data/ant/486_MUX-2_-_Szczawnica_Gora_Prehyba.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1577/MUX-3 Krakow - Szczawnica Gora Prehyba",
+      "ant_file_id": "1577",
+      "local_path": "data/ant/1577_MUX-3_Krakow_-_Szczawnica_Gora_Prehyba.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/2047/MUX-6 - Szczawnica Gora Prehyba",
+      "ant_file_id": "2047",
+      "local_path": "data/ant/2047_MUX-6_-_Szczawnica_Gora_Prehyba.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1808/MUX-8 - Szczawnica Gora Prehyba",
+      "ant_file_id": "1808",
+      "local_path": "data/ant/1808_MUX-8_-_Szczawnica_Gora_Prehyba.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1594/MUX-3 Krakow - Tylmanowa Gora Matuszek",
+      "ant_file_id": "1594",
+      "local_path": "data/ant/1594_MUX-3_Krakow_-_Tylmanowa_Gora_Matuszek.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-3 Katowice - Ujsoly Gora Kubiesowka",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_1a0a890a24f0.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1541/MUX-3 Rzeszow - Olszanica Gora Kiczera",
+      "ant_file_id": "1541",
+      "local_path": "data/ant/1541_MUX-3_Rzeszow_-_Olszanica_Gora_Kiczera.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-3 Krakow - Jablonka Gora Oskwarkowa",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_8fb62e7b9677.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1393/MUX-3 Katowice - Rajcza Gora Hutyrow",
+      "ant_file_id": "1393",
+      "local_path": "data/ant/1393_MUX-3_Katowice_-_Rajcza_Gora_Hutyrow.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-3 Krakow - Rytro Gora Cycowka",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_d24e70952d2a.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-3 Krakow - Ochotnica Gorna Gora Utocze",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_2a0493ac27ea.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1621/MUX-3 Krakow - Ochotnica Dolna Gora Koci Zamek",
+      "ant_file_id": "1621",
+      "local_path": "data/ant/1621_MUX-3_Krakow_-_Ochotnica_Dolna_Gora_Koci_Zamek.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-3 Krakow - Lacko Gora Cebulowka",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_1625e81efe62.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-3 Katowice - Koniakow Gora Ochodzita",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_d818489ad5af.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1543/MUX-3 Rzeszow - Rymanow Gora Zamczyska",
+      "ant_file_id": "1543",
+      "local_path": "data/ant/1543_MUX-3_Rzeszow_-_Rymanow_Gora_Zamczyska.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-3 Rzeszow - Iwonicz-Zdroj Sanatorium Excelsior",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_73de1cfa86fe.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1545/MUX-3 Rzeszow - Sanok Gora Parkowa",
+      "ant_file_id": "1545",
+      "local_path": "data/ant/1545_MUX-3_Rzeszow_-_Sanok_Gora_Parkowa.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1559/MUX-3 Katowice - Istebna Gora Zloty Gron",
+      "ant_file_id": "1559",
+      "local_path": "data/ant/1559_MUX-3_Katowice_-_Istebna_Gora_Zloty_Gron.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1553/MUX-3 Rzeszow - Dukla Teodorowka",
+      "ant_file_id": "1553",
+      "local_path": "data/ant/1553_MUX-3_Rzeszow_-_Dukla_Teodorowka.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1581/MUX-3 Krakow - Kamionka Wielka Gora Dybowka",
+      "ant_file_id": "1581",
+      "local_path": "data/ant/1581_MUX-3_Krakow_-_Kamionka_Wielka_Gora_Dybowka.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1560/MUX-3 Katowice - Jelesnia Gora Krzyzowa",
+      "ant_file_id": "1560",
+      "local_path": "data/ant/1560_MUX-3_Katowice_-_Jelesnia_Gora_Krzyzowa.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-3 Krakow - Grybow Gora Kamienna",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_ef0ab081bd33.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1591/MUX-3 Krakow - Poreba Wielka Nowa Wies",
+      "ant_file_id": "1591",
+      "local_path": "data/ant/1591_MUX-3_Krakow_-_Poreba_Wielka_Nowa_Wies.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1562/MUX-3 Katowice - Koszarawa Gora Czolo [628m]",
+      "ant_file_id": "1562",
+      "local_path": "data/ant/1562_MUX-3_Katowice_-_Koszarawa_Gora_Czolo_628m.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1571/MUX-3 Katowice - Wisla Gora Kozince",
+      "ant_file_id": "1571",
+      "local_path": "data/ant/1571_MUX-3_Katowice_-_Wisla_Gora_Kozince.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1570/MUX-3 Katowice - Wegierska Gorka Gora Przybedza",
+      "ant_file_id": "1570",
+      "local_path": "data/ant/1570_MUX-3_Katowice_-_Wegierska_Gorka_Gora_Przybedza.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1639/MUX-3 Krakow - Zawoja Gora Kolisty Gron",
+      "ant_file_id": "1639",
+      "local_path": "data/ant/1639_MUX-3_Krakow_-_Zawoja_Gora_Kolisty_Gron.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1590/MUX-3 Krakow - Nowy Sacz Chruslice",
+      "ant_file_id": "1590",
+      "local_path": "data/ant/1590_MUX-3_Krakow_-_Nowy_Sacz_Chruslice.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1495/MUX-1 - Gorlice Maslana Gora",
+      "ant_file_id": "1495",
+      "local_path": "data/ant/1495_MUX-1_-_Gorlice_Maslana_Gora.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1488/MUX-2 - Gorlice Maslana Gora",
+      "ant_file_id": "1488",
+      "local_path": "data/ant/1488_MUX-2_-_Gorlice_Maslana_Gora.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1579/MUX-3 Krakow - Gorlice Maslana Gora",
+      "ant_file_id": "1579",
+      "local_path": "data/ant/1579_MUX-3_Krakow_-_Gorlice_Maslana_Gora.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/2057/MUX-6 - Gorlice Maslana Gora",
+      "ant_file_id": "2057",
+      "local_path": "data/ant/2057_MUX-6_-_Gorlice_Maslana_Gora.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1798/MUX-8 - Gorlice Maslana Gora",
+      "ant_file_id": "1798",
+      "local_path": "data/ant/1798_MUX-8_-_Gorlice_Maslana_Gora.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-3 Krakow - Nowy Sacz Wysokie h64",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_00b307095f54.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-1 - Rabka Gora Lubon Wielki",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_96978de67488.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-2 - Rabka Gora Lubon Wielki",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_9cc80a7cc9db.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-3 Krakow - Rabka Gora Lubon Wielki",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_1b4ae6746c60.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-6 - Rabka Gora Lubon Wielki",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_b5da81c039e0.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1770/MUX-8 - Rabka Gora Lubon Wielki",
+      "ant_file_id": "1770",
+      "local_path": "data/ant/1770_MUX-8_-_Rabka_Gora_Lubon_Wielki.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1640/MUX-3 Krakow - Zawoja Gora Miskowcow Gron",
+      "ant_file_id": "1640",
+      "local_path": "data/ant/1640_MUX-3_Krakow_-_Zawoja_Gora_Miskowcow_Gron.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1572/MUX-3 Katowice - Zywiec Gora Grojec",
+      "ant_file_id": "1572",
+      "local_path": "data/ant/1572_MUX-3_Katowice_-_Zywiec_Gora_Grojec.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-3 Rzeszow - Trojca Gora Jaworow",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_0127cf82f979.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-3 Katowice - Ustron Gora Czantoria",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_1d4acda1aa3b.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/477/MUX-1 - Wisla Gora Skrzyczne h87",
+      "ant_file_id": "477",
+      "local_path": "data/ant/477_MUX-1_-_Wisla_Gora_Skrzyczne_h87.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/482/MUX-2 - Wisla Gora Skrzyczne h87",
+      "ant_file_id": "482",
+      "local_path": "data/ant/482_MUX-2_-_Wisla_Gora_Skrzyczne_h87.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1527/MUX-3 Katowice - Wisla Gora Skrzyczne h87",
+      "ant_file_id": "1527",
+      "local_path": "data/ant/1527_MUX-3_Katowice_-_Wisla_Gora_Skrzyczne_h87.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/519/MUX-4 - Wisla Gora Skrzyczne h87",
+      "ant_file_id": "519",
+      "local_path": "data/ant/519_MUX-4_-_Wisla_Gora_Skrzyczne_h87.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/2049/MUX-6 - Wisla Gora Skrzyczne h87",
+      "ant_file_id": "2049",
+      "local_path": "data/ant/2049_MUX-6_-_Wisla_Gora_Skrzyczne_h87.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1778/MUX-8 - Wisla Gora Skrzyczne h87",
+      "ant_file_id": "1778",
+      "local_path": "data/ant/1778_MUX-8_-_Wisla_Gora_Skrzyczne_h87.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1530/MUX-3 Rzeszow - Bircza Gora Kamienna",
+      "ant_file_id": "1530",
+      "local_path": "data/ant/1530_MUX-3_Rzeszow_-_Bircza_Gora_Kamienna.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1538/MUX-3 Rzeszow - Krzemienna Gora Maly Dzial",
+      "ant_file_id": "1538",
+      "local_path": "data/ant/1538_MUX-3_Rzeszow_-_Krzemienna_Gora_Maly_Dzial.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1567/MUX-3 Katowice - Szczyrk ul. Salmopolska",
+      "ant_file_id": "1567",
+      "local_path": "data/ant/1567_MUX-3_Katowice_-_Szczyrk_ul._Salmopolska.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1632/MUX-3 Krakow - Dobra Gora Nad Kiwajami",
+      "ant_file_id": "1632",
+      "local_path": "data/ant/1632_MUX-3_Krakow_-_Dobra_Gora_Nad_Kiwajami.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1634/MUX-3 Krakow - Limanowa Gora Lipowe",
+      "ant_file_id": "1634",
+      "local_path": "data/ant/1634_MUX-3_Krakow_-_Limanowa_Gora_Lipowe.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-3 Krakow - Stryszawa Gora Czepelowka",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_13ce12abc400.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1641/MUX-3 Krakow - Tymbark Gora Podlopien",
+      "ant_file_id": "1641",
+      "local_path": "data/ant/1641_MUX-3_Krakow_-_Tymbark_Gora_Podlopien.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1566/MUX-3 Katowice - Szczyrk Hotel Panorama Centrum",
+      "ant_file_id": "1566",
+      "local_path": "data/ant/1566_MUX-3_Katowice_-_Szczyrk_Hotel_Panorama_Centrum.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1565/MUX-3 Katowice - Szczyrk Bila",
+      "ant_file_id": "1565",
+      "local_path": "data/ant/1565_MUX-3_Katowice_-_Szczyrk_Bila.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-3 Katowice - Brenna Wzgorze Jatny",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_fc14446a5294.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1592/MUX-3 Krakow - Sucha Beskidzka Gora Sumerowka",
+      "ant_file_id": "1592",
+      "local_path": "data/ant/1592_MUX-3_Krakow_-_Sucha_Beskidzka_Gora_Sumerowka.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1558/MUX-3 Katowice - Cieszyn ul. Mickiewicza",
+      "ant_file_id": "1558",
+      "local_path": "data/ant/1558_MUX-3_Katowice_-_Cieszyn_ul._Mickiewicza.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1793/MUX-8 - Cieszyn ul. Mickiewicza",
+      "ant_file_id": "1793",
+      "local_path": "data/ant/1793_MUX-8_-_Cieszyn_ul._Mickiewicza.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-1 - Krosno Sucha Gora",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_4e44352f5e1d.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-2 - Krosno Sucha Gora",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_c7f29820048d.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-3 Rzeszow - Krosno Sucha Gora",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_c4d75cb7784e.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-4 - Krosno Sucha Gora",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_9c20d04bbe73.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-6 - Krosno Sucha Gora",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_cf4ea9d4d1ec.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1742/MUX-8 - Krosno Sucha Gora",
+      "ant_file_id": "1742",
+      "local_path": "data/ant/1742_MUX-8_-_Krosno_Sucha_Gora.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1724/MUX-3 Katowice - Bielsko-Biala Gora Szyndzielnia h23",
+      "ant_file_id": "1724",
+      "local_path": "data/ant/1724_MUX-3_Katowice_-_Bielsko-Biala_Gora_Szyndzielnia_h23.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/469/MUX-1 - Przemysl Tatarska Gora",
+      "ant_file_id": "469",
+      "local_path": "data/ant/469_MUX-1_-_Przemysl_Tatarska_Gora.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/506/MUX-2 - Przemysl Tatarska Gora",
+      "ant_file_id": "506",
+      "local_path": "data/ant/506_MUX-2_-_Przemysl_Tatarska_Gora.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1666/MUX-3 Rzeszow - Przemysl Tatarska Gora",
+      "ant_file_id": "1666",
+      "local_path": "data/ant/1666_MUX-3_Rzeszow_-_Przemysl_Tatarska_Gora.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-6 - Przemysl Tatarska Gora",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_ead35678cf96.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1768/MUX-8 - Przemysl Tatarska Gora",
+      "ant_file_id": "1768",
+      "local_path": "data/ant/1768_MUX-8_-_Przemysl_Tatarska_Gora.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1573/MUX-3 Krakow - Miedzybrodzie Gora Zar",
+      "ant_file_id": "1573",
+      "local_path": "data/ant/1573_MUX-3_Krakow_-_Miedzybrodzie_Gora_Zar.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1533/MUX-3 Rzeszow - Dynow Gora Winnica",
+      "ant_file_id": "1533",
+      "local_path": "data/ant/1533_MUX-3_Rzeszow_-_Dynow_Gora_Winnica.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-3 Krakow - Gromnik ul. Widok",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_25af12f3f32b.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1638/MUX-3 Krakow - Stryszow Potoczek",
+      "ant_file_id": "1638",
+      "local_path": "data/ant/1638_MUX-3_Krakow_-_Stryszow_Potoczek.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1546/MUX-3 Rzeszow - Strzyzow ul. Dzialy",
+      "ant_file_id": "1546",
+      "local_path": "data/ant/1546_MUX-3_Rzeszow_-_Strzyzow_ul._Dzialy.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1642/MUX-3 Krakow - Winiary",
+      "ant_file_id": "1642",
+      "local_path": "data/ant/1642_MUX-3_Krakow_-_Winiary.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-3 Rzeszow - Pruchnik Wzniesienie Na Zadach",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_afff38471ea9.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-1 - Krakow Choragwica",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_5c4a517e8595.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-2 - Krakow Choragwica",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_3d31bb7f407c.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-3 Krakow - Krakow Choragwica",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_d0d19f120116.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-4 - Krakow Choragwica",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_f5c627e60741.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-6 - Krakow Choragwica",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_290613d1cec3.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1740/MUX-8 - Krakow Choragwica",
+      "ant_file_id": "1740",
+      "local_path": "data/ant/1740_MUX-8_-_Krakow_Choragwica.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1788/MUX-8 - Debica Globikowa",
+      "ant_file_id": "1788",
+      "local_path": "data/ant/1788_MUX-8_-_Debica_Globikowa.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-1 - Tarnow Gora Sw. Marcina h102",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_3eab99e2124e.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1459/MUX-2 - Tarnow Gora Sw. Marcina h102",
+      "ant_file_id": "1459",
+      "local_path": "data/ant/1459_MUX-2_-_Tarnow_Gora_Sw._Marcina_h102.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1878/MUX-2 - Tarnow Gora Sw. Marcina h102",
+      "ant_file_id": "1878",
+      "local_path": "data/ant/1878_MUX-2_-_Tarnow_Gora_Sw._Marcina_h102.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-3 Krakow - Tarnow Gora Sw. Marcina h102",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_6843b3d2be70.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1706/MUX-3 Rzeszow - Tarnow Gora Sw. Marcina h102",
+      "ant_file_id": "1706",
+      "local_path": "data/ant/1706_MUX-3_Rzeszow_-_Tarnow_Gora_Sw._Marcina_h102.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-4 - Tarnow Gora Sw. Marcina h102",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_ec6e1bf194e9.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-6 - Tarnow Gora Sw. Marcina h102",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_f626f7befa40.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1787/MUX-8 - Tarnow Gora Sw. Marcina h102",
+      "ant_file_id": "1787",
+      "local_path": "data/ant/1787_MUX-8_-_Tarnow_Gora_Sw._Marcina_h102.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-3 Krakow - Krakow Krzemionki",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_091a437e9b55.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-3 Rzeszow - Rzeszow Baranowka",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_a43dcd5895cf.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1563/MUX-3 Katowice - Raciborz ul. Cmentarna",
+      "ant_file_id": "1563",
+      "local_path": "data/ant/1563_MUX-3_Katowice_-_Raciborz_ul._Cmentarna.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-L2 TVT - Rybnik Komin E Rybnik h260",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_b8bca1bd8a3b.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-3 Katowice - Rybnik Komin E Rybnik h300",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_7dbc17863d9e.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-L2 TVT - Ornontowice Komin KWK Budryk",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_40f20bbc8607.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-1 - Katowice Kosztowy",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_1dab4ccf06dd.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-2 - Katowice Kosztowy",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_614fa7fea1e5.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1725/MUX-3 Krakow - Katowice Kosztowy",
+      "ant_file_id": "1725",
+      "local_path": "data/ant/1725_MUX-3_Krakow_-_Katowice_Kosztowy.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1417/MUX-3 Katowice - Katowice Kosztowy",
+      "ant_file_id": "1417",
+      "local_path": "data/ant/1417_MUX-3_Katowice_-_Katowice_Kosztowy.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-4 - Katowice Kosztowy",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_87e97c06ffb3.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-6 - Katowice Kosztowy",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_374500934124.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1739/MUX-8 - Katowice Kosztowy",
+      "ant_file_id": "1739",
+      "local_path": "data/ant/1739_MUX-8_-_Katowice_Kosztowy.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1636/MUX-3 Krakow - Przeginia Raclawice",
+      "ant_file_id": "1636",
+      "local_path": "data/ant/1636_MUX-3_Krakow_-_Przeginia_Raclawice.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1656/MUX-3 Kielce - Kazimierza Wielka Plechow",
+      "ant_file_id": "1656",
+      "local_path": "data/ant/1656_MUX-3_Kielce_-_Kazimierza_Wielka_Plechow.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-1 - Lezajsk Giedlarowa",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_c6d2e83c7145.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-2 - Lezajsk Giedlarowa",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_19bca613705b.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-3 Rzeszow - Lezajsk Giedlarowa",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_a5c16b342144.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1674/MUX-4 - Lezajsk Giedlarowa",
+      "ant_file_id": "1674",
+      "local_path": "data/ant/1674_MUX-4_-_Lezajsk_Giedlarowa.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-6 - Lezajsk Giedlarowa",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_5ec4a12b38c0.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1805/MUX-8 - Lezajsk Giedlarowa",
+      "ant_file_id": "1805",
+      "local_path": "data/ant/1805_MUX-8_-_Lezajsk_Giedlarowa.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/472/MUX-1 - Klodzko Czarna Gora",
+      "ant_file_id": "472",
+      "local_path": "data/ant/472_MUX-1_-_Klodzko_Czarna_Gora.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/505/MUX-2 - Klodzko Czarna Gora",
+      "ant_file_id": "505",
+      "local_path": "data/ant/505_MUX-2_-_Klodzko_Czarna_Gora.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1605/MUX-3 Wroclaw - Klodzko Czarna Gora",
+      "ant_file_id": "1605",
+      "local_path": "data/ant/1605_MUX-3_Wroclaw_-_Klodzko_Czarna_Gora.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1515/MUX-4 - Klodzko Czarna Gora",
+      "ant_file_id": "1515",
+      "local_path": "data/ant/1515_MUX-4_-_Klodzko_Czarna_Gora.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/2052/MUX-6 - Klodzko Czarna Gora",
+      "ant_file_id": "2052",
+      "local_path": "data/ant/2052_MUX-6_-_Klodzko_Czarna_Gora.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1760/MUX-8 - Klodzko Czarna Gora",
+      "ant_file_id": "1760",
+      "local_path": "data/ant/1760_MUX-8_-_Klodzko_Czarna_Gora.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1692/MUX-3 Rzeszow - Cieszanow ul. Kosciuszki",
+      "ant_file_id": "1692",
+      "local_path": "data/ant/1692_MUX-3_Rzeszow_-_Cieszanow_ul._Kosciuszki.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1612/MUX-3 Wroclaw - Stronie Slaskie Osiedle Morawka",
+      "ant_file_id": "1612",
+      "local_path": "data/ant/1612_MUX-3_Wroclaw_-_Stronie_Slaskie_Osiedle_Morawka.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1714/MUX-3 Katowice - Katowice Bytkow",
+      "ant_file_id": "1714",
+      "local_path": "data/ant/1714_MUX-3_Katowice_-_Katowice_Bytkow.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1716/MUX-3 Katowice - Zabrze Komin EC Zabrze",
+      "ant_file_id": "1716",
+      "local_path": "data/ant/1716_MUX-3_Katowice_-_Zabrze_Komin_EC_Zabrze.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1610/MUX-3 Wroclaw - Ladek-Zdroj Gora Dzielec",
+      "ant_file_id": "1610",
+      "local_path": "data/ant/1610_MUX-3_Wroclaw_-_Ladek-Zdroj_Gora_Dzielec.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1729/MUX-3 Krakow - Wolbrom Zasepiec",
+      "ant_file_id": "1729",
+      "local_path": "data/ant/1729_MUX-3_Krakow_-_Wolbrom_Zasepiec.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1608/MUX-3 Wroclaw - Duszniki-Zdroj Podgorze",
+      "ant_file_id": "1608",
+      "local_path": "data/ant/1608_MUX-3_Wroclaw_-_Duszniki-Zdroj_Podgorze.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1796/MUX-8 - Miechow Strzezow I",
+      "ant_file_id": "1796",
+      "local_path": "data/ant/1796_MUX-8_-_Miechow_Strzezow_I.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1614/MUX-3 Wroclaw - Szczytna Szklana Gora",
+      "ant_file_id": "1614",
+      "local_path": "data/ant/1614_MUX-3_Wroclaw_-_Szczytna_Szklana_Gora.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1613/MUX-3 Wroclaw - Szczytna Gora Szczytnik",
+      "ant_file_id": "1613",
+      "local_path": "data/ant/1613_MUX-3_Wroclaw_-_Szczytna_Gora_Szczytnik.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-3 Wroclaw - Kulin Klodzki Gora Grodziec",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_313e6c60037f.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1399/MUX-3 Wroclaw - Kudowa-Zdroj Gora Parkowa",
+      "ant_file_id": "1399",
+      "local_path": "data/ant/1399_MUX-3_Wroclaw_-_Kudowa-Zdroj_Gora_Parkowa.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1589/MUX-3 Opole - Opole Gora Sw. Anny h83",
+      "ant_file_id": "1589",
+      "local_path": "data/ant/1589_MUX-3_Opole_-_Opole_Gora_Sw._Anny_h83.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1780/MUX-8 - Opole Gora Sw. Anny h83",
+      "ant_file_id": "1780",
+      "local_path": "data/ant/1780_MUX-8_-_Opole_Gora_Sw._Anny_h83.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1728/MUX-3 Katowice - Ogrodzieniec Gieblo",
+      "ant_file_id": "1728",
+      "local_path": "data/ant/1728_MUX-3_Katowice_-_Ogrodzieniec_Gieblo.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-3 Kielce - Busko-Zdroj ul. Mickiewicza",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_d59901bbf791.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1711/MUX-3 Lublin - Bilgoraj Rogale",
+      "ant_file_id": "1711",
+      "local_path": "data/ant/1711_MUX-3_Lublin_-_Bilgoraj_Rogale.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-1 - Opole Chrzelice",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_6ee5b49a4431.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-2 - Opole Chrzelice",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_2aa9980bf0ce.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-3 Opole - Opole Chrzelice",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_0ac5fa21deb6.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-4 - Opole Chrzelice",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_776ee159f69f.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-6 - Opole Chrzelice",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_cb9312c681fb.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-3 Wroclaw - Radkow Gora Guzowata",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_36cea0caf873.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-3 Wroclaw - Bardo Slaskie Wzgorze Rozancowe",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_407f89c3db4c.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-1 - Zamosc Tarnawatka",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_b475faf54a95.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-2 - Zamosc Tarnawatka",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_35454ae383c6.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-3 Lublin - Zamosc Tarnawatka",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_53065e83c278.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-4 - Zamosc Tarnawatka",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_ee491b7f85ea.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-6 - Zamosc Tarnawatka",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_508646d3f924.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1781/MUX-8 - Zamosc Tarnawatka",
+      "ant_file_id": "1781",
+      "local_path": "data/ant/1781_MUX-8_-_Zamosc_Tarnawatka.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/460/MUX-1 - Tarnobrzeg Komin ZCh Siarkopol",
+      "ant_file_id": "460",
+      "local_path": "data/ant/460_MUX-1_-_Tarnobrzeg_Komin_ZCh_Siarkopol.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1996/MUX-2 - Tarnobrzeg Komin ZCh Siarkopol",
+      "ant_file_id": "1996",
+      "local_path": "data/ant/1996_MUX-2_-_Tarnobrzeg_Komin_ZCh_Siarkopol.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1712/MUX-3 Rzeszow - Tarnobrzeg Komin ZCh Siarkopol",
+      "ant_file_id": "1712",
+      "local_path": "data/ant/1712_MUX-3_Rzeszow_-_Tarnobrzeg_Komin_ZCh_Siarkopol.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/2080/MUX-6 - Tarnobrzeg Komin ZCh Siarkopol",
+      "ant_file_id": "2080",
+      "local_path": "data/ant/2080_MUX-6_-_Tarnobrzeg_Komin_ZCh_Siarkopol.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1799/MUX-8 - Tarnobrzeg Komin ZCh Siarkopol",
+      "ant_file_id": "1799",
+      "local_path": "data/ant/1799_MUX-8_-_Tarnobrzeg_Komin_ZCh_Siarkopol.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-3 Wroclaw - Nowa Ruda Slupiec",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_a6cbfc851e59.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-3 Wroclaw - Nowa Ruda Gora Krepiec",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_118a310406c4.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1654/MUX-3 Kielce - Jedrzejow Skroniow",
+      "ant_file_id": "1654",
+      "local_path": "data/ant/1654_MUX-3_Kielce_-_Jedrzejow_Skroniow.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1710/MUX-3 Opole - Opole Korfantego",
+      "ant_file_id": "1710",
+      "local_path": "data/ant/1710_MUX-3_Opole_-_Opole_Korfantego.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-3 Wroclaw - Mieroszow Wzgorze Cmentarne",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_c36f8ef08bc0.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-3 Wroclaw - Sokolowsko Polana h42",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_7693df982a27.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-3 Wroclaw - Gluszyca ul. Lesna",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_e4791d8871fe.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1616/MUX-3 Wroclaw - Walim Gora Ostra",
+      "ant_file_id": "1616",
+      "local_path": "data/ant/1616_MUX-3_Wroclaw_-_Walim_Gora_Ostra.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-3 Kielce - Sandomierz ul. Mokoszynska",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_5a61c476c065.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1611/MUX-3 Wroclaw - Lubawka Ulanowice",
+      "ant_file_id": "1611",
+      "local_path": "data/ant/1611_MUX-3_Wroclaw_-_Lubawka_Ulanowice.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-3 Wroclaw - Lubawka Gora Swieta",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_687a963f8e21.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-3 Wroclaw - Jedlina-Zdroj Gora Kawiniec",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_b29607d03887.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1679/MUX-3 Wroclaw - Kowary Gora Rudnik",
+      "ant_file_id": "1679",
+      "local_path": "data/ant/1679_MUX-3_Wroclaw_-_Kowary_Gora_Rudnik.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-1 - Sciegny Gora Pohulanka",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_ad5ff71925da.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-2 - Sciegny Gora Pohulanka",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_d889a9ff897c.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-3 Wroclaw - Sciegny Gora Pohulanka",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_b7ec62633221.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-3 Katowice - Czestochowa Bleszno",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_dab3a602a3bb.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-3 Wroclaw - Kamienna Gora Gora Parkowa",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_64fbbb190689.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/468/MUX-1 - Jelenia Gora Sniezne Kotly",
+      "ant_file_id": "468",
+      "local_path": "data/ant/468_MUX-1_-_Jelenia_Gora_Sniezne_Kotly.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1522/MUX-2 - Jelenia Gora Sniezne Kotly",
+      "ant_file_id": "1522",
+      "local_path": "data/ant/1522_MUX-2_-_Jelenia_Gora_Sniezne_Kotly.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1677/MUX-3 Wroclaw - Jelenia Gora Sniezne Kotly",
+      "ant_file_id": "1677",
+      "local_path": "data/ant/1677_MUX-3_Wroclaw_-_Jelenia_Gora_Sniezne_Kotly.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1907/MUX-4 - Jelenia Gora Sniezne Kotly",
+      "ant_file_id": "1907",
+      "local_path": "data/ant/1907_MUX-4_-_Jelenia_Gora_Sniezne_Kotly.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1912/MUX-6 - Jelenia Gora Sniezne Kotly",
+      "ant_file_id": "1912",
+      "local_path": "data/ant/1912_MUX-6_-_Jelenia_Gora_Sniezne_Kotly.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1757/MUX-8 - Jelenia Gora Sniezne Kotly",
+      "ant_file_id": "1757",
+      "local_path": "data/ant/1757_MUX-8_-_Jelenia_Gora_Sniezne_Kotly.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-1 - Walbrzych Gora Chelmiec h70",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_511b5963a02c.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-2 - Walbrzych Gora Chelmiec h70",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_96e255cbaa79.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1606/MUX-3 Wroclaw - Walbrzych Gora Chelmiec h70",
+      "ant_file_id": "1606",
+      "local_path": "data/ant/1606_MUX-3_Wroclaw_-_Walbrzych_Gora_Chelmiec_h70.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-6 - Walbrzych Gora Chelmiec h70",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_b9f14d91e25b.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1777/MUX-8 - Walbrzych Gora Chelmiec h70",
+      "ant_file_id": "1777",
+      "local_path": "data/ant/1777_MUX-8_-_Walbrzych_Gora_Chelmiec_h70.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1609/MUX-3 Wroclaw - Karpacz Gorny ul. Spokojna",
+      "ant_file_id": "1609",
+      "local_path": "data/ant/1609_MUX-3_Wroclaw_-_Karpacz_Gorny_ul._Spokojna.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/562/MUX-3 Lublin - Hrubieszow Nieledew",
+      "ant_file_id": "562",
+      "local_path": "data/ant/562_MUX-3_Lublin_-_Hrubieszow_Nieledew.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-L3 MWE Broadcast - Czestochowa Komin b. CSM Mleczgal",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_db5cf489b9d2.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-L4 MWE Teleport - Swidnica ul. Sklodowskiej-Curie",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_f6f6109062ca.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/453/MUX-1 - Czestochowa Wreczyca",
+      "ant_file_id": "453",
+      "local_path": "data/ant/453_MUX-1_-_Czestochowa_Wreczyca.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/483/MUX-2 - Czestochowa Wreczyca",
+      "ant_file_id": "483",
+      "local_path": "data/ant/483_MUX-2_-_Czestochowa_Wreczyca.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1623/MUX-3 Katowice - Czestochowa Wreczyca",
+      "ant_file_id": "1623",
+      "local_path": "data/ant/1623_MUX-3_Katowice_-_Czestochowa_Wreczyca.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1923/MUX-4 - Czestochowa Wreczyca",
+      "ant_file_id": "1923",
+      "local_path": "data/ant/1923_MUX-4_-_Czestochowa_Wreczyca.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/2054/MUX-6 - Czestochowa Wreczyca",
+      "ant_file_id": "2054",
+      "local_path": "data/ant/2054_MUX-6_-_Czestochowa_Wreczyca.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1750/MUX-8 - Czestochowa Wreczyca",
+      "ant_file_id": "1750",
+      "local_path": "data/ant/1750_MUX-8_-_Czestochowa_Wreczyca.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-3 Wroclaw - Piechowice Gorzyniec",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_eac9e1469149.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-1 - Kielce Swiety Krzyz",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_74a9642a770c.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-2 - Kielce Swiety Krzyz",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_8e3ae97a6ff6.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-3 Kielce - Kielce Swiety Krzyz",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_4a9aa78b4cce.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-4 - Kielce Swiety Krzyz",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_7dae888af866.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-6 - Kielce Swiety Krzyz",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_76494e0535bb.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1759/MUX-8 - Kielce Swiety Krzyz",
+      "ant_file_id": "1759",
+      "local_path": "data/ant/1759_MUX-8_-_Kielce_Swiety_Krzyz.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-1 - Wroclaw Gora Sleza",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_0560338f0e54.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-2 - Wroclaw Gora Sleza",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_86e6112eceec.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-3 Wroclaw - Wroclaw Gora Sleza",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_ce59c7d3190d.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-4 - Wroclaw Gora Sleza",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_394b73a5f050.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-6 - Wroclaw Gora Sleza",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_7f746265bb6f.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1744/MUX-8 - Wroclaw Gora Sleza",
+      "ant_file_id": "1744",
+      "local_path": "data/ant/1744_MUX-8_-_Wroclaw_Gora_Sleza.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-3 Wroclaw - Bogatynia Gora Wysoka",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_9fa25b611092.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1747/MUX-8 - Bogatynia Gora Wysoka",
+      "ant_file_id": "1747",
+      "local_path": "data/ant/1747_MUX-8_-_Bogatynia_Gora_Wysoka.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1574/MUX-3 Opole - Olesno ul. Lesna",
+      "ant_file_id": "1574",
+      "local_path": "data/ant/1574_MUX-3_Opole_-_Olesno_ul._Lesna.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-3 Kielce - Kielce Komin EC",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_dfb6b0fdd713.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-3 Wroclaw - Swieradow-Zdroj Gora Zajecznik",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_a4c9a7f16e23.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-3 Lublin - Krasnik ul. Lubelska",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_6a18640f6374.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-3 Wroclaw - Wojcieszow Gora Milek",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_768fa23e6e34.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1734/MUX-L1 MWE Teleport - Jelenia Gora Lysa Gora h69",
+      "ant_file_id": "1734",
+      "local_path": "data/ant/1734_MUX-L1_MWE_Teleport_-_Jelenia_Gora_Lysa_Gora_h69.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1812/MUX-1 - Namyslow Swierczow",
+      "ant_file_id": "1812",
+      "local_path": "data/ant/1812_MUX-1_-_Namyslow_Swierczow.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1882/MUX-2 - Namyslow Swierczow",
+      "ant_file_id": "1882",
+      "local_path": "data/ant/1882_MUX-2_-_Namyslow_Swierczow.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1972/MUX-3 Opole - Namyslow Swierczow",
+      "ant_file_id": "1972",
+      "local_path": "data/ant/1972_MUX-3_Opole_-_Namyslow_Swierczow.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/2079/MUX-6 - Namyslow Swierczow",
+      "ant_file_id": "2079",
+      "local_path": "data/ant/2079_MUX-6_-_Namyslow_Swierczow.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1676/MUX-3 Wroclaw - Dzialoszyn Centrum METEO",
+      "ant_file_id": "1676",
+      "local_path": "data/ant/1676_MUX-3_Wroclaw_-_Dzialoszyn_Centrum_METEO.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/502/MUX-3 Wroclaw - Wroclaw Zorawina",
+      "ant_file_id": "502",
+      "local_path": "data/ant/502_MUX-3_Wroclaw_-_Wroclaw_Zorawina.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-1 - Wloszczowa Dobromierz",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_0a97a5269622.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-2 - Wloszczowa Dobromierz",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_44b9dda7a4a4.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-3 Kielce - Wloszczowa Dobromierz",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_02577fa95031.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-6 - Wloszczowa Dobromierz",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_1f811167f212.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1752/MUX-8 - Wloszczowa Dobromierz",
+      "ant_file_id": "1752",
+      "local_path": "data/ant/1752_MUX-8_-_Wloszczowa_Dobromierz.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-3 Lublin - Lublin Bozy Dar",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_82092095cb16.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1792/MUX-8 - Lublin Bozy Dar",
+      "ant_file_id": "1792",
+      "local_path": "data/ant/1792_MUX-8_-_Lublin_Bozy_Dar.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-3 Wroclaw - Swierzawa ul. Mickiewicza",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_10e4bcc5d33c.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1685/MUX-3 Wroclaw - Wlen Modrzewie",
+      "ant_file_id": "1685",
+      "local_path": "data/ant/1685_MUX-3_Wroclaw_-_Wlen_Modrzewie.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-3 Wroclaw - Lesna Gora Lesna",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_16ba8736eb00.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-3 Kielce - Starachowice ul. Martenowska",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_f8ccfd7010d5.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-3 Lodz - Przedborz ul. Radomszczanska",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_1379b28ff4cc.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/EXP MUX BCAST Wroclaw - Wroclaw Budynek Sky Tower",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_a0efb7e5553b.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-L4 MWE Teleport - Wroclaw Budynek Sky Tower",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_47b71d432561.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-1 - Lublin Piaski",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_13d4455d26e6.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-2 - Lublin Piaski",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_07dbe3492772.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-3 Lublin - Lublin Piaski",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_0f4f0d9c31c0.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-4 - Lublin Piaski",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_e4315eb39111.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-6 - Lublin Piaski",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_35f1d1839956.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1764/MUX-8 - Lublin Piaski",
+      "ant_file_id": "1764",
+      "local_path": "data/ant/1764_MUX-8_-_Lublin_Piaski.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-3 Wroclaw - Luban Nowa Karczma",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_9f1c0653caa2.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-3 Warszawa - Lipsko Spacerowa",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_df2b36baae5d.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1687/MUX-3 Wroclaw - Zgorzelec Wieza Cisnien",
+      "ant_file_id": "1687",
+      "local_path": "data/ant/1687_MUX-3_Wroclaw_-_Zgorzelec_Wieza_Cisnien.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1391/MUX-3 Lodz - Wielun Kamionka",
+      "ant_file_id": "1391",
+      "local_path": "data/ant/1391_MUX-3_Lodz_-_Wielun_Kamionka.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-1 - Kamiensk Gora Kamienska h75",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_5101cd647920.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-2 - Kamiensk Gora Kamienska h75",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_8189991d7fb3.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-3 Lodz - Kamiensk Gora Kamienska h75",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_d3360301b83e.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-6 - Kamiensk Gora Kamienska h75",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_9a88359aba76.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1804/MUX-8 - Kamiensk Gora Kamienska h75",
+      "ant_file_id": "1804",
+      "local_path": "data/ant/1804_MUX-8_-_Kamiensk_Gora_Kamienska_h75.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-3 Wroclaw - Legnica Piastowska",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_0947f951fb47.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-3 Lublin - Lublin Raabego",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_6c5d79852f21.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1776/MUX-8 - Trzebnica Gora Farna",
+      "ant_file_id": "1776",
+      "local_path": "data/ant/1776_MUX-8_-_Trzebnica_Gora_Farna.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1425/MUX-3 Lodz - Wieruszow Tyble",
+      "ant_file_id": "1425",
+      "local_path": "data/ant/1425_MUX-3_Lodz_-_Wieruszow_Tyble.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1405/MUX-3 Lublin - Kazimierz Dolny Gory",
+      "ant_file_id": "1405",
+      "local_path": "data/ant/1405_MUX-3_Lublin_-_Kazimierz_Dolny_Gory.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/540/MUX-3 Wroclaw - Sycow Droltowice",
+      "ant_file_id": "540",
+      "local_path": "data/ant/540_MUX-3_Wroclaw_-_Sycow_Droltowice.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1789/MUX-8 - Kobyla Gora Kobyla Gora",
+      "ant_file_id": "1789",
+      "local_path": "data/ant/1789_MUX-8_-_Kobyla_Gora_Kobyla_Gora.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-1 - Przysucha Kozlowiec",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_0ae683a53d23.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-2 - Przysucha Kozlowiec",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_61372e0bce10.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-3 Lodz - Przysucha Kozlowiec",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_dc85a7f8ad6b.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/2100/MUX-3 Kielce - Przysucha Kozlowiec",
+      "ant_file_id": "2100",
+      "local_path": "data/ant/2100_MUX-3_Kielce_-_Przysucha_Kozlowiec.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-4 - Przysucha Kozlowiec",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_8b635bfc3ec6.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-6 - Przysucha Kozlowiec",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_0addf25792af.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1769/MUX-8 - Przysucha Kozlowiec",
+      "ant_file_id": "1769",
+      "local_path": "data/ant/1769_MUX-8_-_Przysucha_Kozlowiec.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1732/MUX-L7 TVL - Lubin Komin MPEC Termal",
+      "ant_file_id": "1732",
+      "local_path": "data/ant/1732_MUX-L7_TVL_-_Lubin_Komin_MPEC_Termal.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-3 Warszawa - Radom Wacyn h164",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_5d249753da58.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1771/MUX-8 - Radom Wacyn h164",
+      "ant_file_id": "1771",
+      "local_path": "data/ant/1771_MUX-8_-_Radom_Wacyn_h164.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-3 Lodz - Tomaszow Mazowiecki ul. Moscickiego",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_897e7973618b.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-1 - Kalisz Mikstat",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_d8bbf11a7996.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-2 - Kalisz Mikstat",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_2efe9afc0cff.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-3 Poznan - Kalisz Mikstat",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_18646216ce11.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-4 - Kalisz Mikstat",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_315f2d88008b.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-6 - Kalisz Mikstat",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_d767b9b7ab06.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-L3 MWE Broadcast - Tomaszow Mazowiecki Komin b. ZWCh Wistom",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_9ec89ae2b913.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/557/MUX-1 - Wlodawa Zolnierzy WiN",
+      "ant_file_id": "557",
+      "local_path": "data/ant/557_MUX-1_-_Wlodawa_Zolnierzy_WiN.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/556/MUX-2 - Wlodawa Zolnierzy WiN",
+      "ant_file_id": "556",
+      "local_path": "data/ant/556_MUX-2_-_Wlodawa_Zolnierzy_WiN.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/558/MUX-3 Lublin - Wlodawa Zolnierzy WiN",
+      "ant_file_id": "558",
+      "local_path": "data/ant/558_MUX-3_Lublin_-_Wlodawa_Zolnierzy_WiN.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/2082/MUX-6 - Wlodawa Zolnierzy WiN",
+      "ant_file_id": "2082",
+      "local_path": "data/ant/2082_MUX-6_-_Wlodawa_Zolnierzy_WiN.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/507/MUX-3 Wroclaw - Glogow Jakubow h63",
+      "ant_file_id": "507",
+      "local_path": "data/ant/507_MUX-3_Wroclaw_-_Glogow_Jakubow_h63.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1802/MUX-8 - Glogow Jakubow h63",
+      "ant_file_id": "1802",
+      "local_path": "data/ant/1802_MUX-8_-_Glogow_Jakubow_h63.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1733/MUX-L7 TVL - Glogow Jakubow h70",
+      "ant_file_id": "1733",
+      "local_path": "data/ant/1733_MUX-L7_TVL_-_Glogow_Jakubow_h70.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-1 - Ryki Janiszewska",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_9a2bcbc51711.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-2 - Ryki Janiszewska",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_da3e2dda5411.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1700/MUX-3 Warszawa - Ryki Janiszewska",
+      "ant_file_id": "1700",
+      "local_path": "data/ant/1700_MUX-3_Warszawa_-_Ryki_Janiszewska.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-3 Lublin - Ryki Janiszewska",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_8cbce11d3991.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-4 - Ryki Janiszewska",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_1d8fb2a417d0.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-6 - Ryki Janiszewska",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_4b3e4e1a543c.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1751/MUX-8 - Ryki Janiszewska",
+      "ant_file_id": "1751",
+      "local_path": "data/ant/1751_MUX-8_-_Ryki_Janiszewska.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1811/MUX-8 - Zduny Komin BM Kobylin",
+      "ant_file_id": "1811",
+      "local_path": "data/ant/1811_MUX-8_-_Zduny_Komin_BM_Kobylin.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-3 Poznan - Kalisz Chelmce",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_9e9b0aa2a500.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1758/MUX-8 - Kalisz Chelmce",
+      "ant_file_id": "1758",
+      "local_path": "data/ant/1758_MUX-8_-_Kalisz_Chelmce.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-1 - Zagan Wichow",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_e5ea1cd7142e.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-2 - Zagan Wichow",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_dd6fede7a116.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-3 Gorzow Wielkopolski - Zagan Wichow",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_b3550bf25116.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-4 - Zagan Wichow",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_d8ad5dfdd152.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-6 - Zagan Wichow",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_b5be7ce0b0ba.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1783/MUX-8 - Zagan Wichow",
+      "ant_file_id": "1783",
+      "local_path": "data/ant/1783_MUX-8_-_Zagan_Wichow.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1909/MUX-1 - Lodz Zygry",
+      "ant_file_id": "1909",
+      "local_path": "data/ant/1909_MUX-1_-_Lodz_Zygry.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1911/MUX-2 - Lodz Zygry",
+      "ant_file_id": "1911",
+      "local_path": "data/ant/1911_MUX-2_-_Lodz_Zygry.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1719/MUX-3 Lodz - Lodz Zygry",
+      "ant_file_id": "1719",
+      "local_path": "data/ant/1719_MUX-3_Lodz_-_Lodz_Zygry.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1504/MUX-4 - Lodz Zygry",
+      "ant_file_id": "1504",
+      "local_path": "data/ant/1504_MUX-4_-_Lodz_Zygry.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1976/MUX-6 - Lodz Zygry",
+      "ant_file_id": "1976",
+      "local_path": "data/ant/1976_MUX-6_-_Lodz_Zygry.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1741/MUX-8 - Lodz Zygry",
+      "ant_file_id": "1741",
+      "local_path": "data/ant/1741_MUX-8_-_Lodz_Zygry.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-3 Lublin - Wisznice Dubica Dolna",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_03dfe4914ad3.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-1 - Lodz Wzgorze Radary",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_61136b84a2d4.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-2 - Lodz Wzgorze Radary",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_a0dbb1f4a63d.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-3 Lodz - Lodz Wzgorze Radary",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_40ee028321a7.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-4 - Lodz Wzgorze Radary",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_2dbb6617ace4.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-6 - Lodz Wzgorze Radary",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_07541f78e993.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-3 Lublin - Lukow Celiny Szlacheckie",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_34de66ee3ca7.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-3 Gorzow Wielkopolski - Zielona Gora Ptasia",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_9268c71d6764.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/544/MUX-3 Gorzow Wielkopolski - Gubin ul. Wolynska",
+      "ant_file_id": "544",
+      "local_path": "data/ant/544_MUX-3_Gorzow_Wielkopolski_-_Gubin_ul._Wolynska.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/567/MUX-1 - Skierniewice Bartniki",
+      "ant_file_id": "567",
+      "local_path": "data/ant/567_MUX-1_-_Skierniewice_Bartniki.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1880/MUX-2 - Skierniewice Bartniki",
+      "ant_file_id": "1880",
+      "local_path": "data/ant/1880_MUX-2_-_Skierniewice_Bartniki.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1702/MUX-3 Lodz - Skierniewice Bartniki",
+      "ant_file_id": "1702",
+      "local_path": "data/ant/1702_MUX-3_Lodz_-_Skierniewice_Bartniki.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/2078/MUX-6 - Skierniewice Bartniki",
+      "ant_file_id": "2078",
+      "local_path": "data/ant/2078_MUX-6_-_Skierniewice_Bartniki.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1786/MUX-8 - Skierniewice Bartniki",
+      "ant_file_id": "1786",
+      "local_path": "data/ant/1786_MUX-8_-_Skierniewice_Bartniki.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/565/MUX-3 Lublin - Terespol Dobryn Duzy",
+      "ant_file_id": "565",
+      "local_path": "data/ant/565_MUX-3_Lublin_-_Terespol_Dobryn_Duzy.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-1 - Warszawa Raszyn",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_42ff84b3dd33.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-2 - Warszawa Raszyn",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_d7565f5d2c4d.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-3 Warszawa - Warszawa Raszyn",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_80945ceaa09c.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-4 - Warszawa Raszyn",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_f97bbc31a91b.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-6 - Warszawa Raszyn",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_eb51c20b4a5c.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-8 - Warszawa Raszyn",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_46329011bc49.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-1 - Poznan Srem",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_46da6d705532.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-2 - Poznan Srem",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_64dcb5bd7195.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-3 Poznan - Poznan Srem",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_8116cebbb7a6.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-4 - Poznan Srem",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_d635c3a0967a.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-6 - Poznan Srem",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_981179df4aa1.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1767/MUX-8 - Poznan Srem",
+      "ant_file_id": "1767",
+      "local_path": "data/ant/1767_MUX-8_-_Poznan_Srem.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1797/MUX-8 - Siedlce Blonie",
+      "ant_file_id": "1797",
+      "local_path": "data/ant/1797_MUX-8_-_Siedlce_Blonie.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-1 - Siedlce Losice",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_baa979a90be8.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-2 - Siedlce Losice",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_0d9948d07bc8.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1709/MUX-3 Warszawa - Siedlce Losice",
+      "ant_file_id": "1709",
+      "local_path": "data/ant/1709_MUX-3_Warszawa_-_Siedlce_Losice.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-3 Lublin - Siedlce Losice",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_54142ad2f5b9.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-4 - Siedlce Losice",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_f52c99d2cf6d.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-6 - Siedlce Losice",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_505236f8ac34.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1772/MUX-8 - Siedlce Losice",
+      "ant_file_id": "1772",
+      "local_path": "data/ant/1772_MUX-8_-_Siedlce_Losice.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-1 - Warszawa Palac Kultury i Nauki",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_f4c7343937a0.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-2 - Warszawa Palac Kultury i Nauki",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_63513fd3f519.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-3 Warszawa - Warszawa Palac Kultury i Nauki",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_7d4172a5465e.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-4 - Warszawa Palac Kultury i Nauki",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_4493ba9659c4.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-6 - Warszawa Palac Kultury i Nauki",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_f8ef14e52dd2.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1743/MUX-8 - Warszawa Palac Kultury i Nauki",
+      "ant_file_id": "1743",
+      "local_path": "data/ant/1743_MUX-8_-_Warszawa_Palac_Kultury_i_Nauki.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/EXP MUX BCAST Gdansk. Warszawa - Warszawa Budynek WTT",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_3b5d97d6d16e.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1624/MUX-1 - Kutno Sieciechow",
+      "ant_file_id": "1624",
+      "local_path": "data/ant/1624_MUX-1_-_Kutno_Sieciechow.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1705/MUX-2 - Kutno Sieciechow",
+      "ant_file_id": "1705",
+      "local_path": "data/ant/1705_MUX-2_-_Kutno_Sieciechow.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1704/MUX-3 Lodz - Kutno Sieciechow",
+      "ant_file_id": "1704",
+      "local_path": "data/ant/1704_MUX-3_Lodz_-_Kutno_Sieciechow.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/2077/MUX-6 - Kutno Sieciechow",
+      "ant_file_id": "2077",
+      "local_path": "data/ant/2077_MUX-6_-_Kutno_Sieciechow.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-3 Bialystok - Mielnik Komin ZGK",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_f5fa181f9316.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-1 - Zielona Gora Jemiolow",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_1d1916dcaaaa.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-2 - Zielona Gora Jemiolow",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_4cbbb8794ac2.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-3 Gorzow Wielkopolski - Zielona Gora Jemiolow",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_c2ff4ba4799b.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-4 - Zielona Gora Jemiolow",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_0535922fbfda.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-6 - Zielona Gora Jemiolow",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_c1463c3105e4.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1782/MUX-8 - Zielona Gora Jemiolow",
+      "ant_file_id": "1782",
+      "local_path": "data/ant/1782_MUX-8_-_Zielona_Gora_Jemiolow.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-1 - Konin Zolwieniec",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_1e7adbb5d2d7.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-2 - Konin Zolwieniec",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_aef531d31d9e.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-3 Poznan - Konin Zolwieniec",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_da5bdbd171ce.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1648/MUX-3 Bydgoszcz - Konin Zolwieniec",
+      "ant_file_id": "1648",
+      "local_path": "data/ant/1648_MUX-3_Bydgoszcz_-_Konin_Zolwieniec.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-4 - Konin Zolwieniec",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_d445c5249992.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-6 - Konin Zolwieniec",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_c2172a50dee9.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1761/MUX-8 - Konin Zolwieniec",
+      "ant_file_id": "1761",
+      "local_path": "data/ant/1761_MUX-8_-_Konin_Zolwieniec.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1523/MUX-3 Poznan - Nowy Tomysl Bolewice",
+      "ant_file_id": "1523",
+      "local_path": "data/ant/1523_MUX-3_Poznan_-_Nowy_Tomysl_Bolewice.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-8 - Poznan Collegium Altum",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_00c7450cf84a.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-3 Poznan - Poznan Piatkowo h128",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_6db2ac54239a.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-3 Warszawa - Plock Komin b. mleczarni Mitex",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_7ad5c25d4f1e.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-4 - Plock Komin b. mleczarni Mitex",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_c9276a1754fd.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-6 - Plock Komin b. mleczarni Mitex",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_fab73e5b5f7c.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1806/MUX-8 - Plock Komin b. mleczarni Mitex",
+      "ant_file_id": "1806",
+      "local_path": "data/ant/1806_MUX-8_-_Plock_Komin_b._mleczarni_Mitex.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/570/MUX-3 Bialystok - Kleszczele Czeremcha-Wies",
+      "ant_file_id": "570",
+      "local_path": "data/ant/570_MUX-3_Bialystok_-_Kleszczele_Czeremcha-Wies.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-1 - Sokolow Podlaski Chruszczewka",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_1444f40b812a.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-2 - Sokolow Podlaski Chruszczewka",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_fe5c6130c7bf.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-3 Warszawa - Sokolow Podlaski Chruszczewka",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_bdb2991852d9.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-6 - Sokolow Podlaski Chruszczewka",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_75acf6147e1e.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1748/MUX-8 - Sokolow Podlaski Chruszczewka",
+      "ant_file_id": "1748",
+      "local_path": "data/ant/1748_MUX-8_-_Sokolow_Podlaski_Chruszczewka.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1663/MUX-3 Bialystok - Siemiatycze Makarki",
+      "ant_file_id": "1663",
+      "local_path": "data/ant/1663_MUX-3_Bialystok_-_Siemiatycze_Makarki.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-1 - Gniezno Strzyzewo Koscielne",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_ece90fede18c.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-2 - Gniezno Strzyzewo Koscielne",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_4c5d25630f3b.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1514/MUX-3 Poznan - Gniezno Strzyzewo Koscielne",
+      "ant_file_id": "1514",
+      "local_path": "data/ant/1514_MUX-3_Poznan_-_Gniezno_Strzyzewo_Koscielne.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-6 - Gniezno Strzyzewo Koscielne",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_f4408f7ee9fa.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1810/MUX-8 - Oborniki Uscikowo-Folwark",
+      "ant_file_id": "1810",
+      "local_path": "data/ant/1810_MUX-8_-_Oborniki_Uscikowo-Folwark.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1779/MUX-8 - Wloclawek pl. Wolnosci",
+      "ant_file_id": "1779",
+      "local_path": "data/ant/1779_MUX-8_-_Wloclawek_pl._Wolnosci.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1698/MUX-3 Bydgoszcz - Wloclawek Komin Cieplowni Zazamcze",
+      "ant_file_id": "1698",
+      "local_path": "data/ant/1698_MUX-3_Bydgoszcz_-_Wloclawek_Komin_Cieplowni_Zazamcze.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/501/MUX-3 Gorzow Wielkopolski - Gorzow Wielkopolski Podmiejska",
+      "ant_file_id": "501",
+      "local_path": "data/ant/501_MUX-3_Gorzow_Wielkopolski_-_Gorzow_Wielkopolski_Podmiejska.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1662/MUX-3 Bialystok - Czyze Srebrna Gorka",
+      "ant_file_id": "1662",
+      "local_path": "data/ant/1662_MUX-3_Bialystok_-_Czyze_Srebrna_Gorka.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1800/MUX-8 - Czyze Srebrna Gorka",
+      "ant_file_id": "1800",
+      "local_path": "data/ant/1800_MUX-8_-_Czyze_Srebrna_Gorka.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/512/MUX-3 Poznan - Wagrowiec ul. Mickiewicza",
+      "ant_file_id": "512",
+      "local_path": "data/ant/512_MUX-3_Poznan_-_Wagrowiec_ul._Mickiewicza.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1658/MUX-3 Warszawa - Ostrow Mazowiecka Podborze h77",
+      "ant_file_id": "1658",
+      "local_path": "data/ant/1658_MUX-3_Warszawa_-_Ostrow_Mazowiecka_Podborze_h77.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-1 - Ciechanow Monte Cassino",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_f172f58ff9ac.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-2 - Ciechanow Monte Cassino",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_f56cba4a77c8.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-3 Warszawa - Ciechanow Monte Cassino",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_15e5f58ee69e.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-6 - Ciechanow Monte Cassino",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_7de58d02fb96.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1749/MUX-8 - Ciechanow Monte Cassino",
+      "ant_file_id": "1749",
+      "local_path": "data/ant/1749_MUX-8_-_Ciechanow_Monte_Cassino.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-1 - Ostroleka Rozan",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_f0b836376a56.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-2 - Ostroleka Rozan",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_8f00baeb6c67.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-3 Warszawa - Ostroleka Rozan",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_0c876e105503.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-4 - Ostroleka Rozan",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_9d1311ceb255.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-6 - Ostroleka Rozan",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_c5e3a8bc0851.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-1 - Plock Rachocin",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_e05105b8dcd7.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-2 - Plock Rachocin",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_a0ad6ed7c9b2.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/2144/MUX-3 Bydgoszcz - Plock Rachocin",
+      "ant_file_id": "2144",
+      "local_path": "data/ant/2144_MUX-3_Bydgoszcz_-_Plock_Rachocin.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-3 Warszawa - Plock Rachocin",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_4f2cd80004b6.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-4 - Plock Rachocin",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_e11a113d9be7.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-6 - Plock Rachocin",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_9dcd3cd6f1cc.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1790/MUX-8 - Plock Rachocin",
+      "ant_file_id": "1790",
+      "local_path": "data/ant/1790_MUX-8_-_Plock_Rachocin.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1701/MUX-3 Gorzow Wielkopolski - Dobiegniew ul. Lesna",
+      "ant_file_id": "1701",
+      "local_path": "data/ant/1701_MUX-3_Gorzow_Wielkopolski_-_Dobiegniew_ul._Lesna.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-3 Poznan - Chodziez ul. Strzelecka",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_f43618a11a67.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-1 - Golancz Chojna",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_4d633e2e2e8b.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-2 - Golancz Chojna",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_ced66eeeb6f7.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-3 Poznan - Golancz Chojna",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_b230340b0721.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-4 - Golancz Chojna",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_2ae1d6d81713.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-6 - Golancz Chojna",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_d43a2978d216.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1755/MUX-8 - Golancz Chojna",
+      "ant_file_id": "1755",
+      "local_path": "data/ant/1755_MUX-8_-_Golancz_Chojna.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1627/MUX-3 Bydgoszcz - Torun Komin PGE Torun",
+      "ant_file_id": "1627",
+      "local_path": "data/ant/1627_MUX-3_Bydgoszcz_-_Torun_Komin_PGE_Torun.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1809/MUX-8 - Torun Komin PGE Torun",
+      "ant_file_id": "1809",
+      "local_path": "data/ant/1809_MUX-8_-_Torun_Komin_PGE_Torun.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-1 - Ostroleka Lawy",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_00b45edd8269.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-2 - Ostroleka Lawy",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_d93c2239ad92.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-3 Warszawa - Ostroleka Lawy",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_78d6e6079c8d.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-6 - Ostroleka Lawy",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_6fc5f77cfdf9.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1766/MUX-8 - Ostroleka Kopernika",
+      "ant_file_id": "1766",
+      "local_path": "data/ant/1766_MUX-8_-_Ostroleka_Kopernika.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/569/MUX-3 Warszawa - Przasnysz Jastrzebiec",
+      "ant_file_id": "569",
+      "local_path": "data/ant/569_MUX-3_Warszawa_-_Przasnysz_Jastrzebiec.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-3 Bydgoszcz - Bydgoszcz Chodkiewicza",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_c3e5689fa712.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1484/MUX-1 - Lomza Szosa Zambrowska",
+      "ant_file_id": "1484",
+      "local_path": "data/ant/1484_MUX-1_-_Lomza_Szosa_Zambrowska.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1520/MUX-2 - Lomza Szosa Zambrowska",
+      "ant_file_id": "1520",
+      "local_path": "data/ant/1520_MUX-2_-_Lomza_Szosa_Zambrowska.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1690/MUX-3 Bialystok - Lomza Szosa Zambrowska",
+      "ant_file_id": "1690",
+      "local_path": "data/ant/1690_MUX-3_Bialystok_-_Lomza_Szosa_Zambrowska.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/2074/MUX-6 - Lomza Szosa Zambrowska",
+      "ant_file_id": "2074",
+      "local_path": "data/ant/2074_MUX-6_-_Lomza_Szosa_Zambrowska.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1765/MUX-8 - Lomza Szosa Zambrowska",
+      "ant_file_id": "1765",
+      "local_path": "data/ant/1765_MUX-8_-_Lomza_Szosa_Zambrowska.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-1 - Walcz Rusinowo",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_06cd70105fa1.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-2 - Walcz Rusinowo",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_83e0374939fb.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-3 Poznan - Walcz Rusinowo",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_3dc6b859c602.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-3 Szczecin - Walcz Rusinowo",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_a4e1cfb27fda.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-4 - Walcz Rusinowo",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_33825baf0844.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-6 - Walcz Rusinowo",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_3e9bc0219680.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1794/MUX-8 - Walcz Rusinowo",
+      "ant_file_id": "1794",
+      "local_path": "data/ant/1794_MUX-8_-_Walcz_Rusinowo.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-1 - Bialystok Krynice h332",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_fa257a8b8b3b.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-2 - Bialystok Krynice h332",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_f43ef45d926d.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1661/MUX-3 Bialystok - Bialystok Krynice h332",
+      "ant_file_id": "1661",
+      "local_path": "data/ant/1661_MUX-3_Bialystok_-_Bialystok_Krynice_h332.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1940/MUX-4 - Bialystok Krynice h332",
+      "ant_file_id": "1940",
+      "local_path": "data/ant/1940_MUX-4_-_Bialystok_Krynice_h332.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/2014/MUX-6 - Bialystok Krynice h332",
+      "ant_file_id": "2014",
+      "local_path": "data/ant/2014_MUX-6_-_Bialystok_Krynice_h332.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1791/MUX-8 - Bialystok Krynice h332",
+      "ant_file_id": "1791",
+      "local_path": "data/ant/1791_MUX-8_-_Bialystok_Krynice_h332.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-1 - Bydgoszcz Trzeciewiec",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_828161647b79.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-2 - Bydgoszcz Trzeciewiec",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_052e48c7e4bd.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1625/MUX-3 Bydgoszcz - Bydgoszcz Trzeciewiec",
+      "ant_file_id": "1625",
+      "local_path": "data/ant/1625_MUX-3_Bydgoszcz_-_Bydgoszcz_Trzeciewiec.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-4 - Bydgoszcz Trzeciewiec",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_97e92634ac9a.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-6 - Bydgoszcz Trzeciewiec",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_562bb568283a.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1784/MUX-8 - Bydgoszcz Trzeciewiec",
+      "ant_file_id": "1784",
+      "local_path": "data/ant/1784_MUX-8_-_Bydgoszcz_Trzeciewiec.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/463/MUX-1 - Szczecin Kolowo",
+      "ant_file_id": "463",
+      "local_path": "data/ant/463_MUX-1_-_Szczecin_Kolowo.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1434/MUX-2 - Szczecin Kolowo",
+      "ant_file_id": "1434",
+      "local_path": "data/ant/1434_MUX-2_-_Szczecin_Kolowo.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1428/MUX-3 Szczecin - Szczecin Kolowo",
+      "ant_file_id": "1428",
+      "local_path": "data/ant/1428_MUX-3_Szczecin_-_Szczecin_Kolowo.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/568/MUX-4 - Szczecin Kolowo",
+      "ant_file_id": "568",
+      "local_path": "data/ant/568_MUX-4_-_Szczecin_Kolowo.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/2048/MUX-6 - Szczecin Kolowo",
+      "ant_file_id": "2048",
+      "local_path": "data/ant/2048_MUX-6_-_Szczecin_Kolowo.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1774/MUX-8 - Szczecin Kolowo",
+      "ant_file_id": "1774",
+      "local_path": "data/ant/1774_MUX-8_-_Szczecin_Kolowo.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1664/MUX-3 Bialystok - Kolno Zaskrodzie",
+      "ant_file_id": "1664",
+      "local_path": "data/ant/1664_MUX-3_Bialystok_-_Kolno_Zaskrodzie.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1644/MUX-3 Olsztyn - Nowe Miasto Lubawskie Kurzetnik",
+      "ant_file_id": "1644",
+      "local_path": "data/ant/1644_MUX-3_Olsztyn_-_Nowe_Miasto_Lubawskie_Kurzetnik.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1626/MUX-3 Bydgoszcz - Grudziadz ul. Nad Torem",
+      "ant_file_id": "1626",
+      "local_path": "data/ant/1626_MUX-3_Bydgoszcz_-_Grudziadz_ul._Nad_Torem.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1722/MUX-3 Szczecin - Szczecin Warszewo",
+      "ant_file_id": "1722",
+      "local_path": "data/ant/1722_MUX-3_Szczecin_-_Szczecin_Warszewo.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/2060/MUX-3 Olsztyn - Ostroda Dylewska Gora",
+      "ant_file_id": "2060",
+      "local_path": "data/ant/2060_MUX-3_Olsztyn_-_Ostroda_Dylewska_Gora.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/571/MUX-3 Bialystok - Szczuczyn Bzury",
+      "ant_file_id": "571",
+      "local_path": "data/ant/571_MUX-3_Bialystok_-_Szczuczyn_Bzury.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-1 - Ilawa Kisielice",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_1302652cef4c.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-2 - Ilawa Kisielice",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_45c61f6a9664.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-3 Gdansk - Ilawa Kisielice",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_63010cab0595.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-3 Olsztyn - Ilawa Kisielice",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_ff3285ad106f.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-3 Bydgoszcz - Ilawa Kisielice",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_2e85727cf149.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-4 - Ilawa Kisielice",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_cde81672a04a.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-6 - Ilawa Kisielice",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_5dbb58ec5fc2.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1756/MUX-8 - Ilawa Kisielice",
+      "ant_file_id": "1756",
+      "local_path": "data/ant/1756_MUX-8_-_Ilawa_Kisielice.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-3 Szczecin - Lobez ul. Podgorna",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_5f01f749cd8c.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-3 Gdansk - Czluchow Szkolna",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_bf7de71ed4b0.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1801/MUX-8 - Czluchow Szkolna",
+      "ant_file_id": "1801",
+      "local_path": "data/ant/1801_MUX-8_-_Czluchow_Szkolna.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/572/MUX-3 Bialystok - Lipsk Jermakowicza",
+      "ant_file_id": "572",
+      "local_path": "data/ant/572_MUX-3_Bialystok_-_Lipsk_Jermakowicza.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-1 - Olsztyn Pieczewo",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_56c07d78a081.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-2 - Olsztyn Pieczewo",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_bd34182ce121.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-3 Olsztyn - Olsztyn Pieczewo",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_7fb0113ff9ac.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-4 - Olsztyn Pieczewo",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_2ab20a0915b6.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-6 - Olsztyn Pieczewo",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_916db10b3a61.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1785/MUX-8 - Olsztyn Pieczewo",
+      "ant_file_id": "1785",
+      "local_path": "data/ant/1785_MUX-8_-_Olsztyn_Pieczewo.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-3 Olsztyn - Mragowo Spacerowa",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_cb177ad7bea0.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-1 - Bialogard Slawoborze",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_786ecfa063db.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-2 - Bialogard Slawoborze",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_769576f1434b.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-3 Szczecin - Bialogard Slawoborze",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_4d18063fef3f.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-4 - Bialogard Slawoborze",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_ce4b62f3d588.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-6 - Bialogard Slawoborze",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_f67770e6724d.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1745/MUX-8 - Bialogard Slawoborze",
+      "ant_file_id": "1745",
+      "local_path": "data/ant/1745_MUX-8_-_Bialogard_Slawoborze.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-3 Szczecin - Gryfice Trzyglowska",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_6cb7e6504ab8.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/2135/MUX-3 Szczecin - Swinoujscie Chrobrego",
+      "ant_file_id": "2135",
+      "local_path": "data/ant/2135_MUX-3_Szczecin_-_Swinoujscie_Chrobrego.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1478/MUX-1 - Gizycko Milki",
+      "ant_file_id": "1478",
+      "local_path": "data/ant/1478_MUX-1_-_Gizycko_Milki.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1517/MUX-2 - Gizycko Milki",
+      "ant_file_id": "1517",
+      "local_path": "data/ant/1517_MUX-2_-_Gizycko_Milki.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-3 Olsztyn - Gizycko Milki",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_ef55aa1f65ee.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-4 - Gizycko Milki",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_b2dba31f1274.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-6 - Gizycko Milki",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_22e1f6faa0ae.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1754/MUX-8 - Gizycko Milki",
+      "ant_file_id": "1754",
+      "local_path": "data/ant/1754_MUX-8_-_Gizycko_Milki.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/473/MUX-1 - Miedzyzdroje Gora Grzywacz",
+      "ant_file_id": "473",
+      "local_path": "data/ant/473_MUX-1_-_Miedzyzdroje_Gora_Grzywacz.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/481/MUX-2 - Miedzyzdroje Gora Grzywacz",
+      "ant_file_id": "481",
+      "local_path": "data/ant/481_MUX-2_-_Miedzyzdroje_Gora_Grzywacz.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1427/MUX-3 Szczecin - Miedzyzdroje Gora Grzywacz",
+      "ant_file_id": "1427",
+      "local_path": "data/ant/1427_MUX-3_Szczecin_-_Miedzyzdroje_Gora_Grzywacz.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/2021/MUX-6 - Miedzyzdroje Gora Grzywacz",
+      "ant_file_id": "2021",
+      "local_path": "data/ant/2021_MUX-6_-_Miedzyzdroje_Gora_Grzywacz.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1803/MUX-8 - Miedzyzdroje Gora Grzywacz",
+      "ant_file_id": "1803",
+      "local_path": "data/ant/1803_MUX-8_-_Miedzyzdroje_Gora_Grzywacz.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-1 - Koszalin Gologora h271",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_8c63e1194381.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-2 - Koszalin Gologora h271",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_08bbfe3d5625.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1721/MUX-3 Szczecin - Koszalin Gologora h271",
+      "ant_file_id": "1721",
+      "local_path": "data/ant/1721_MUX-3_Szczecin_-_Koszalin_Gologora_h271.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1652/MUX-3 Gdansk - Koszalin Gologora h271",
+      "ant_file_id": "1652",
+      "local_path": "data/ant/1652_MUX-3_Gdansk_-_Koszalin_Gologora_h271.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-4 - Koszalin Gologora h271",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_7c777073281f.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-6 - Koszalin Gologora h271",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_299549da3674.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1762/MUX-8 - Koszalin Gologora h271",
+      "ant_file_id": "1762",
+      "local_path": "data/ant/1762_MUX-8_-_Koszalin_Gologora_h271.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-3 Szczecin - Trzebiatow ul. Wodna",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_0c92e5cc6874.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1813/MUX-3 Szczecin - Rewal Trzesacz",
+      "ant_file_id": "1813",
+      "local_path": "data/ant/1813_MUX-3_Szczecin_-_Rewal_Trzesacz.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1421/MUX-3 Olsztyn - Ketrzyn ul. Lokietka",
+      "ant_file_id": "1421",
+      "local_path": "data/ant/1421_MUX-3_Olsztyn_-_Ketrzyn_ul._Lokietka.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/2003/MUX LRT - Suwalki Gora Krzemianucha",
+      "ant_file_id": "2003",
+      "local_path": "data/ant/2003_MUX_LRT_-_Suwalki_Gora_Krzemianucha.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1877/MUX-1 - Suwalki Gora Krzemianucha",
+      "ant_file_id": "1877",
+      "local_path": "data/ant/1877_MUX-1_-_Suwalki_Gora_Krzemianucha.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1458/MUX-2 - Suwalki Gora Krzemianucha",
+      "ant_file_id": "1458",
+      "local_path": "data/ant/1458_MUX-2_-_Suwalki_Gora_Krzemianucha.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-3 Bialystok - Suwalki Gora Krzemianucha",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_8823c7716be1.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-4 - Suwalki Gora Krzemianucha",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_e065d3297c2f.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-6 - Suwalki Gora Krzemianucha",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_006385e9c234.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1773/MUX-8 - Suwalki Gora Krzemianucha",
+      "ant_file_id": "1773",
+      "local_path": "data/ant/1773_MUX-8_-_Suwalki_Gora_Krzemianucha.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-3 Szczecin - Koszalin Gora Chelmska",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_e12a515edbc9.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-1 - Elblag Jagodnik",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_eead0fdcdef5.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-2 - Elblag Jagodnik",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_6eb5449a1b58.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-3 Olsztyn - Elblag Jagodnik",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_0426a63a9265.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-4 - Elblag Jagodnik",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_f391b4049b2c.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-6 - Elblag Jagodnik",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_17e11694b4e9.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1753/MUX-8 - Elblag Jagodnik",
+      "ant_file_id": "1753",
+      "local_path": "data/ant/1753_MUX-8_-_Elblag_Jagodnik.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/508/MUX-3 Gdansk - Kartuzy Szymbark",
+      "ant_file_id": "508",
+      "local_path": "data/ant/508_MUX-3_Gdansk_-_Kartuzy_Szymbark.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1775/MUX-8 - Kartuzy Szymbark",
+      "ant_file_id": "1775",
+      "local_path": "data/ant/1775_MUX-8_-_Kartuzy_Szymbark.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1713/MUX-3 Gdansk - Gdansk Jaskowa Kopa",
+      "ant_file_id": "1713",
+      "local_path": "data/ant/1713_MUX-3_Gdansk_-_Gdansk_Jaskowa_Kopa.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-6 - Gdansk Jaskowa Kopa",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_12b1923389d4.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/520/EXP MUX BCAST Gdansk. Warszawa - Gdansk Budynek Olivia Star",
+      "ant_file_id": "520",
+      "local_path": "data/ant/520_EXP_MUX_BCAST_Gdansk._Warszawa_-_Gdansk_Budynek_Olivia_Star.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/478/MUX-1 - Gdansk Chwaszczyno",
+      "ant_file_id": "478",
+      "local_path": "data/ant/478_MUX-1_-_Gdansk_Chwaszczyno.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1433/MUX-2 - Gdansk Chwaszczyno",
+      "ant_file_id": "1433",
+      "local_path": "data/ant/1433_MUX-2_-_Gdansk_Chwaszczyno.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/504/MUX-3 Gdansk - Gdansk Chwaszczyno",
+      "ant_file_id": "504",
+      "local_path": "data/ant/504_MUX-3_Gdansk_-_Gdansk_Chwaszczyno.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1512/MUX-4 - Gdansk Chwaszczyno",
+      "ant_file_id": "1512",
+      "local_path": "data/ant/1512_MUX-4_-_Gdansk_Chwaszczyno.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/2009/MUX-6 - Gdansk Chwaszczyno",
+      "ant_file_id": "2009",
+      "local_path": "data/ant/2009_MUX-6_-_Gdansk_Chwaszczyno.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1738/MUX-8 - Gdansk Chwaszczyno",
+      "ant_file_id": "1738",
+      "local_path": "data/ant/1738_MUX-8_-_Gdansk_Chwaszczyno.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1643/MUX-3 Gdansk - Slupsk Bierkowo",
+      "ant_file_id": "1643",
+      "local_path": "data/ant/1643_MUX-3_Gdansk_-_Slupsk_Bierkowo.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-1 - Lebork Skorowo Nowe",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_089391a7b2d5.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-2 - Lebork Skorowo Nowe",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_d77e7e797925.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-3 Gdansk - Lebork Skorowo Nowe",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_11cc1682693f.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/0/MUX-6 - Lebork Skorowo Nowe",
+      "ant_file_id": "",
+      "local_path": "data/ant/unknown_e6bcd3c718c3.ant",
+      "downloaded": false,
+      "note": "Brak prawidłowego ID w URL; downloader pominie bez --include-invalid."
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1763/MUX-8 - Lebork Skorowo Nowe",
+      "ant_file_id": "1763",
+      "local_path": "data/ant/1763_MUX-8_-_Lebork_Skorowo_Nowe.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/1525/MUX-3 Gdansk - Gdynia Oksywie h70",
+      "ant_file_id": "1525",
+      "local_path": "data/ant/1525_MUX-3_Gdansk_-_Gdynia_Oksywie_h70.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/2143/MUX-6 - Gdynia Oksywie h70",
+      "ant_file_id": "2143",
+      "local_path": "data/ant/2143_MUX-6_-_Gdynia_Oksywie_h70.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/511/MUX-3 Gdansk - Wejherowo Komin Cieplowni Nanice",
+      "ant_file_id": "511",
+      "local_path": "data/ant/511_MUX-3_Gdansk_-_Wejherowo_Komin_Cieplowni_Nanice.ant",
+      "downloaded": false,
+      "note": ""
+    },
+    {
+      "url": "http://mapy.radiopolska.pl/files/ant_file/510/MUX-3 Gdansk - Choczewo Zelazno",
+      "ant_file_id": "510",
+      "local_path": "data/ant/510_MUX-3_Gdansk_-_Choczewo_Zelazno.ant",
+      "downloaded": false,
+      "note": ""
+    }
+  ]
+}

@@ -1,4 +1,4 @@
-# DVB-T/T2 Point — 19.1 - 1705261458
+# DVB-T/T2 Point — 19.5 - 1705261615
 
 Etap 19:
 - numer wersji widoczny stale na ekranie,
@@ -34,3 +34,10 @@ Pliki ANT pobierzesz komendą:
 
 python download_ant_patterns.py
 
+
+## Wersja 19.5
+
+- Poprawiono numer wersji widoczny w interfejsie.
+- Dodano dynamiczne ustawianie napisu wersji z jednej stałej `APP_VERSION`.
+- Zmieniono cache service workera, aby przeglądarka nie trzymała starego `index.html`.
+- Zmieniono parametry `?v=` przy `app.js` i `style.css`, aby wymusić odświeżenie plików.

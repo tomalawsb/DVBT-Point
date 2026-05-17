@@ -1,0 +1,11 @@
+DVB-T/T2 Point 19.5 - 1705261615
+
+Poprawki:
+- UI pokazuje teraz właściwą wersję: 19.5 - 1705261615.
+- `index.html` ma poprawiony tytuł, górny badge i pływający badge wersji.
+- `app.js` ustawia wersję dynamicznie z jednej stałej APP_VERSION.
+- `service-worker.js` dostał nową nazwę cache, żeby nie podawał starego interfejsu z pamięci.
+- Zmieniono parametry cache-busting przy app.js/style.css.
+
+Uwaga:
+Po wgraniu tej wersji w przeglądarce/PWA najlepiej odświeżyć aplikację twardo albo usunąć starą instalację PWA, jeśli nadal widzisz starą wersję.
