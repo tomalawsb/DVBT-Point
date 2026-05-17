@@ -1,0 +1,18 @@
+DVB-T/T2 Point 19.9 - 1705261742
+
+Zakres zmian:
+- Dodano pierwszy model obliczeń zasięgu typu ITM/Longley-Rice-lite.
+- Obliczanie RF nie opiera się już tylko o FSPL i pojedynczy punkt wysokości odbioru.
+- Dla każdego azymutu budowany jest promieniowy profil terenu z DEM.
+- Dodano korektę krzywizny Ziemi na ścieżce nadajnik-odbiornik.
+- Dodano sprawdzanie 60% pierwszej strefy Fresnela.
+- Dodano stratę dyfrakcyjną knife-edge dla przeszkód terenowych.
+- Uwzględniane są lokalne pliki ANT, jeśli zostały pobrane i poprawnie sparsowane.
+- Panel wyniku pokazuje diagnostykę: liczba komórek z istotną stratą terenową i średnią stratę DEM/ITM.
+- Zaktualizowano wersję w UI, tytule, app.js i service-workerze.
+
+Ograniczenia:
+- To nie jest jeszcze pełny Longley-Rice/ITM zgodny 1:1 z Radio Mobile.
+- To praktyczna implementacja terenowa działająca w przeglądarce: FSPL + DEM + Fresnel + dyfrakcja + ANT.
+- Dokładność zależy od jakości DEM w cache i poprawności plików ANT.
+- Dla bardzo dużych zasięgów obliczenia mogą potrwać dłużej, bo aplikacja musi pobrać/przetworzyć więcej punktów DEM.

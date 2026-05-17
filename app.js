@@ -1,6 +1,6 @@
 (() => {
   'use strict';
-  const APP_VERSION = '19.8 - 1705261728';
+  const APP_VERSION = '19.9 - 1705261742';
   const STORE = 'dvbt-point-v19-state';
   const $ = id => document.getElementById(id);
   const state = {
@@ -323,7 +323,7 @@
       <div class="info-card"><strong>Wersja</strong><span>${APP_VERSION}</span></div>
       <div class="info-card"><strong>Profil terenu / DEM</strong><span>DEM pobierasz na żądanie dla wybranego nadajnika i zapisujesz w lokalnym cache przeglądarki. Open-Meteo zostaje tylko jako źródło pobierania brakujących punktów.</span><button id="downloadDemSelected" class="panel-btn primary">Pobierz DEM dla wybranego nadajnika</button><button id="showDemStats" class="panel-btn">Pokaż stan cache DEM</button></div>
       <div class="info-card"><strong>Nadajniki</strong><span>Baza RadioPolska po oczyszczeniu: ${state.txs.length} obiektów nadawczych i ${muxCount} emisji/MUX-ów. Ładowane z data/transmitters.json.</span></div>
-      <div class="info-card"><strong>Własne obliczanie zasięgu RF</strong><span>Aplikacja może sama policzyć poglądowy zasięg wybranego nadajnika z mocy ERP, częstotliwości, wysokości anten, profilu DEM z Open-Meteo i lokalnych plików ANT, jeśli zostały pobrane. To nie jest kopia cudzych map — to własne obliczenie uproszczonym modelem.</span><button id="calcRfCoverage" class="panel-btn primary">Oblicz i narysuj zasięg wybranego nadajnika</button><button id="clearRfCoverage" class="panel-btn">Usuń obliczony zasięg</button></div>
+      <div class="info-card"><strong>Własne obliczanie zasięgu RF / ITM</strong><span>Aplikacja liczy poglądowy zasięg wybranego nadajnika z ERP, częstotliwości, wysokości anten, lokalnego DEM i plików ANT. Wersja 19.9 dodaje pierwszy model terenowy typu ITM/Longley-Rice: profil po promieniu, krzywizna Ziemi, strefa Fresnela i strata dyfrakcyjna za przeszkodami.</span><button id="calcRfCoverage" class="panel-btn primary">Oblicz zasięg ITM / terenowy</button><button id="clearRfCoverage" class="panel-btn">Usuń obliczony zasięg</button></div>
       <div class="info-card"><strong>Charakterystyki anten ANT</strong><span>Wersja 19.6 ma diagnostykę plików ANT: sprawdza indeks, pobrane pliki lokalne, poprawność parsera, zakres azymutów i to, czy RF faktycznie ma z czego korzystać. Pliki pobierzesz komendą: python download_ant_patterns.py.</span><button id="runAntDiagnostics" class="panel-btn primary">Uruchom diagnostykę ANT</button></div>
       <div class="info-card"><strong>Prawdziwy zasięg masztów</strong><span>Warstwa zasięgu może pochodzić z własnego obliczenia RF, importu GeoJSON albo licencjonowanego XYZ tile URL. Gotowych kafelków RadioPolska/Emitel aplikacja nie skrobie.</span></div>
       <div class="info-card"><strong>Import GeoJSON zasięgu</strong><input id="coverageGeoJson" type="file" accept=".json,.geojson,application/geo+json,application/json"></div>
@@ -626,52 +626,110 @@
     if(level >= -98) return 'słaby';
     return 'bardzo słaby';
   }
+
+  function freeSpaceLossDb(freqMhz, distanceKm){
+    const d=Math.max(0.05, distanceKm);
+    return 32.44 + 20*Math.log10(Math.max(1, freqMhz)) + 20*Math.log10(d);
+  }
+  function knifeEdgeLossDb(v){
+    if(v <= -0.78) return 0;
+    return 6.9 + 20*Math.log10(Math.sqrt((v-0.1)*(v-0.1)+1) + v - 0.1);
+  }
+  function fresnelRadiusM(freqMhz, d1Km, d2Km){
+    const lambda=300/Math.max(1, freqMhz);
+    const d1=Math.max(1, d1Km*1000), d2=Math.max(1, d2Km*1000);
+    return Math.sqrt(lambda*d1*d2/(d1+d2));
+  }
+  function terrainItmLossDb(ray, endIndex, freqMhz, txAltM, rxHeightM){
+    const end=ray[endIndex];
+    if(!end || end.km <= 0) return 0;
+    const rxAltM=end.elev + rxHeightM;
+    const totalKm=end.km;
+    let worstV=-99;
+    let worstMargin=999;
+    for(let i=1;i<endIndex;i++){
+      const p=ray[i];
+      const f=p.km/totalKm;
+      const los=txAltM + (rxAltM-txAltM)*f;
+      const earthBulgeM=(p.km*(totalKm-p.km))/12.75;
+      const f1=fresnelRadiusM(freqMhz, p.km, totalKm-p.km);
+      const requiredClearance=0.6*f1;
+      const obstacle=p.elev + earthBulgeM + requiredClearance;
+      const margin=los-obstacle;
+      if(margin<worstMargin) worstMargin=margin;
+      if(margin<0){
+        const lambda=300/Math.max(1, freqMhz);
+        const h=-margin;
+        const d1=Math.max(1,p.km*1000), d2=Math.max(1,(totalKm-p.km)*1000);
+        const v=h*Math.sqrt(2*(d1+d2)/(lambda*d1*d2));
+        if(v>worstV) worstV=v;
+      }
+    }
+    const diffraction=worstV>-90 ? knifeEdgeLossDb(worstV) : 0;
+    const clutter=totalKm>55 ? (totalKm-55)*0.10 : 0;
+    const lowClearance=worstMargin<8 && worstMargin>=0 ? (8-worstMargin)*0.35 : 0;
+    return Math.min(55, diffraction + clutter + lowClearance);
+  }
+  function buildItmRays(t, maxKm){
+    const bearings=[]; for(let b=0;b<360;b+=10) bearings.push(b);
+    const distances=[]; for(let d=2; d<=maxKm; d+=3) distances.push(d);
+    return bearings.map(bearing=>({
+      bearing,
+      points: distances.map(km=>({bearing, km, ...destinationPoint(t.lat,t.lon,bearing,km)}))
+    }));
+  }
   async function calculateRfCoverage(){
     const t=state.selected; if(!t) return toast('Najpierw wybierz nadajnik.');
     if(state.rfBusy) return toast('Obliczanie zasięgu już trwa.');
     state.rfBusy=true;
-    toast('Liczenie zasięgu RF z wysokości terenu...');
+    toast('Liczenie zasięgu ITM/terenowego z DEM i ANT...');
     try{
       const {freq, erpKw, mux, txHeight}=txMainParams(t);
       const antPattern=await loadAntPattern(mux);
-      const maxKm=Math.max(20, Math.min(90, Math.sqrt(erpKw)*22 + txHeight*0.25));
-      const bearings=[]; for(let b=0;b<360;b+=12) bearings.push(b);
-      const rings=[]; for(let d=2; d<=maxKm; d+=4) rings.push(d);
-      const samples=[];
-      for(const bearing of bearings){ for(const km of rings){ samples.push({bearing, km, ...destinationPoint(t.lat,t.lon,bearing,km)}); } }
+      const maxKm=Math.max(18, Math.min(95, Math.sqrt(erpKw)*23 + txHeight*0.28));
       const txElevArr=await fetchElevations([{lat:t.lat,lon:t.lon}]);
-      const elevations=await fetchElevations(samples.map(p=>({lat:p.lat,lon:p.lon})));
       const txGround=Number.isFinite(+t.site_elevation_m) ? +t.site_elevation_m : txElevArr[0];
       const txAlt=txGround + txHeight;
-      const erpDbm=60 + 10*Math.log10(erpKw); // 1 kW ERP ~= 60 dBm; uproszczenie
+      const erpDbm=60 + 10*Math.log10(Math.max(0.001, erpKw));
+      const rays=buildItmRays(t, maxKm);
+      const allPoints=[];
+      for(const ray of rays) allPoints.push(...ray.points.map(p=>({lat:p.lat, lon:p.lon})));
+      const elev=await fetchElevations(allPoints);
+      let eidx=0;
+      for(const ray of rays){
+        for(const p of ray.points){ p.elev=+elev[eidx++]; }
+      }
       const cells=[];
-      for(let i=0;i<samples.length;i++){
-        const p=samples[i], rxGround=elevations[i], d=Math.max(0.2,p.km);
-        const fspl=32.44 + 20*Math.log10(freq) + 20*Math.log10(d);
-        const earthBulge=(d*d)/(12.75); // metry, przybliżenie horyzontu radiowego
-        const losMargin=txAlt - (rxGround + state.rxHeight + earthBulge);
-        const terrainPenalty=losMargin < 0 ? Math.min(38, Math.abs(losMargin)*0.23) : losMargin < 12 ? (12-losMargin)*0.65 : 0;
-        const distanceFade=d>35 ? (d-35)*0.18 : 0;
-        const antGain=antennaGainDb(antPattern, p.bearing);
-        const level=erpDbm + antGain - fspl - terrainPenalty - distanceFade;
-        const halfBearing=6, inner=Math.max(0.2,p.km-2), outer=p.km+2;
-        const a=destinationPoint(t.lat,t.lon,p.bearing-halfBearing,inner);
-        const b=destinationPoint(t.lat,t.lon,p.bearing+halfBearing,inner);
-        const c=destinationPoint(t.lat,t.lon,p.bearing+halfBearing,outer);
-        const dpt=destinationPoint(t.lat,t.lon,p.bearing-halfBearing,outer);
-        cells.push({poly:[[a.lat,a.lon],[b.lat,b.lon],[c.lat,c.lon],[dpt.lat,dpt.lon]], level, km:p.km, bearing:p.bearing});
+      for(const ray of rays){
+        for(let i=0;i<ray.points.length;i++){
+          const p=ray.points[i];
+          const d=Math.max(0.2,p.km);
+          const fspl=freeSpaceLossDb(freq, d);
+          const itmLoss=terrainItmLossDb(ray.points, i, freq, txAlt, state.rxHeight);
+          const antGain=antennaGainDb(antPattern, ray.bearing);
+          const reliabilityMargin=d>40 ? (d-40)*0.08 : 0;
+          const level=erpDbm + antGain - fspl - itmLoss - reliabilityMargin;
+          const halfBearing=5, inner=Math.max(0.2,p.km-1.5), outer=p.km+1.5;
+          const a=destinationPoint(t.lat,t.lon,ray.bearing-halfBearing,inner);
+          const b=destinationPoint(t.lat,t.lon,ray.bearing+halfBearing,inner);
+          const c=destinationPoint(t.lat,t.lon,ray.bearing+halfBearing,outer);
+          const dpt=destinationPoint(t.lat,t.lon,ray.bearing-halfBearing,outer);
+          cells.push({poly:[[a.lat,a.lon],[b.lat,b.lon],[c.lat,c.lon],[dpt.lat,dpt.lon]], level, km:p.km, bearing:ray.bearing, loss:itmLoss});
+        }
       }
       clearRfLayer();
       state.rfLayer=L.layerGroup();
       for(const cell of cells){
         const color=rfColor(cell.level);
-        L.polygon(cell.poly,{color, weight:.4, opacity:.32, fillColor:color, fillOpacity:.18, interactive:false}).addTo(state.rfLayer);
+        L.polygon(cell.poly,{color, weight:.35, opacity:.30, fillColor:color, fillOpacity:.17, interactive:false}).addTo(state.rfLayer);
       }
       state.rfLayer.addTo(state.map);
       const bestReach=Math.max(0,...cells.filter(c=>c.level>=-88).map(c=>c.km));
-      state.lastRf={tx:t.id, freq, erpKw, bestReach, antPattern:!!antPattern};
-      toast(`Narysowano własny zasięg RF: ${Math.round(bestReach)} km dla ${mux.name||'MUX'}.`);
-      openPanel('Obliczony zasięg RF', `${t.short_name||t.name}`, `<div class="info-card"><strong>Wynik</strong><span>Najdalszy punkt z poziomem co najmniej średnim: około ${Math.round(bestReach)} km. Częstotliwość: ${Math.round(freq)} MHz, ERP: ${erpKw} kW, wysokość anteny: ${txHeight} m n.p.t. Charakterystyka ANT: ${antPattern ? 'użyta' : 'brak lokalnego pliku — pominięta'}.</span></div><div class="info-card"><strong>Model</strong><span>Uproszczony model: FSPL + korekta wysokości/krzywizny Ziemi + kara za przesłonięcie terenem z lokalnego cache DEM lub Open-Meteo + korekta kierunkowa z lokalnego pliku ANT, jeśli został pobrany. To jest własne obliczenie aplikacji, nie pobrana mapa zasięgu.</span></div><div class="legend-rf"><span><i class="rf-good"></i>bardzo/dobry</span><span><i class="rf-mid"></i>średni</span><span><i class="rf-weak"></i>słaby</span><span><i class="rf-bad"></i>bardzo słaby</span></div>`);
+      const blockedCells=cells.filter(c=>c.loss>6).length;
+      const avgLoss=cells.length ? cells.reduce((a,c)=>a+c.loss,0)/cells.length : 0;
+      state.lastRf={tx:t.id, freq, erpKw, bestReach, antPattern:!!antPattern, model:'ITM-lite terrain diffraction'};
+      toast(`Narysowano zasięg ITM/terenowy: ${Math.round(bestReach)} km dla ${mux.name||'MUX'}.`);
+      openPanel('Obliczony zasięg ITM / terenowy', `${t.short_name||t.name}`, `<div class="info-card"><strong>Wynik</strong><span>Najdalszy punkt z poziomem co najmniej średnim: około ${Math.round(bestReach)} km. Częstotliwość: ${Math.round(freq)} MHz, ERP: ${erpKw} kW, wysokość anteny: ${txHeight} m n.p.t. Charakterystyka ANT: ${antPattern ? 'użyta' : 'brak lokalnego pliku — pominięta'}.</span></div><div class="info-card"><strong>Model 19.9</strong><span>Pierwszy model terenowy typu ITM/Longley-Rice: FSPL + profil promieniowy DEM + krzywizna Ziemi + 60% pierwszej strefy Fresnela + strata dyfrakcyjna knife-edge dla przeszkód + korekta ANT. To nadal nie jest pełny Radio Mobile, ale jest wyraźnie bliższe propagacji terenowej niż sam okrąg/sektor.</span></div><div class="info-card"><strong>Diagnostyka</strong><span>Komórek z istotną stratą terenową: ${blockedCells}/${cells.length}. Średnia dodatkowa strata terenowa: ${avgLoss.toFixed(1)} dB. DEM: lokalny cache przeglądarki z fallbackiem do Open-Meteo.</span></div><div class="legend-rf"><span><i class="rf-good"></i>bardzo/dobry</span><span><i class="rf-mid"></i>średni</span><span><i class="rf-weak"></i>słaby</span><span><i class="rf-bad"></i>bardzo słaby</span></div>`);
     }finally{
       state.rfBusy=false;
     }
@@ -782,6 +840,6 @@
     $('closeStationBtn').onclick=hideStation; $('openStationBtn').onclick=showStation; $('antennaBtn').onclick=()=>{startCompass(false); showCompassPanel();}; $('compassWidget').onclick=()=>{startCompass(false); showCompassPanel();}; $('stationProfileBtn').onclick=showProfile; $('stationMuxBtn').onclick=showMux; $('stationDemBtn').onclick=downloadDemForSelectedTx;
     window.addEventListener('online',()=>{$('onlineChip').textContent='Online';$('onlineChip').classList.add('online-chip');}); window.addEventListener('offline',()=>{$('onlineChip').textContent='Offline';$('onlineChip').classList.remove('online-chip');});
   }
-  async function boot(){ load(); bind(); initMap(); await loadTxs(); if(state.coverageTileUrl) applyCoverageTile(state.coverageTileUrl); startCompass(true); window.addEventListener('pointerdown',()=>startCompass(true),{once:true,passive:true}); if('serviceWorker' in navigator) navigator.serviceWorker.register('./service-worker.js?v=19.8-1705261728').catch(()=>{}); setAppHeight(); }
+  async function boot(){ load(); bind(); initMap(); await loadTxs(); if(state.coverageTileUrl) applyCoverageTile(state.coverageTileUrl); startCompass(true); window.addEventListener('pointerdown',()=>startCompass(true),{once:true,passive:true}); if('serviceWorker' in navigator) navigator.serviceWorker.register('./service-worker.js?v=19.9-1705261742').catch(()=>{}); setAppHeight(); }
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', boot); else boot();
 })();
