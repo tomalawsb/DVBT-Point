@@ -1,12 +1,12 @@
 (() => {
   'use strict';
-  const APP_VERSION = '19.2 - 1705261518';
+  const APP_VERSION = '19.4 - 1705261548';
   const STORE = 'dvbt-point-v19-state';
   const $ = id => document.getElementById(id);
   const state = {
     map:null, baseLayer:null, base:'osm', rx:{lat:50.2871, lon:21.4238, label:'Mielec / punkt odbioru'}, rxHeight:6,
     txs:[], selected:null, markers:L.layerGroup(), line:null, range:null, homeMarker:null, headingCone:null,
-    heading:null, rawHeading:null, pendingHeading:null, headingSource:'brak', headingInvert:false, headingOffset:0, compassOn:false, gpsWatchId:null, headingRaf:null, headingSamples:[], headingLastTs:0, coverageLayer:null, rfLayer:null, coverageTileUrl:'', rfBusy:false, lastRf:null
+    heading:null, rawHeading:null, pendingHeading:null, headingSource:'brak', headingInvert:false, headingOffset:0, compassOn:false, gpsWatchId:null, headingRaf:null, headingSamples:[], headingLastTs:0, coverageLayer:null, rfLayer:null, coverageTileUrl:'', rfBusy:false, lastRf:null, antPatterns:new Map()
   };
   let profileAbort = null;
 
@@ -81,7 +81,25 @@
   function pols(t){ return [...new Set((t.muxes||[]).map(m=>m.polarization||m.pol).filter(Boolean))].join('/') || '—'; }
 
   function normalizeTx(raw){
-    const muxes=(raw.muxes||[]).map(m=>({name:m.name||m.mux||'MUX', channel:m.channel||m.kanal||'—', frequency_mhz:m.frequency_mhz||m.frequency||m.czestotliwosc||'', erp_kw:m.erp_kw||m.erp||'', polarization:m.polarization||m.pol||'—', band:m.band||'—'}));
+    const muxes=(raw.muxes||[]).map(m=>({
+      name:m.name||m.mux||'MUX',
+      channel:m.channel||m.kanal||'—',
+      channel_no:m.channel_no||m.channelNo||null,
+      frequency_mhz:m.frequency_mhz||m.frequency||m.czestotliwosc||'',
+      erp_kw:m.erp_kw||m.erp||'',
+      polarization:m.polarization||m.pol||'—',
+      band:m.band||'—',
+      pattern:m.pattern||m.kierunkowosc||'—',
+      antenna_height_m:m.antenna_height_m||m.tx_height_m||'',
+      antenna_name:m.antenna_name||'',
+      antenna_config:m.antenna_config||'',
+      operator:m.operator||raw.operator||'',
+      voivodeship_code:m.voivodeship_code||'',
+      radiopolska_emission_url:m.radiopolska_emission_url||'',
+      ant_file_url:m.ant_file_url||'',
+      ant_file_id:m.ant_file_id||'',
+      ant_pattern_path:m.ant_pattern_path||''
+    }));
     return {...raw, short_name:raw.short_name||raw.name, height:raw.mast_height_m||raw.height||60, muxes};
   }
 
@@ -195,8 +213,26 @@
   }
   function showMux(){
     const t=state.selected; if(!t) return;
-    const rows=t.muxes.map(m=>`<div class="tx-item"><strong>${esc(m.name)} · ${esc(m.channel)}</strong><span>${m.frequency_mhz||'—'} MHz · ERP ${m.erp_kw||'—'} kW · pol. ${esc(m.polarization)} · ${esc(m.band)}</span></div>`).join('');
-    openPanel('MUX-y', t.short_name||t.name, rows);
+    const rows=t.muxes.map(m=>{
+      const links=[];
+      if(m.radiopolska_emission_url) links.push(`<a href="${esc(m.radiopolska_emission_url)}" target="_blank" rel="noopener">emisja</a>`);
+      if(m.ant_file_url) links.push(`<a href="${esc(m.ant_file_url)}" target="_blank" rel="noopener">plik ANT</a>`);
+      const details=[
+        `${m.frequency_mhz||'—'} MHz`,
+        `ERP ${m.erp_kw||'—'} kW`,
+        `pol. ${esc(m.polarization)}`,
+        esc(m.band),
+        `char. ${esc(m.pattern||'—')}`,
+        m.antenna_height_m ? `antena ${esc(m.antenna_height_m)} m n.p.t.` : '',
+        m.antenna_name ? `typ ${esc(m.antenna_name)}` : '',
+        m.antenna_config ? `konf. ${esc(m.antenna_config)}` : '',
+        m.operator ? `operator ${esc(m.operator)}` : '',
+        links.length ? links.join(' · ') : ''
+      ].filter(Boolean).join(' · ');
+      return `<div class="tx-item"><strong>${esc(m.name)} · ${esc(m.channel)}</strong><span>${details}</span></div>`;
+    }).join('');
+    const meta=`${t.location?esc(t.location)+' / ':''}${esc(t.site||t.short_name||t.name)} · ${t.site_elevation_m||'—'} m n.p.m. · maszt/antena ${t.height||'—'} m n.p.t.`;
+    openPanel('MUX-y', meta, rows);
   }
   function showLayers(){
     openPanel('Warstwy','Podkład mapy.', `<button class="tx-item ${state.base==='osm'?'active':''}" data-base="osm"><strong>Plan OSM</strong><span>Najstabilniejsza mapa.</span></button><button class="tx-item ${state.base==='light'?'active':''}" data-base="light"><strong>Jasna CARTO</strong><span>Lżejsza wizualnie.</span></button><button class="tx-item ${state.base==='sat'?'active':''}" data-base="sat"><strong>Satelita Esri</strong><span>Cięższa, wymaga internetu.</span></button>`);
@@ -274,11 +310,13 @@
   }
 
   function showData(){
+    const muxCount=state.txs.reduce((sum,t)=>sum+(t.muxes?.length||0),0);
     openPanel('Dane / API','Prawdziwe dane: wysokości, nadajniki i legalne warstwy zasięgu.', `
       <div class="info-card"><strong>Wersja</strong><span>${APP_VERSION}</span></div>
       <div class="info-card"><strong>Profil terenu</strong><span>Prawdziwy profil z Open-Meteo Elevation API. Brak profilu demo.</span></div>
-      <div class="info-card"><strong>Nadajniki</strong><span>Ładowane z data/transmitters.json. Parametry można podmienić na legalny eksport UKE/Emitel/RadioPolska zgodnie z licencją.</span></div>
-      <div class="info-card"><strong>Własne obliczanie zasięgu RF</strong><span>Aplikacja może sama policzyć poglądowy zasięg wybranego nadajnika z mocy ERP, częstotliwości, wysokości anten i profilu DEM z Open-Meteo. To nie jest kopia cudzych map — to własne obliczenie uproszczonym modelem.</span><button id="calcRfCoverage" class="panel-btn primary">Oblicz i narysuj zasięg wybranego nadajnika</button><button id="clearRfCoverage" class="panel-btn">Usuń obliczony zasięg</button></div>
+      <div class="info-card"><strong>Nadajniki</strong><span>Baza RadioPolska po oczyszczeniu: ${state.txs.length} obiektów nadawczych i ${muxCount} emisji/MUX-ów. Ładowane z data/transmitters.json.</span></div>
+      <div class="info-card"><strong>Własne obliczanie zasięgu RF</strong><span>Aplikacja może sama policzyć poglądowy zasięg wybranego nadajnika z mocy ERP, częstotliwości, wysokości anten, profilu DEM z Open-Meteo i lokalnych plików ANT, jeśli zostały pobrane. To nie jest kopia cudzych map — to własne obliczenie uproszczonym modelem.</span><button id="calcRfCoverage" class="panel-btn primary">Oblicz i narysuj zasięg wybranego nadajnika</button><button id="clearRfCoverage" class="panel-btn">Usuń obliczony zasięg</button></div>
+      <div class="info-card"><strong>Charakterystyki anten ANT</strong><span>Wersja 19.4 ma indeks linków z RadioPolska i obsługę lokalnych plików ANT. Pliki pobierzesz komendą: python download_ant_patterns.py. Bez pobranych plików aplikacja działa dalej, ale bez korekty kierunkowej anteny.</span></div>
       <div class="info-card"><strong>Prawdziwy zasięg masztów</strong><span>Warstwa zasięgu może pochodzić z własnego obliczenia RF, importu GeoJSON albo licencjonowanego XYZ tile URL. Gotowych kafelków RadioPolska/Emitel aplikacja nie skrobie.</span></div>
       <div class="info-card"><strong>Import GeoJSON zasięgu</strong><input id="coverageGeoJson" type="file" accept=".json,.geojson,application/geo+json,application/json"></div>
       <div class="info-card"><strong>Licencjonowane kafelki zasięgu</strong><input id="coverageTileUrl" type="url" placeholder="https://.../{z}/{x}/{y}.png — wymagane {z}, {x}, {y}" value="${esc(state.coverageTileUrl||'')}"><button id="applyCoverageTile" class="panel-btn primary">Podłącz warstwę</button><button id="clearCoverage" class="panel-btn">Usuń warstwę</button></div>
@@ -315,9 +353,63 @@
   }
   function txMainParams(t){
     const mux=(t.muxes||[]).slice().sort((a,b)=>(+b.erp_kw||0)-(+a.erp_kw||0))[0] || {};
-    const freq=+mux.frequency_mhz || (+mux.channel ? 474 + ((+mux.channel - 21) * 8) : 650);
+    const ch=String(mux.channel||'').replace(/[^0-9]/g,'');
+    const freq=+mux.frequency_mhz || (ch ? 474 + ((+ch - 21) * 8) : 650);
     const erpKw=Math.max(0.001, +mux.erp_kw || 1);
-    return {mux, freq, erpKw};
+    const txHeight=Math.max(1, +mux.antenna_height_m || +t.height || 60);
+    return {mux, freq, erpKw, txHeight};
+  }
+
+  function parseAntPattern(text){
+    const pts=[];
+    const lines=String(text||'').split(/\r?\n/);
+    for(const line of lines){
+      const clean=line.trim();
+      if(!clean || clean.startsWith('#') || clean.startsWith(';')) continue;
+      const nums=clean.replace(',', '.').match(/-?\d+(?:\.\d+)?/g);
+      if(!nums || nums.length < 2) continue;
+      const a=+nums[0], v=+nums[1];
+      if(!Number.isFinite(a) || !Number.isFinite(v)) continue;
+      if(a < 0 || a > 360 || v < -80 || v > 80) continue;
+      pts.push({az:normDeg(a), value:v});
+    }
+    if(pts.length < 8) return null;
+    pts.sort((a,b)=>a.az-b.az);
+    const maxVal=Math.max(...pts.map(p=>p.value));
+    return pts.map(p=>({az:p.az, gainDb:Math.min(0, p.value - maxVal)}));
+  }
+
+  async function loadAntPattern(mux){
+    const path=mux?.ant_pattern_path;
+    if(!path) return null;
+    if(state.antPatterns.has(path)) return state.antPatterns.get(path);
+    try{
+      const r=await fetch(path, {cache:'force-cache'});
+      if(!r.ok){ state.antPatterns.set(path, null); return null; }
+      const txt=await r.text();
+      const parsed=parseAntPattern(txt);
+      state.antPatterns.set(path, parsed);
+      return parsed;
+    }catch{
+      state.antPatterns.set(path, null);
+      return null;
+    }
+  }
+
+  function antennaGainDb(pattern, bearing){
+    if(!pattern || pattern.length < 2) return 0;
+    const b=normDeg(bearing);
+    let prev=pattern[pattern.length-1], next=pattern[0];
+    for(const p of pattern){
+      if(p.az <= b) prev=p;
+      if(p.az >= b){ next=p; break; }
+    }
+    let span=next.az-prev.az;
+    let pos=b-prev.az;
+    if(span <= 0) span += 360;
+    if(pos < 0) pos += 360;
+    const f=Math.max(0, Math.min(1, pos/span));
+    return prev.gainDb + (next.gainDb-prev.gainDb)*f;
   }
   function rfColor(level){
     if(level >= -68) return '#16a34a';
@@ -339,8 +431,9 @@
     state.rfBusy=true;
     toast('Liczenie zasięgu RF z wysokości terenu...');
     try{
-      const {freq, erpKw, mux}=txMainParams(t);
-      const maxKm=Math.max(20, Math.min(90, Math.sqrt(erpKw)*22 + (+t.height||60)*0.25));
+      const {freq, erpKw, mux, txHeight}=txMainParams(t);
+      const antPattern=await loadAntPattern(mux);
+      const maxKm=Math.max(20, Math.min(90, Math.sqrt(erpKw)*22 + txHeight*0.25));
       const bearings=[]; for(let b=0;b<360;b+=12) bearings.push(b);
       const rings=[]; for(let d=2; d<=maxKm; d+=4) rings.push(d);
       const samples=[];
@@ -348,7 +441,7 @@
       const txElevArr=await fetchElevations([{lat:t.lat,lon:t.lon}]);
       const elevations=await fetchElevations(samples.map(p=>({lat:p.lat,lon:p.lon})));
       const txGround=Number.isFinite(+t.site_elevation_m) ? +t.site_elevation_m : txElevArr[0];
-      const txAlt=txGround + (+t.height || 60);
+      const txAlt=txGround + txHeight;
       const erpDbm=60 + 10*Math.log10(erpKw); // 1 kW ERP ~= 60 dBm; uproszczenie
       const cells=[];
       for(let i=0;i<samples.length;i++){
@@ -358,7 +451,8 @@
         const losMargin=txAlt - (rxGround + state.rxHeight + earthBulge);
         const terrainPenalty=losMargin < 0 ? Math.min(38, Math.abs(losMargin)*0.23) : losMargin < 12 ? (12-losMargin)*0.65 : 0;
         const distanceFade=d>35 ? (d-35)*0.18 : 0;
-        const level=erpDbm - fspl - terrainPenalty - distanceFade;
+        const antGain=antennaGainDb(antPattern, p.bearing);
+        const level=erpDbm + antGain - fspl - terrainPenalty - distanceFade;
         const halfBearing=6, inner=Math.max(0.2,p.km-2), outer=p.km+2;
         const a=destinationPoint(t.lat,t.lon,p.bearing-halfBearing,inner);
         const b=destinationPoint(t.lat,t.lon,p.bearing+halfBearing,inner);
@@ -374,9 +468,9 @@
       }
       state.rfLayer.addTo(state.map);
       const bestReach=Math.max(0,...cells.filter(c=>c.level>=-88).map(c=>c.km));
-      state.lastRf={tx:t.id, freq, erpKw, bestReach};
+      state.lastRf={tx:t.id, freq, erpKw, bestReach, antPattern:!!antPattern};
       toast(`Narysowano własny zasięg RF: ${Math.round(bestReach)} km dla ${mux.name||'MUX'}.`);
-      openPanel('Obliczony zasięg RF', `${t.short_name||t.name}`, `<div class="info-card"><strong>Wynik</strong><span>Najdalszy punkt z poziomem co najmniej średnim: około ${Math.round(bestReach)} km. Częstotliwość: ${Math.round(freq)} MHz, ERP: ${erpKw} kW.</span></div><div class="info-card"><strong>Model</strong><span>Uproszczony model: FSPL + korekta wysokości/krzywizny Ziemi + kara za przesłonięcie terenem z DEM Open-Meteo. To jest własne obliczenie aplikacji, nie pobrana mapa zasięgu.</span></div><div class="legend-rf"><span><i class="rf-good"></i>bardzo/dobry</span><span><i class="rf-mid"></i>średni</span><span><i class="rf-weak"></i>słaby</span><span><i class="rf-bad"></i>bardzo słaby</span></div>`);
+      openPanel('Obliczony zasięg RF', `${t.short_name||t.name}`, `<div class="info-card"><strong>Wynik</strong><span>Najdalszy punkt z poziomem co najmniej średnim: około ${Math.round(bestReach)} km. Częstotliwość: ${Math.round(freq)} MHz, ERP: ${erpKw} kW, wysokość anteny: ${txHeight} m n.p.t. Charakterystyka ANT: ${antPattern ? 'użyta' : 'brak lokalnego pliku — pominięta'}.</span></div><div class="info-card"><strong>Model</strong><span>Uproszczony model: FSPL + korekta wysokości/krzywizny Ziemi + kara za przesłonięcie terenem z DEM Open-Meteo + korekta kierunkowa z lokalnego pliku ANT, jeśli został pobrany. To jest własne obliczenie aplikacji, nie pobrana mapa zasięgu.</span></div><div class="legend-rf"><span><i class="rf-good"></i>bardzo/dobry</span><span><i class="rf-mid"></i>średni</span><span><i class="rf-weak"></i>słaby</span><span><i class="rf-bad"></i>bardzo słaby</span></div>`);
     }finally{
       state.rfBusy=false;
     }
@@ -487,6 +581,6 @@
     $('closeStationBtn').onclick=hideStation; $('openStationBtn').onclick=showStation; $('antennaBtn').onclick=()=>{startCompass(false); showCompassPanel();}; $('compassWidget').onclick=()=>{startCompass(false); showCompassPanel();}; $('stationProfileBtn').onclick=showProfile; $('stationMuxBtn').onclick=showMux;
     window.addEventListener('online',()=>{$('onlineChip').textContent='Online';$('onlineChip').classList.add('online-chip');}); window.addEventListener('offline',()=>{$('onlineChip').textContent='Offline';$('onlineChip').classList.remove('online-chip');});
   }
-  async function boot(){ load(); bind(); initMap(); await loadTxs(); if(state.coverageTileUrl) applyCoverageTile(state.coverageTileUrl); startCompass(true); window.addEventListener('pointerdown',()=>startCompass(true),{once:true,passive:true}); if('serviceWorker' in navigator) navigator.serviceWorker.register('./service-worker.js?v=19.2-1705261518').catch(()=>{}); setAppHeight(); }
+  async function boot(){ load(); bind(); initMap(); await loadTxs(); if(state.coverageTileUrl) applyCoverageTile(state.coverageTileUrl); startCompass(true); window.addEventListener('pointerdown',()=>startCompass(true),{once:true,passive:true}); if('serviceWorker' in navigator) navigator.serviceWorker.register('./service-worker.js?v=19.4-1705261548').catch(()=>{}); setAppHeight(); }
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', boot); else boot();
 })();

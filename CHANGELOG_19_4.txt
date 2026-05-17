@@ -1,0 +1,45 @@
+DVB-T/T2 Point 19.4 - 1705261548
+
+Dodano etap ANT / charakterystyki kierunkowe anten:
+
+1. Dane nadajników
+- Do data/transmitters.json dopisano przy emisjach:
+  - ant_file_id,
+  - ant_pattern_path,
+  - ant_file_url.
+- Utworzono indeks data/ant/index.json na podstawie pól Link_ANT z danych RadioPolska.
+- W indeksie jest 587 pozycji ANT, z czego 297 ma prawidłowe ID pliku ANT z adresu RadioPolska.
+- Część rekordów z eksportu ma ID 0, więc nie nadaje się do pewnego pobrania bez poprawienia źródła danych.
+
+2. Pobieranie plików ANT
+- Dodano skrypt download_ant_patterns.py.
+- Skrypt pobiera brakujące pliki do data/ant/.
+- Skrypt robi przerwy między pobraniami, żeby nie obciążać serwera.
+- Skrypt używa tylko standardowej biblioteki Pythona.
+
+Uruchomienie:
+python download_ant_patterns.py
+
+Testowo, mała partia:
+python download_ant_patterns.py --limit 20
+
+3. Parser ANT w aplikacji
+- app.js potrafi wczytać lokalny plik ANT przypisany do wybranego MUX-a.
+- Dodano parser prostych plików tekstowych ANT zawierających pary: azymut / wartość charakterystyki.
+- Charakterystyka jest normalizowana względem maksymalnego zysku anteny.
+- Jeśli plik ANT istnieje, obliczenia RF dostają korektę kierunkową anteny.
+- Jeśli pliku ANT nie ma, aplikacja nadal działa, ale liczy bez korekty kierunkowej.
+
+4. RF / zasięg
+- Obliczenia RF uwzględniają teraz:
+  - ERP,
+  - częstotliwość,
+  - wysokość anteny,
+  - DEM z Open-Meteo,
+  - lokalną charakterystykę ANT, jeśli jest pobrana.
+
+Czego nie udało się zrobić w tej paczce:
+- Pliki ANT nie zostały fizycznie pobrane w tej sesji, bo środowisko nie miało dostępu DNS do mapy.radiopolska.pl.
+- Nie wdrożono jeszcze pełnego Longley-Rice/ITM.
+- Nie wdrożono lokalnej bazy DEM offline.
+- Nie zweryfikowano ręcznie formatu każdego pliku ANT, bo wymagane jest ich pobranie po stronie użytkownika.
