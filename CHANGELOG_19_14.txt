@@ -1,0 +1,6 @@
+19.14 - 1705262115
+
+- Przebudowano profil terenu: 128 próbek DEM na trasie zamiast prostej kreski/fallbacku.
+- Dodano skalę wysokości, skalę odległości, linię LOS, legendę, statystyki i informację o widoczności.
+- Profil nie rysuje fałszywej prostej, gdy nie ma danych DEM; pokazuje jawny błąd danych.
+- Dodano osobny cache profilu DEM dla konkretnej trasy.

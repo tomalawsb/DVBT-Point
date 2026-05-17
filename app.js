@@ -1,6 +1,6 @@
 (() => {
   'use strict';
-  const APP_VERSION = '19.13 - 1705261850';
+  const APP_VERSION = '19.14 - 1705262115';
   const STORE = 'dvbt-point-v19-state';
   const $ = id => document.getElementById(id);
   const state = {
@@ -799,72 +799,140 @@
     $('profileDownloadDem').onclick=async()=>{ await downloadDemForSelectedTx(); showProfile(); };
     try{ const p=await fetchProfile(state.rx,t); renderProfile(p,t); }catch(err){ $('profileBox').innerHTML=`<strong>Profil nie został wczytany</strong><span>${esc(err.message||'Nie udało się pobrać danych wysokości.')} Kliknij „Pobierz DEM i odśwież profil” albo spróbuj później, jeśli API wysokości jest limitowane.</span>`; }
   }
-  async function fetchProfile(a,t){
+  function profileRouteKey(a,t){
+    return `profile-v2:${a.lat.toFixed(5)},${a.lon.toFixed(5)}:${t.lat.toFixed(5)},${t.lon.toFixed(5)}:${Math.round(+t.site_elevation_m||0)}:${Math.round(+t.height||0)}`;
+  }
+  function loadProfileCache(){
+    try{ return JSON.parse(localStorage.getItem('dvbt-profile-dem-cache-v2')||'{}') || {}; }
+    catch{ return {}; }
+  }
+  function saveProfileCache(cache){
+    try{ localStorage.setItem('dvbt-profile-dem-cache-v2', JSON.stringify(cache)); }catch{}
+  }
+
+  async function showProfile(){
+    const t=state.selected; if(!t) return toast('Najpierw wybierz nadajnik.');
+    openPanel('Profil terenu', `${state.rx.label} → ${t.short_name||t.name}`, `<div class="row info-card"><strong>Wysokość anteny odbiorczej</strong><input id="rxHeight" type="number" min="1" max="40" value="${state.rxHeight}"></div><button id="profileDownloadDem" class="panel-btn primary" type="button">Pobierz DEM i odśwież profil</button><div id="profileBox" class="info-card"><strong>Ładuję prawdziwy profil DEM...</strong><span>Pobieram próbki wysokości między punktem odbioru i nadajnikiem. Profil nie będzie zastępowany prostą kreską.</span></div>`);
+    $('rxHeight').onchange=e=>{state.rxHeight=Math.max(1,Math.min(40,+e.target.value||6)); save(); showProfile();};
+    $('profileDownloadDem').onclick=async()=>{ await fetchProfile(state.rx,t,true).then(p=>renderProfile(p,t)).catch(err=>renderProfileError(err)); };
+    try{ const p=await fetchProfile(state.rx,t,false); renderProfile(p,t); }catch(err){ renderProfileError(err); }
+  }
+
+  function renderProfileError(err){
+    $('profileBox').innerHTML=`<div class="profile-error"><strong>Nie mam prawdziwych danych DEM dla tej trasy.</strong><span>${esc(err.message||'API wysokości nie odpowiedziało.')}</span><span>Nie rysuję fałszywego profilu prostą linią. Kliknij „Pobierz DEM i odśwież profil” albo spróbuj później, gdy API wysokości przestanie zwracać limit.</span></div>`;
+  }
+
+  async function fetchProfile(a,t,force=false){
     if(profileAbort) profileAbort.abort(); profileAbort=new AbortController();
-    const n=42, points=[];
+    const n=128, points=[];
     const totalDistance = Math.max(0.1, Number.isFinite(+t.distance) ? +t.distance : dist(a,t));
-    for(let i=0;i<n;i++){ const f=i/(n-1); points.push({lat:a.lat+(t.lat-a.lat)*f, lon:a.lon+(t.lon-a.lon)*f}); }
-    const cache=loadDemCache();
-    const elev=new Array(points.length).fill(null);
-    const missing=[];
-    points.forEach((p,i)=>{
-      const key=demKeyFromPoint(p);
-      if(Number.isFinite(+cache[key])) elev[i]=+cache[key];
-      else missing.push({i, lat:p.lat, lon:p.lon, key});
-    });
-    let apiOk=false, apiError='';
-    if(missing.length){
-      try{
-        const apiElev=await fetchElevationsFromApi(missing, 'Nie udało się pobrać prawdziwego profilu DEM.', {retries:2, timeoutMs:7000, chunkSize:20, pauseMs:150});
-        missing.forEach((p,idx)=>{ elev[p.i]=+apiElev[idx]; cache[p.key]=+apiElev[idx]; });
-        saveDemCache();
-        apiOk=true;
-      }catch(err){
-        apiError=err.message || String(err);
+    for(let i=0;i<n;i++){
+      const f=i/(n-1);
+      points.push({lat:a.lat+(t.lat-a.lat)*f, lon:a.lon+(t.lon-a.lon)*f});
+    }
+    const routeKey=profileRouteKey(a,t);
+    const profileCache=loadProfileCache();
+    if(!force && profileCache[routeKey] && Array.isArray(profileCache[routeKey].elev) && profileCache[routeKey].elev.length===n){
+      const cached=profileCache[routeKey].elev.map((e,i)=>({d:totalDistance*i/(n-1), e:+e}));
+      cached.meta={source:'profile-cache', samples:n};
+      return cached;
+    }
+    let elev=null, apiError='';
+    try{
+      // Jedno duże zapytanie zamiast kilku małych. Mniej ryzyka limitu 429 i mniej „wiszenia”.
+      elev=await fetchElevationsFromApi(points, 'Nie udało się pobrać profilu DEM.', {retries:1, timeoutMs:9000, chunkSize:128, pauseMs:0});
+    }catch(err){
+      apiError=err.message || String(err);
+    }
+    if(!Array.isArray(elev) || elev.length!==n || !elev.every(v=>Number.isFinite(+v))){
+      if(profileCache[routeKey] && Array.isArray(profileCache[routeKey].elev)){
+        const cached=profileCache[routeKey].elev.map((e,i)=>({d:totalDistance*i/(profileCache[routeKey].elev.length-1), e:+e}));
+        cached.meta={source:'profile-cache-stale', samples:cached.length, apiError};
+        return cached;
       }
+      throw new Error(`API wysokości nie zwróciło kompletu próbek. ${apiError}`);
     }
-    const known=elev.map((v,i)=>Number.isFinite(+v)?{i,v:+v}:null).filter(Boolean);
-    if(!known.length){
-      throw new Error(`Brak danych DEM dla tej trasy. API wysokości nie odpowiedziało: ${apiError || 'brak odpowiedzi'}. Kliknij „Pobierz DEM i odśwież profil” albo spróbuj za chwilę.`);
-    }
-    for(let k=0;k<known.length-1;k++){
-      const a0=known[k], b0=known[k+1];
-      for(let i=a0.i+1;i<b0.i;i++){
-        const f=(i-a0.i)/(b0.i-a0.i);
-        elev[i]=a0.v+(b0.v-a0.v)*f;
-      }
-    }
-    for(let i=0;i<elev.length;i++){
-      if(!Number.isFinite(+elev[i])){
-        const nearest=known.reduce((best,item)=>Math.abs(item.i-i)<Math.abs(best.i-i)?item:best, known[0]);
-        elev[i]=nearest.v;
-      }
-    }
+    profileCache[routeKey]={ts:Date.now(), elev:elev.map(v=>Math.round(+v*10)/10)};
+    saveProfileCache(profileCache);
     const result=elev.map((e,i)=>({d:totalDistance*i/(n-1), e:+e}));
-    result.meta={source: missing.length===0 ? 'cache' : (apiOk ? 'cache-api' : 'partial-cache'), missing:missing.length, apiError};
+    result.meta={source:'api-live', samples:n};
     return result;
   }
+
   function renderProfile(p,t){
     const rxGround = p[0].e;
-    const txGroundFromApi = p[p.length-1].e;
-    const txGround = Number.isFinite(+t.site_elevation_m) ? +t.site_elevation_m : txGroundFromApi;
-    const txGroundSource = Number.isFinite(+t.site_elevation_m) ? 'wysokość obiektu z bazy' : 'wysokość z Open-Meteo';
+    const txGroundDem = p[p.length-1].e;
+    const txGround = Number.isFinite(+t.site_elevation_m) ? +t.site_elevation_m : txGroundDem;
+    const txGroundSource = Number.isFinite(+t.site_elevation_m) ? 'wysokość obiektu z bazy' : 'wysokość z DEM';
     const txHeight = +t.height || 60;
     const rxAlt = rxGround + state.rxHeight;
     const txAlt = txGround + txHeight;
-    const terrainForScale = p.map(x=>x.e).concat([txGround, rxGround, rxAlt, txAlt]);
-    const min=Math.min(...terrainForScale)-25, max=Math.max(...terrainForScale)+35; const W=620,H=230,pad=34;
     const totalDistance = Math.max(0.1, Number.isFinite(+t.distance) ? +t.distance : dist(state.rx,t));
-    const x=d=>pad+(W-pad*2)*(d/totalDistance), y=e=>H-pad-(H-pad*2)*((e-min)/(max-min));
-    const path=p.map((pt,i)=>`${i?'L':'M'}${x(pt.d).toFixed(1)},${y(pt.e).toFixed(1)}`).join(' '); const area=`M${pad},${H-pad} ${path} L${W-pad},${H-pad} Z`;
-    let worst=999, worstD=0; for(const pt of p){ const los=rxAlt+(txAlt-rxAlt)*(pt.d/totalDistance); const margin=los-pt.e; if(margin<worst){worst=margin; worstD=pt.d;} }
-    const msg=worst<0?'Przeszkoda w linii optycznej':worst<10?'Mały zapas nad terenem':'Linia optyczna wygląda czysto';
-    const noteClass=worst<0?'profile-note bad':worst<10?'profile-note warn':'profile-note ok';
+    const terrain=p.map(x=>x.e);
+    const minTerrain=Math.min(...terrain, rxAlt, txAlt);
+    const maxTerrain=Math.max(...terrain, rxAlt, txAlt);
+    const span=Math.max(40, maxTerrain-minTerrain);
+    const min=Math.floor((minTerrain-span*.18)/10)*10;
+    const max=Math.ceil((maxTerrain+span*.20)/10)*10;
+    const W=680,H=350,padL=54,padR=28,padT=42,padB=54;
+    const x=d=>padL+(W-padL-padR)*(d/totalDistance);
+    const y=e=>H-padB-(H-padT-padB)*((e-min)/(max-min));
+    const path=p.map((pt,i)=>`${i?'L':'M'}${x(pt.d).toFixed(1)},${y(pt.e).toFixed(1)}`).join(' ');
+    const area=`M${padL},${H-padB} ${path} L${W-padR},${H-padB} Z`;
+    const losY=d=>y(rxAlt+(txAlt-rxAlt)*(d/totalDistance));
+    const losPath=`M${padL},${y(rxAlt).toFixed(1)} L${W-padR},${y(txAlt).toFixed(1)}`;
+    let worst=999, worstD=0, blocked=false;
+    const blockedRects=[];
+    for(let i=0;i<p.length;i++){
+      const pt=p[i];
+      const los=rxAlt+(txAlt-rxAlt)*(pt.d/totalDistance);
+      const margin=los-pt.e;
+      if(margin<worst){worst=margin; worstD=pt.d;}
+      if(margin<0){
+        blocked=true;
+        const w=(W-padL-padR)/(p.length-1)+1;
+        blockedRects.push(`<rect x="${(x(pt.d)-w/2).toFixed(1)}" y="${padT}" width="${w.toFixed(1)}" height="${(H-padT-padB)}" fill="rgba(239,68,68,.18)"/>`);
+      }
+    }
+    const ticks=[];
+    const tickCount=5;
+    for(let i=0;i<=tickCount;i++){
+      const val=min+(max-min)*i/tickCount;
+      const yy=y(val);
+      ticks.push(`<line x1="${padL}" y1="${yy.toFixed(1)}" x2="${W-padR}" y2="${yy.toFixed(1)}" stroke="#e5e7eb"/><text x="${padL-10}" y="${(yy+4).toFixed(1)}" text-anchor="end" font-size="12" fill="#475569">${Math.round(val)}</text>`);
+    }
+    const dTicks=[];
+    for(let i=0;i<=4;i++){
+      const d=totalDistance*i/4;
+      const xx=x(d);
+      dTicks.push(`<line x1="${xx.toFixed(1)}" y1="${H-padB}" x2="${xx.toFixed(1)}" y2="${H-padB+5}" stroke="#94a3b8"/><text x="${xx.toFixed(1)}" y="${H-18}" text-anchor="middle" font-size="12" fill="#475569">${i===0?'0':d.toFixed(1)} km</text>`);
+    }
+    const msg=blocked?'Widoczność: NIE':worst<10?'Widoczność: warunkowa':'Widoczność: TAK';
+    const noteClass=blocked?'profile-note bad':worst<10?'profile-note warn':'profile-note ok';
     const meta=p.meta||{};
-    const sourceText = meta.source === 'partial-cache'
-      ? `Teren: częściowy lokalny cache DEM; brakujące punkty zostały tylko interpolowane. To profil przybliżony. ${esc(meta.apiError||'')}`
-      : (meta.source === 'cache' ? 'Teren: lokalny cache DEM.' : 'Teren: lokalny cache DEM + brakujące punkty pobrane z API wysokości.');
-    $('profileBox').innerHTML=`<svg class="profile-svg" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none"><path d="${area}" fill="#e5e7eb"/><path d="${path}" fill="none" stroke="#475569" stroke-width="2.4"/><line x1="${pad}" y1="${y(rxAlt)}" x2="${W-pad}" y2="${y(txAlt)}" stroke="#111827" stroke-width="2"/><circle cx="${pad}" cy="${y(rxAlt)}" r="5" fill="#2563eb"/><circle cx="${W-pad}" cy="${y(txAlt)}" r="5" fill="#16a34a"/><text x="${pad}" y="18" font-size="13" font-weight="700">Dom +${state.rxHeight} m</text><text x="${W-pad-130}" y="18" font-size="13" font-weight="700">Nadajnik +${txHeight} m</text><text x="${pad}" y="${H-8}" font-size="12" fill="#64748b">0 km</text><text x="${W-pad-46}" y="${H-8}" font-size="12" fill="#64748b">${totalDistance.toFixed(1)} km</text></svg><div class="${noteClass}">${msg}. Najmniejszy zapas: ${Math.round(worst)} m, około ${worstD.toFixed(1)} km od punktu odbioru.</div><div class="profile-meta">${sourceText} Wysokość nadajnika: ${txGroundSource}.</div>`;
+    const sourceText = meta.source === 'api-live' ? `DEM: pobrano ${meta.samples||p.length} próbek wysokości z API.` : `DEM: lokalny cache profilu (${meta.samples||p.length} próbek). ${meta.apiError ? 'Odświeżenie API nieudane: '+esc(meta.apiError) : ''}`;
+    const minElev=Math.round(Math.min(...terrain));
+    const maxElev=Math.round(Math.max(...terrain));
+    const diffElev=Math.round(txAlt-rxAlt);
+    $('profileBox').innerHTML=`
+      <div class="profile-chart-card">
+        <div class="profile-head-values"><div><strong>Dom +${state.rxHeight} m</strong><span>${Math.round(rxGround)} m n.p.m.</span></div><div><strong>Nadajnik +${txHeight} m</strong><span>${Math.round(txGround)} m n.p.m.</span></div></div>
+        <svg class="profile-svg pro" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="Profil terenu">
+          ${blockedRects.join('')}
+          ${ticks.join('')}
+          ${dTicks.join('')}
+          <text x="18" y="${H/2}" transform="rotate(-90 18 ${H/2})" text-anchor="middle" font-size="12" fill="#475569">m n.p.m.</text>
+          <path d="${area}" fill="rgba(34,197,94,.18)"/>
+          <path d="${path}" fill="none" stroke="#16a34a" stroke-width="3" vector-effect="non-scaling-stroke"/>
+          <path d="${losPath}" fill="none" stroke="#64748b" stroke-width="2" stroke-dasharray="8 8" vector-effect="non-scaling-stroke"/>
+          <circle cx="${padL}" cy="${y(rxAlt)}" r="6" fill="#2563eb"/>
+          <circle cx="${W-padR}" cy="${y(txAlt)}" r="6" fill="#16a34a"/>
+        </svg>
+        <div class="profile-legend"><span><i class="terrain"></i>Profil terenu</span><span><i class="los"></i>Linia LOS</span><span><i class="blocked"></i>Strefa zasłonięta</span></div>
+      </div>
+      <div class="${noteClass}"><strong>${msg}</strong><span>Najmniejszy zapas: ${worst.toFixed(1)} m, w odległości ${worstD.toFixed(1)} km od punktu odbioru.</span></div>
+      <div class="profile-stats"><div><span>Długość trasy</span><strong>${totalDistance.toFixed(1)} km</strong></div><div><span>Różnica wysokości anten</span><strong>${diffElev>0?'+':''}${diffElev} m</strong></div><div><span>Minimalna wysokość</span><strong>${minElev} m</strong></div><div><span>Maksymalna wysokość</span><strong>${maxElev} m</strong></div></div>
+      <div class="profile-meta">${sourceText} Wysokość nadajnika: ${txGroundSource}. Dane DEM są zewnętrzne i mogą mieć ograniczoną dokładność lokalną.</div>`;
   }
 
   function updateCompass(){
@@ -949,6 +1017,6 @@
     $('closeStationBtn').onclick=hideStation; $('openStationBtn').onclick=showStation; $('antennaBtn').onclick=()=>{startCompass(false); showCompassPanel();}; $('compassWidget').onclick=()=>{startCompass(false); showCompassPanel();}; $('stationProfileBtn').onclick=showProfile; $('stationMuxBtn').onclick=showMux; $('stationDemBtn').onclick=downloadDemForSelectedTx;
     window.addEventListener('online',()=>{$('onlineChip').textContent='Online';$('onlineChip').classList.add('online-chip');}); window.addEventListener('offline',()=>{$('onlineChip').textContent='Offline';$('onlineChip').classList.remove('online-chip');});
   }
-  async function boot(){ load(); bind(); initMap(); await loadTxs(); if(state.coverageTileUrl) applyCoverageTile(state.coverageTileUrl); startCompass(true); window.addEventListener('pointerdown',()=>startCompass(true),{once:true,passive:true}); if('serviceWorker' in navigator) navigator.serviceWorker.register('./service-worker.js?v=19.13-1705261850').catch(()=>{}); setAppHeight(); }
+  async function boot(){ load(); bind(); initMap(); await loadTxs(); if(state.coverageTileUrl) applyCoverageTile(state.coverageTileUrl); startCompass(true); window.addEventListener('pointerdown',()=>startCompass(true),{once:true,passive:true}); if('serviceWorker' in navigator) navigator.serviceWorker.register('./service-worker.js?v=19.14-1705262115').catch(()=>{}); setAppHeight(); }
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', boot); else boot();
 })();
