@@ -16,3 +16,7 @@
 .info-card input[type=url], .info-card input[type=file]{width:100%;margin-top:8px;border:1px solid var(--border);border-radius:12px;padding:8px 10px;background:#fff;color:#0f172a;font-weight:700;font-size:12px;}
 .info-card .panel-btn{margin-top:8px;width:100%;}
 @media(max-width:760px){.version-floating{font-size:10px;height:24px;right:10px;bottom:calc(8px + env(safe-area-inset-bottom));opacity:.88}.version-chip{display:inline-flex!important}}
+
+
+/* Etap 19.2: własny uproszczony silnik RF */
+.legend-rf{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:8px}.legend-rf span{display:flex;align-items:center;gap:6px;border:1px solid var(--border);background:#fff;border-radius:12px;padding:7px;font-size:12px;font-weight:800;color:#475569}.legend-rf i{width:14px;height:14px;border-radius:4px;display:inline-block}.rf-good{background:#16a34a}.rf-mid{background:#f59e0b}.rf-weak{background:#f97316}.rf-bad{background:#dc2626}

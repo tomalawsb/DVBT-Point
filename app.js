@@ -1,12 +1,12 @@
 (() => {
   'use strict';
-  const APP_VERSION = '19.1 - 1705261458';
+  const APP_VERSION = '19.2 - 1705261518';
   const STORE = 'dvbt-point-v19-state';
   const $ = id => document.getElementById(id);
   const state = {
     map:null, baseLayer:null, base:'osm', rx:{lat:50.2871, lon:21.4238, label:'Mielec / punkt odbioru'}, rxHeight:6,
     txs:[], selected:null, markers:L.layerGroup(), line:null, range:null, homeMarker:null, headingCone:null,
-    heading:null, rawHeading:null, pendingHeading:null, headingSource:'brak', headingInvert:false, headingOffset:0, compassOn:false, gpsWatchId:null, headingRaf:null, headingSamples:[], headingLastTs:0, coverageLayer:null, coverageTileUrl:''
+    heading:null, rawHeading:null, pendingHeading:null, headingSource:'brak', headingInvert:false, headingOffset:0, compassOn:false, gpsWatchId:null, headingRaf:null, headingSamples:[], headingLastTs:0, coverageLayer:null, rfLayer:null, coverageTileUrl:'', rfBusy:false, lastRf:null
   };
   let profileAbort = null;
 
@@ -278,14 +278,108 @@
       <div class="info-card"><strong>Wersja</strong><span>${APP_VERSION}</span></div>
       <div class="info-card"><strong>Profil terenu</strong><span>Prawdziwy profil z Open-Meteo Elevation API. Brak profilu demo.</span></div>
       <div class="info-card"><strong>Nadajniki</strong><span>Ładowane z data/transmitters.json. Parametry można podmienić na legalny eksport UKE/Emitel/RadioPolska zgodnie z licencją.</span></div>
-      <div class="info-card"><strong>Prawdziwy zasięg masztów</strong><span>Aplikacja nie udaje zasięgu. Wyświetli tylko legalnie podpiętą warstwę: GeoJSON albo licencjonowany XYZ tile URL. Publicznego darmowego API map pokrycia RadioPolska/Emitel nie podłączono, bo nie ma oficjalnej dokumentacji takiego API.</span></div>
+      <div class="info-card"><strong>Własne obliczanie zasięgu RF</strong><span>Aplikacja może sama policzyć poglądowy zasięg wybranego nadajnika z mocy ERP, częstotliwości, wysokości anten i profilu DEM z Open-Meteo. To nie jest kopia cudzych map — to własne obliczenie uproszczonym modelem.</span><button id="calcRfCoverage" class="panel-btn primary">Oblicz i narysuj zasięg wybranego nadajnika</button><button id="clearRfCoverage" class="panel-btn">Usuń obliczony zasięg</button></div>
+      <div class="info-card"><strong>Prawdziwy zasięg masztów</strong><span>Warstwa zasięgu może pochodzić z własnego obliczenia RF, importu GeoJSON albo licencjonowanego XYZ tile URL. Gotowych kafelków RadioPolska/Emitel aplikacja nie skrobie.</span></div>
       <div class="info-card"><strong>Import GeoJSON zasięgu</strong><input id="coverageGeoJson" type="file" accept=".json,.geojson,application/geo+json,application/json"></div>
       <div class="info-card"><strong>Licencjonowane kafelki zasięgu</strong><input id="coverageTileUrl" type="url" placeholder="https://.../{z}/{x}/{y}.png — wymagane {z}, {x}, {y}" value="${esc(state.coverageTileUrl||'')}"><button id="applyCoverageTile" class="panel-btn primary">Podłącz warstwę</button><button id="clearCoverage" class="panel-btn">Usuń warstwę</button></div>
       <button id="refreshPwa" class="panel-btn primary">Wymuś aktualizację PWA</button>`);
+    $('calcRfCoverage').onclick=()=>calculateRfCoverage().catch(err=>toast('Błąd obliczeń RF: '+(err.message||err)));
+    $('clearRfCoverage').onclick=()=>{ clearRfLayer(); toast('Usunięto obliczony zasięg RF.'); };
     $('coverageGeoJson').onchange=e=>importCoverageGeoJson(e.target.files?.[0]).catch(err=>toast('Błąd GeoJSON: '+(err.message||err)));
     $('applyCoverageTile').onclick=()=>applyCoverageTile($('coverageTileUrl').value);
     $('clearCoverage').onclick=()=>{ clearCoverageLayer(); state.coverageTileUrl=''; save(); toast('Usunięto warstwę zasięgu.'); };
     $('refreshPwa').onclick=async()=>{ const regs=await navigator.serviceWorker?.getRegistrations?.()||[]; for(const r of regs){ await r.unregister(); } const keys=await caches.keys(); await Promise.all(keys.map(k=>caches.delete(k))); location.reload(); };
+  }
+
+
+  function clearRfLayer(){
+    if(state.rfLayer){ state.map.removeLayer(state.rfLayer); state.rfLayer=null; }
+    state.lastRf=null;
+  }
+  function destinationPoint(lat, lon, bearingDeg, distanceKm){
+    const R=6371, br=rad(bearingDeg), d=distanceKm/R, lat1=rad(lat), lon1=rad(lon);
+    const lat2=Math.asin(Math.sin(lat1)*Math.cos(d)+Math.cos(lat1)*Math.sin(d)*Math.cos(br));
+    const lon2=lon1+Math.atan2(Math.sin(br)*Math.sin(d)*Math.cos(lat1), Math.cos(d)-Math.sin(lat1)*Math.sin(lat2));
+    return {lat:lat2*180/Math.PI, lon:((lon2*180/Math.PI+540)%360)-180};
+  }
+  async function fetchElevations(points){
+    const out=[];
+    for(let i=0;i<points.length;i+=90){
+      const chunk=points.slice(i,i+90);
+      const url=`https://api.open-meteo.com/v1/elevation?latitude=${chunk.map(p=>p.lat.toFixed(5)).join(',')}&longitude=${chunk.map(p=>p.lon.toFixed(5)).join(',')}`;
+      const r=await fetch(url); if(!r.ok) throw new Error('Open-Meteo Elevation API nie odpowiedziało podczas obliczania zasięgu.');
+      const j=await r.json(); if(!Array.isArray(j.elevation) || j.elevation.length !== chunk.length) throw new Error('API wysokości zwróciło niepełne dane.');
+      out.push(...j.elevation.map(x=>+x));
+    }
+    return out;
+  }
+  function txMainParams(t){
+    const mux=(t.muxes||[]).slice().sort((a,b)=>(+b.erp_kw||0)-(+a.erp_kw||0))[0] || {};
+    const freq=+mux.frequency_mhz || (+mux.channel ? 474 + ((+mux.channel - 21) * 8) : 650);
+    const erpKw=Math.max(0.001, +mux.erp_kw || 1);
+    return {mux, freq, erpKw};
+  }
+  function rfColor(level){
+    if(level >= -68) return '#16a34a';
+    if(level >= -78) return '#84cc16';
+    if(level >= -88) return '#f59e0b';
+    if(level >= -98) return '#f97316';
+    return '#dc2626';
+  }
+  function rfLabel(level){
+    if(level >= -68) return 'bardzo dobry';
+    if(level >= -78) return 'dobry';
+    if(level >= -88) return 'średni';
+    if(level >= -98) return 'słaby';
+    return 'bardzo słaby';
+  }
+  async function calculateRfCoverage(){
+    const t=state.selected; if(!t) return toast('Najpierw wybierz nadajnik.');
+    if(state.rfBusy) return toast('Obliczanie zasięgu już trwa.');
+    state.rfBusy=true;
+    toast('Liczenie zasięgu RF z wysokości terenu...');
+    try{
+      const {freq, erpKw, mux}=txMainParams(t);
+      const maxKm=Math.max(20, Math.min(90, Math.sqrt(erpKw)*22 + (+t.height||60)*0.25));
+      const bearings=[]; for(let b=0;b<360;b+=12) bearings.push(b);
+      const rings=[]; for(let d=2; d<=maxKm; d+=4) rings.push(d);
+      const samples=[];
+      for(const bearing of bearings){ for(const km of rings){ samples.push({bearing, km, ...destinationPoint(t.lat,t.lon,bearing,km)}); } }
+      const txElevArr=await fetchElevations([{lat:t.lat,lon:t.lon}]);
+      const elevations=await fetchElevations(samples.map(p=>({lat:p.lat,lon:p.lon})));
+      const txGround=Number.isFinite(+t.site_elevation_m) ? +t.site_elevation_m : txElevArr[0];
+      const txAlt=txGround + (+t.height || 60);
+      const erpDbm=60 + 10*Math.log10(erpKw); // 1 kW ERP ~= 60 dBm; uproszczenie
+      const cells=[];
+      for(let i=0;i<samples.length;i++){
+        const p=samples[i], rxGround=elevations[i], d=Math.max(0.2,p.km);
+        const fspl=32.44 + 20*Math.log10(freq) + 20*Math.log10(d);
+        const earthBulge=(d*d)/(12.75); // metry, przybliżenie horyzontu radiowego
+        const losMargin=txAlt - (rxGround + state.rxHeight + earthBulge);
+        const terrainPenalty=losMargin < 0 ? Math.min(38, Math.abs(losMargin)*0.23) : losMargin < 12 ? (12-losMargin)*0.65 : 0;
+        const distanceFade=d>35 ? (d-35)*0.18 : 0;
+        const level=erpDbm - fspl - terrainPenalty - distanceFade;
+        const halfBearing=6, inner=Math.max(0.2,p.km-2), outer=p.km+2;
+        const a=destinationPoint(t.lat,t.lon,p.bearing-halfBearing,inner);
+        const b=destinationPoint(t.lat,t.lon,p.bearing+halfBearing,inner);
+        const c=destinationPoint(t.lat,t.lon,p.bearing+halfBearing,outer);
+        const dpt=destinationPoint(t.lat,t.lon,p.bearing-halfBearing,outer);
+        cells.push({poly:[[a.lat,a.lon],[b.lat,b.lon],[c.lat,c.lon],[dpt.lat,dpt.lon]], level, km:p.km, bearing:p.bearing});
+      }
+      clearRfLayer();
+      state.rfLayer=L.layerGroup();
+      for(const cell of cells){
+        const color=rfColor(cell.level);
+        L.polygon(cell.poly,{color, weight:.4, opacity:.32, fillColor:color, fillOpacity:.18, interactive:false}).addTo(state.rfLayer);
+      }
+      state.rfLayer.addTo(state.map);
+      const bestReach=Math.max(0,...cells.filter(c=>c.level>=-88).map(c=>c.km));
+      state.lastRf={tx:t.id, freq, erpKw, bestReach};
+      toast(`Narysowano własny zasięg RF: ${Math.round(bestReach)} km dla ${mux.name||'MUX'}.`);
+      openPanel('Obliczony zasięg RF', `${t.short_name||t.name}`, `<div class="info-card"><strong>Wynik</strong><span>Najdalszy punkt z poziomem co najmniej średnim: około ${Math.round(bestReach)} km. Częstotliwość: ${Math.round(freq)} MHz, ERP: ${erpKw} kW.</span></div><div class="info-card"><strong>Model</strong><span>Uproszczony model: FSPL + korekta wysokości/krzywizny Ziemi + kara za przesłonięcie terenem z DEM Open-Meteo. To jest własne obliczenie aplikacji, nie pobrana mapa zasięgu.</span></div><div class="legend-rf"><span><i class="rf-good"></i>bardzo/dobry</span><span><i class="rf-mid"></i>średni</span><span><i class="rf-weak"></i>słaby</span><span><i class="rf-bad"></i>bardzo słaby</span></div>`);
+    }finally{
+      state.rfBusy=false;
+    }
   }
 
   async function showProfile(){
@@ -393,6 +487,6 @@
     $('closeStationBtn').onclick=hideStation; $('openStationBtn').onclick=showStation; $('antennaBtn').onclick=()=>{startCompass(false); showCompassPanel();}; $('compassWidget').onclick=()=>{startCompass(false); showCompassPanel();}; $('stationProfileBtn').onclick=showProfile; $('stationMuxBtn').onclick=showMux;
     window.addEventListener('online',()=>{$('onlineChip').textContent='Online';$('onlineChip').classList.add('online-chip');}); window.addEventListener('offline',()=>{$('onlineChip').textContent='Offline';$('onlineChip').classList.remove('online-chip');});
   }
-  async function boot(){ load(); bind(); initMap(); await loadTxs(); if(state.coverageTileUrl) applyCoverageTile(state.coverageTileUrl); startCompass(true); window.addEventListener('pointerdown',()=>startCompass(true),{once:true,passive:true}); if('serviceWorker' in navigator) navigator.serviceWorker.register('./service-worker.js?v=19.1-1705261458').catch(()=>{}); setAppHeight(); }
+  async function boot(){ load(); bind(); initMap(); await loadTxs(); if(state.coverageTileUrl) applyCoverageTile(state.coverageTileUrl); startCompass(true); window.addEventListener('pointerdown',()=>startCompass(true),{once:true,passive:true}); if('serviceWorker' in navigator) navigator.serviceWorker.register('./service-worker.js?v=19.2-1705261518').catch(()=>{}); setAppHeight(); }
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', boot); else boot();
 })();
