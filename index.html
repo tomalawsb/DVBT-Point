@@ -3,98 +3,88 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="theme-color" content="#f6f8fb" />
-  <title>DVB-T/T2 Point 14.0 - 1705261138</title>
+  <meta name="theme-color" content="#eef5fb" />
+  <title>DVB-T/T2 Point 15.0 - 1705261308</title>
   <link rel="manifest" href="./manifest.json" />
   <link rel="icon" href="./assets/icon.svg" />
+  <link rel="preconnect" href="https://tile.openstreetmap.org" />
+  <link rel="preconnect" href="https://a.tile.openstreetmap.org" />
+  <link rel="preconnect" href="https://b.tile.openstreetmap.org" />
+  <link rel="preconnect" href="https://c.tile.openstreetmap.org" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIINfQbR2K3ZLkHYPKSlEtN0GLTuuDlD5fM=" crossorigin="" />
-  <link rel="stylesheet" href="./css/style.css?v=14.0-1705261138" />
+  <link rel="stylesheet" href="./css/style.css?v=15.0-1705261308" />
 </head>
 <body>
-  <div id="map" aria-label="Mapa DVB-T/T2"></div>
+  <div id="map" aria-label="Mapa nadajników DVB-T/T2"></div>
 
-  <header class="topbar" id="topbar">
-    <form id="searchForm" class="search" autocomplete="off">
-      <span class="search__icon">⌕</span>
-      <input id="searchInput" type="search" placeholder="Wpisz adres lub miejscowość" />
+  <header class="top-ui" aria-label="Górny panel aplikacji">
+    <form id="searchForm" class="search-box" autocomplete="off">
+      <span aria-hidden="true">⌕</span>
+      <input id="searchInput" type="search" placeholder="Adres lub miejscowość" />
       <button type="submit" title="Szukaj">🔎</button>
     </form>
-    <div class="chips">
-      <button id="locationChip" class="chip chip--main" type="button">🏠 Punkt odbioru</button>
-      <span class="chip chip--version">14.0 - 1705261138</span>
-      <span id="onlineChip" class="chip chip--online">Online</span>
+    <div class="chips-row">
+      <button id="locationChip" type="button" class="chip chip-main">🏠 Mielec / punkt odbioru</button>
+      <span class="chip chip-version">15.0 - 1705261308</span>
+      <span id="onlineChip" class="chip chip-online">Online</span>
     </div>
   </header>
 
-  <nav class="tools tools--left" aria-label="Narzędzia lewe">
-    <button class="tool" id="gpsBtn" title="GPS">⌖<small>GPS</small></button>
-    <button class="tool" id="compassBtn" title="Kompas">🧭</button>
-    <button class="tool" id="transmittersBtn" title="Nadajniki">📡</button>
+  <nav class="fab-stack left-stack" aria-label="Narzędzia lewe">
+    <button id="gpsBtn" class="fab" type="button" title="Użyj GPS">⌖</button>
+    <button id="compassBtn" class="fab" type="button" title="Kompas">🧭</button>
+    <button id="txListBtn" class="fab" type="button" title="Lista nadajników">📡</button>
   </nav>
 
-  <nav class="tools tools--right" aria-label="Narzędzia prawe">
-    <button class="tool" id="sheetToggleBtn" title="Pokaż/ukryj kartę nadajnika">▲</button>
-    <button class="tool" id="coverageBtn" title="Zasięg">◌</button>
-    <button class="tool" id="terrainBtn" title="Profil terenu">▱</button>
-    <button class="tool" id="layersBtn" title="Warstwy">▤</button>
-    <button class="tool" id="filtersBtn" title="Filtry">☰</button>
-    <button class="tool" id="pwaBtn" title="PWA / Dane">⬇</button>
-    <button class="tool" id="dataBtn" title="Dane / API">⚙</button>
+  <nav class="fab-stack right-stack" aria-label="Narzędzia prawe">
+    <button id="layersBtn" class="fab" type="button" title="Warstwy">▤</button>
+    <button id="profileBtn" class="fab" type="button" title="Profil terenu">▱</button>
+    <button id="filtersBtn" class="fab" type="button" title="Filtry MUX">☰</button>
+    <button id="dataBtn" class="fab" type="button" title="Dane i API">⚙</button>
   </nav>
 
-  <section id="miniCompass" class="mini-compass" hidden>
-    <div class="mini-compass__dial">
-      <span class="dial__n">N</span>
-      <i id="phoneNeedle" class="needle needle--phone"></i>
-      <i id="targetNeedle" class="needle needle--target"></i>
-    </div>
-    <div class="mini-compass__text">
-      <strong id="turnText">Wybierz nadajnik</strong>
-      <span id="headingText">Telefon: — · Cel: —</span>
-      <em id="compassNote">Kompas można włączyć z panelu.</em>
+  <section id="compassOverlay" class="compass-overlay" hidden>
+    <button id="compassClose" class="plain-close" type="button" aria-label="Zamknij kompas">×</button>
+    <div class="compass-modern">
+      <div class="ring"><i id="targetNeedle" class="target-needle"></i><i id="phoneNeedle" class="phone-needle"></i><b>N</b></div>
+      <div class="compass-info">
+        <strong id="turnText">Wybierz nadajnik</strong>
+        <span id="headingText">Telefon: — · Cel: —</span>
+        <em id="compassNote">Tryb ręczny / bez czujnika.</em>
+      </div>
     </div>
   </section>
 
-  <aside id="popover" class="popover" hidden>
-    <div class="popover__head">
-      <strong id="popoverTitle">Panel</strong>
-      <button id="popoverClose" type="button" aria-label="Zamknij">×</button>
+  <aside id="drawer" class="drawer" hidden aria-label="Panel aplikacji">
+    <div class="drawer-head">
+      <strong id="drawerTitle">Panel</strong>
+      <button id="drawerClose" class="plain-close" type="button" aria-label="Zamknij">×</button>
     </div>
-    <div id="popoverBody" class="popover__body"></div>
+    <div id="drawerBody" class="drawer-body"></div>
   </aside>
 
-  <section id="bottomSheet" class="bottom-sheet is-compact" aria-label="Wybrany nadajnik">
-    <button id="sheetHandle" class="sheet-handle" type="button" aria-label="Zwiń lub rozwiń panel"></button>
-    <div class="sheet-main">
-      <div class="station-head">
-        <div class="station-icon">📡</div>
-        <div>
-          <span class="eyebrow">Najlepszy nadajnik</span>
-          <h1 id="stationName">Ładowanie...</h1>
-        </div>
-        <button id="sheetClose" class="ghost-btn" type="button" title="Ukryj panel">×</button>
-      </div>
-      <div class="stats-grid">
-        <div><span>Azymut</span><strong id="azimuthValue">—</strong></div>
-        <div><span>Odległość</span><strong id="distanceValue">—</strong></div>
-        <div><span>Polaryzacja</span><strong id="polarizationValue">—</strong></div>
-        <div><span>MUX</span><strong id="muxValue">—</strong></div>
-      </div>
-      <div class="quick-actions">
-        <button id="antennaModeBtn" class="primary-btn" type="button">Ustaw antenę</button>
-        <button id="profileQuickBtn" type="button">Profil</button>
-        <button id="muxQuickBtn" type="button">MUX-y</button>
-        <button id="collapseSheetBtn" type="button">Ukryj</button>
-      </div>
-      <div class="details" id="stationDetails"></div>
+  <section id="stationSheet" class="station-sheet" hidden aria-label="Informacje o nadajniku">
+    <div class="sheet-head">
+      <div><span>Wybrany nadajnik</span><strong id="sheetName">—</strong></div>
+      <button id="sheetClose" class="plain-close" type="button" aria-label="Zamknij panel nadajnika">×</button>
+    </div>
+    <div class="sheet-grid">
+      <div><span>Azymut</span><b id="sheetAzimuth">—</b></div>
+      <div><span>Odległość</span><b id="sheetDistance">—</b></div>
+      <div><span>Polaryzacja</span><b id="sheetPol">—</b></div>
+      <div><span>MUX</span><b id="sheetMux">—</b></div>
+    </div>
+    <div class="sheet-actions">
+      <button id="antennaBtn" type="button">Ustaw antenę</button>
+      <button id="sheetProfileBtn" type="button">Profil</button>
+      <button id="sheetMuxBtn" type="button">MUX-y</button>
     </div>
   </section>
 
-  <button id="reopenSheet" class="reopen-sheet" type="button" hidden>📡 Nadajnik</button>
-
+  <button id="openStationBtn" class="open-station" type="button" hidden>📡 Nadajnik</button>
   <div id="toast" class="toast" hidden></div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-  <script src="./js/app.js?v=14.0-1705261138"></script>
+  <script src="./js/app.js?v=15.0-1705261308"></script>
 </body>
 </html>

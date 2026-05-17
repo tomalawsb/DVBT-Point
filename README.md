@@ -1,28 +1,29 @@
-# DVB-T/T2 Point — 14.0 - 1705261138
+# DVB-T/T2 Point — Etap 15
 
-Etap 14 po poprawkach:
+Wersja: **15.0 - 1705261308**
 
-- przywrócony prawdziwy profil terenu,
-- profil pobierany z Open-Meteo Elevation API / Copernicus DEM GLO-90,
-- brak trybu wymyślonego profilu — jeżeli API nie odpowie, aplikacja pokazuje błąd,
-- nadajniki nadal są widoczne na mapie,
-- dodany panel Dane / API,
-- dodany import nadajników z JSON/CSV,
-- dodane linki do oficjalnych CSV UKE,
-- dodana opcja płatnego/licencjonowanego API elewacji,
-- dodana opcja prawdziwej warstwy pokrycia z GeoJSON albo płatnych/licencjonowanych kafelków,
-- nie rysuję udawanego zasięgu jako prawdziwego.
+Etap 15 to reset konstrukcji interfejsu po problemach z mapą na telefonie.
 
-## Ważne
+## Najważniejsze zmiany
 
-Gotowe mapy pokrycia RadioPolska/Emitel nie zostały skopiowane. Do aplikacji można podłączyć tylko legalnie uzyskaną warstwę GeoJSON albo URL kafelków z licencją/API.
+- Mapa jest czystym, pełnoekranowym elementem Leaflet bez kontenerów ograniczających rozmiar.
+- Usunięto agresywne ustawienia `position: fixed` na `body`, które mogły rozjeżdżać kafelki na Androidzie.
+- Panel nadajnika jest domyślnie zamykalny i nie blokuje mapy.
+- Kliknięcie mapy zamyka panele.
+- Kompas jest lżejszym overlayem, a nie dużym panelem.
+- Nadajniki są widoczne na mapie jako markery.
+- Profil terenu jest realny: pobierany z Open-Meteo Elevation API.
+- Brak profilu demonstracyjnego — przy błędzie API aplikacja pokazuje błąd.
 
-## Źródła w paczce
+## Wrzucenie na GitHub Pages
 
-- `data/sources.json` — opis darmowych i opcjonalnych płatnych źródeł,
-- `data/coverage.geojson` — pusty szablon prawdziwej warstwy zasięgu,
-- `data/transmitters.json` — nadal awaryjna baza startowa, do zastąpienia importem.
+Wrzuć zawartość paczki do repozytorium i opublikuj przez GitHub Pages.
 
-## Po wrzuceniu na GitHub Pages
+Po aktualizacji na telefonie najlepiej wyczyścić stare dane witryny albo w panelu Dane/API użyć wymuszenia aktualizacji PWA.
 
-Wyczyść cache PWA albo użyj panelu PWA → Wymuś aktualizację.
+## Ograniczenia
+
+- Baza nadajników jest lokalna w `data/transmitters.json`.
+- Profil terenu wymaga internetu.
+- Kafelki mapy wymagają internetu, jeśli nie są już w cache przeglądarki.
+- Prawdziwe mapy pokrycia RadioPolska/Emitel nie są kopiowane, bo wymagają legalnego źródła/licencji/API.
