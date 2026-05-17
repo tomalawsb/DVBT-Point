@@ -5,3 +5,14 @@
 
 /* Etap 18: stabilizacja kompasu, stożek ponad wszystkimi warstwami, poprawiony profil */
 .leaflet-heading-pane{z-index:690!important;pointer-events:none!important}.heading-cone{opacity:.95;will-change:transform}.heading-cone path{fill:rgba(37,99,235,.18);stroke:rgba(37,99,235,.64);stroke-width:2.2}.heading-cone circle{fill:#2563eb;opacity:.75}.profile-note.ok{background:#ecfdf5;color:#166534}.profile-note.warn{background:#fff7ed;color:#9a3412}.profile-note.bad{background:#fef2f2;color:#991b1b}.profile-meta{margin-top:7px;color:#64748b;font-size:11px;line-height:1.35;font-weight:650}.profile-svg{height:205px}.compass-copy small{white-space:normal;line-height:1.12}.compass-panel-head small{line-height:1.25}
+
+/* Etap 19 */
+.version-floating{
+  position:absolute;z-index:45;right:12px;bottom:calc(10px + env(safe-area-inset-bottom));
+  height:28px;padding:0 10px;border-radius:14px;background:rgba(255,255,255,.92);
+  border:1px solid rgba(148,163,184,.28);box-shadow:0 8px 22px rgba(15,23,42,.10);
+  display:flex;align-items:center;font-size:11px;font-weight:850;color:#64748b;pointer-events:none;
+}
+.info-card input[type=url], .info-card input[type=file]{width:100%;margin-top:8px;border:1px solid var(--border);border-radius:12px;padding:8px 10px;background:#fff;color:#0f172a;font-weight:700;font-size:12px;}
+.info-card .panel-btn{margin-top:8px;width:100%;}
+@media(max-width:760px){.version-floating{font-size:10px;height:24px;right:10px;bottom:calc(8px + env(safe-area-inset-bottom));opacity:.88}.version-chip{display:inline-flex!important}}

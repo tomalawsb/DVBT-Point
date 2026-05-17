@@ -1,12 +1,12 @@
 (() => {
   'use strict';
-  const APP_VERSION = '18.0 - 1705261348';
-  const STORE = 'dvbt-point-v18-state';
+  const APP_VERSION = '19.0 - 1705261408';
+  const STORE = 'dvbt-point-v19-state';
   const $ = id => document.getElementById(id);
   const state = {
     map:null, baseLayer:null, base:'osm', rx:{lat:50.2871, lon:21.4238, label:'Mielec / punkt odbioru'}, rxHeight:6,
     txs:[], selected:null, markers:L.layerGroup(), line:null, range:null, homeMarker:null, headingCone:null,
-    heading:null, rawHeading:null, pendingHeading:null, headingSource:'brak', headingInvert:false, headingOffset:0, compassOn:false, gpsWatchId:null, headingRaf:null, headingSamples:[], headingLastTs:0
+    heading:null, rawHeading:null, pendingHeading:null, headingSource:'brak', headingInvert:false, headingOffset:0, compassOn:false, gpsWatchId:null, headingRaf:null, headingSamples:[], headingLastTs:0, coverageLayer:null, coverageTileUrl:''
   };
   let profileAbort = null;
 
@@ -68,8 +68,8 @@
   window.visualViewport?.addEventListener('resize', setAppHeight);
   window.addEventListener('orientationchange', () => setTimeout(setAppHeight, 250));
 
-  function save(){ localStorage.setItem(STORE, JSON.stringify({rx:state.rx, rxHeight:state.rxHeight, base:state.base, selectedId:state.selected?.id || null, headingInvert:state.headingInvert, headingOffset:state.headingOffset})); }
-  function load(){ try{ const s=JSON.parse(localStorage.getItem(STORE)||'{}'); Object.assign(state, {rx:s.rx||state.rx, rxHeight:s.rxHeight||state.rxHeight, base:s.base||state.base, headingInvert:!!s.headingInvert, headingOffset:+s.headingOffset||0}); state._selectedId=s.selectedId; }catch{} }
+  function save(){ localStorage.setItem(STORE, JSON.stringify({rx:state.rx, rxHeight:state.rxHeight, base:state.base, selectedId:state.selected?.id || null, headingInvert:state.headingInvert, headingOffset:state.headingOffset, coverageTileUrl:state.coverageTileUrl||''})); }
+  function load(){ try{ const s=JSON.parse(localStorage.getItem(STORE)||'{}'); Object.assign(state, {rx:s.rx||state.rx, rxHeight:s.rxHeight||state.rxHeight, base:s.base||state.base, headingInvert:!!s.headingInvert, headingOffset:+s.headingOffset||0, coverageTileUrl:s.coverageTileUrl||''}); state._selectedId=s.selectedId; }catch{} }
   function toast(msg){ const t=$('toast'); t.textContent=msg; t.hidden=false; clearTimeout(toast._t); toast._t=setTimeout(()=>t.hidden=true,2600); }
   function esc(s){ return String(s ?? '').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
   function rad(d){ return d*Math.PI/180; }
@@ -191,8 +191,48 @@
     const all=[...new Set(state.txs.flatMap(t=>muxNames(t)))].sort();
     openPanel('Filtry MUX','W tej wersji filtr jest przygotowany do rozbudowy.', all.map(m=>`<div class="info-card"><strong>${esc(m)}</strong><span>Dostępny w bazie nadajników.</span></div>`).join(''));
   }
+
+  function clearCoverageLayer(){
+    if(state.coverageLayer){ state.map.removeLayer(state.coverageLayer); state.coverageLayer=null; }
+  }
+  function applyCoverageTile(url){
+    clearCoverageLayer();
+    state.coverageTileUrl=(url||'').trim();
+    if(!state.coverageTileUrl){ save(); return; }
+    state.coverageLayer=L.tileLayer(state.coverageTileUrl, {
+      maxZoom:19, opacity:.58, updateWhenIdle:true, updateWhenZooming:false, keepBuffer:2, attribution:'Warstwa zasięgu: zewnętrzne/licencjonowane źródło'
+    }).addTo(state.map);
+    save();
+    toast('Podłączono zewnętrzną warstwę prawdziwego zasięgu.');
+  }
+  async function importCoverageGeoJson(file){
+    if(!file) return;
+    const text=await file.text();
+    const geo=JSON.parse(text);
+    clearCoverageLayer();
+    state.coverageLayer=L.geoJSON(geo,{
+      style:f=>{
+        const level=String(f.properties?.level||f.properties?.status||f.properties?.coverage||'').toLowerCase();
+        const color=level.includes('dob')||level.includes('good')?'#16a34a':level.includes('śred')||level.includes('medium')?'#f59e0b':level.includes('sła')||level.includes('weak')?'#f97316':'#dc2626';
+        return {color, weight:1, opacity:.45, fillColor:color, fillOpacity:.18};
+      },
+      pointToLayer:(f,latlng)=>L.circleMarker(latlng,{radius:5, color:'#2563eb', weight:1, fillOpacity:.35})
+    }).addTo(state.map);
+    toast('Zaimportowano prawdziwą warstwę zasięgu GeoJSON.');
+  }
+
   function showData(){
-    openPanel('Dane / API','Status źródeł danych.', `<div class="info-card"><strong>Profil terenu</strong><span>Prawdziwy profil z Open-Meteo Elevation API. Brak profilu demo.</span></div><div class="info-card"><strong>Nadajniki</strong><span>Ładowane z data/transmitters.json. Można podmienić na legalny eksport CSV/JSON.</span></div><button id="refreshPwa" class="panel-btn primary">Wymuś aktualizację PWA</button>`);
+    openPanel('Dane / API','Prawdziwe dane: wysokości, nadajniki i legalne warstwy zasięgu.', `
+      <div class="info-card"><strong>Wersja</strong><span>${APP_VERSION}</span></div>
+      <div class="info-card"><strong>Profil terenu</strong><span>Prawdziwy profil z Open-Meteo Elevation API. Brak profilu demo.</span></div>
+      <div class="info-card"><strong>Nadajniki</strong><span>Ładowane z data/transmitters.json. Parametry można podmienić na legalny eksport UKE/Emitel/RadioPolska zgodnie z licencją.</span></div>
+      <div class="info-card"><strong>Prawdziwy zasięg masztów</strong><span>Aplikacja nie udaje zasięgu. Wyświetli tylko legalnie podpiętą warstwę: GeoJSON albo licencjonowany XYZ tile URL. Publicznego darmowego API map pokrycia RadioPolska/Emitel nie podłączono, bo nie ma oficjalnej dokumentacji takiego API.</span></div>
+      <div class="info-card"><strong>Import GeoJSON zasięgu</strong><input id="coverageGeoJson" type="file" accept=".json,.geojson,application/geo+json,application/json"></div>
+      <div class="info-card"><strong>Licencjonowane kafelki zasięgu</strong><input id="coverageTileUrl" type="url" placeholder="https://.../{z}/{x}/{y}.png" value="${esc(state.coverageTileUrl||'')}"><button id="applyCoverageTile" class="panel-btn primary">Podłącz warstwę</button><button id="clearCoverage" class="panel-btn">Usuń warstwę</button></div>
+      <button id="refreshPwa" class="panel-btn primary">Wymuś aktualizację PWA</button>`);
+    $('coverageGeoJson').onchange=e=>importCoverageGeoJson(e.target.files?.[0]).catch(err=>toast('Błąd GeoJSON: '+(err.message||err)));
+    $('applyCoverageTile').onclick=()=>applyCoverageTile($('coverageTileUrl').value);
+    $('clearCoverage').onclick=()=>{ clearCoverageLayer(); state.coverageTileUrl=''; save(); toast('Usunięto warstwę zasięgu.'); };
     $('refreshPwa').onclick=async()=>{ const regs=await navigator.serviceWorker?.getRegistrations?.()||[]; for(const r of regs){ await r.unregister(); } const keys=await caches.keys(); await Promise.all(keys.map(k=>caches.delete(k))); location.reload(); };
   }
 
@@ -232,7 +272,7 @@
     const t=state.selected; const target=t?Math.round(t.azimuth):0;
     $('targetNeedle').style.transform=`translate(-50%,-100%) rotate(${target}deg)`;
     if(state.heading!=null) $('phoneNeedle').style.transform=`translate(-50%,-100%) rotate(${state.heading}deg)`;
-    let txt='Dotknij, aby włączyć';
+    let txt=state.compassOn?'Czekam na czujnik':'Czujnik automatyczny';
     let cls='';
     if(state.heading!=null && t){
       const d=diff(state.heading,target);
@@ -242,24 +282,21 @@
     }
     $('turnText').textContent=txt;
     $('turnText').className=cls;
-    $('headingText').textContent=`Tel: ${state.heading==null?'—':Math.round(state.heading)+'°'} · Cel: ${t?target+'°':'—'} · ${state.headingSource}`;
+    $('headingText').textContent=`Tel: ${state.heading==null?'—':Math.round(state.heading)+'°'} · Cel: ${t?target+'°':'—'} · ${state.compassOn && state.headingSource==='brak' ? 'czujnik' : state.headingSource}`;
     renderHeadingCone();
   }
-  async function startCompass(){
+  async function startCompass(silent=false){
+    if(state.compassOn) return true;
     if(window.DeviceOrientationEvent?.requestPermission){
-      try{ const p=await DeviceOrientationEvent.requestPermission(); if(p!=='granted') return toast('Brak zgody na kompas.'); }catch{return toast('Przeglądarka nie udostępniła kompasu.');}
+      try{ const p=await DeviceOrientationEvent.requestPermission(); if(p!=='granted'){ if(!silent) toast('Brak zgody na kompas.'); return false; } }catch{ if(!silent) toast('Przeglądarka nie udostępniła kompasu.'); return false; }
     }
     state.compassOn = true;
     window.addEventListener('deviceorientationabsolute', onOrientation, true);
     window.addEventListener('deviceorientation', onOrientation, true);
-    toast('Kompas włączony. Porusz telefonem ósemką, jeśli wskazanie pływa.');
+    state.headingSource = state.headingSource==='brak' ? 'czujnik aktywny' : state.headingSource;
+    if(!silent) toast('Czujnik kierunku aktywny. Porusz telefonem ósemką, jeśli wskazanie pływa.');
     updateCompass();
-  }
-  function stopCompass(){
-    state.compassOn = false;
-    window.removeEventListener('deviceorientationabsolute', onOrientation, true);
-    window.removeEventListener('deviceorientation', onOrientation, true);
-    toast('Kompas zatrzymany.');
+    return true;
   }
   function onOrientation(e){
     if(typeof e.webkitCompassHeading==='number'){ applyHeading(e.webkitCompassHeading, 'ios'); return; }
@@ -282,18 +319,14 @@
         <div class="big-compass"><i class="target" style="transform:translate(-50%,-100%) rotate(${t?Math.round(t.azimuth):0}deg)"></i><i class="phone" style="transform:translate(-50%,-100%) rotate(${state.heading||0}deg)"></i><b>N</b></div>
         <div><strong>${esc($('turnText').textContent)}</strong><span>Telefon: ${state.heading==null?'—':Math.round(state.heading)+'°'} · Cel: ${target}°</span><small>Źródło: ${esc(state.headingSource)}</small></div>
       </div>
-      <div class="panel-grid-2">
-        <button id="startCompassBtn" class="panel-btn primary">Włącz czujnik</button>
-        <button id="stopCompassBtn" class="panel-btn">Zatrzymaj</button>
-      </div>
-      <div class="info-card"><strong>Ręczny kierunek telefonu: <span id="manualHeadingValue">${Math.round(state.heading||0)}°</span></strong><input id="manualHeading" type="range" min="0" max="359" value="${Math.round(state.heading||0)}"></div>
+      <div class="info-card"><strong>Czujnik kierunku</strong><span>Czujnik jest uruchamiany automatycznie. Jeżeli przeglądarka wymaga zgody, dotknij tego panelu lub widgetu kompasu i zaakceptuj dostęp.</span></div>
+      <div class="info-card"><strong>Ręczna korekta awaryjna: <span id="manualHeadingValue">${Math.round(state.heading||0)}°</span></strong><input id="manualHeading" type="range" min="0" max="359" value="${Math.round(state.heading||0)}"></div>
       <div class="panel-grid-2">
         <button id="invertCompassBtn" class="panel-btn">Odwróć czujnik</button>
         <button id="resetCompassBtn" class="panel-btn">Reset korekty</button>
       </div>
       <div class="info-card"><strong>Uwaga</strong><span>Włączyłem mocne wygładzanie, więc wskazanie powinno skakać mniej. Kompas telefonu nadal może przekłamywać przy maszcie, antenie, blasze, aucie i magnesach. Skalibruj telefon ruchem ósemki.</span></div>`);
-    $('startCompassBtn').onclick=startCompass;
-    $('stopCompassBtn').onclick=stopCompass;
+    startCompass(true);
     $('manualHeading').oninput=e=>{ $('manualHeadingValue').textContent=`${e.target.value}°`; setManualHeading(e.target.value); };
     $('invertCompassBtn').onclick=()=>{ state.headingInvert=!state.headingInvert; save(); toast(state.headingInvert?'Odwrócono kierunek czujnika.':'Przywrócono standardowy kierunek czujnika.'); };
     $('resetCompassBtn').onclick=()=>{ state.headingOffset=0; state.headingInvert=false; save(); updateCompass(); toast('Zresetowano korektę kompasu.'); };
@@ -305,9 +338,9 @@
   function bind(){
     $('searchForm').onsubmit=search; $('locateBtn').onclick=startGpsWatch;
     $('locationChip').onclick=()=>state.map.setView([state.rx.lat,state.rx.lon],12); $('txListBtn').onclick=showTxList; $('profileBtn').onclick=showProfile; $('layersBtn').onclick=showLayers; $('filtersBtn').onclick=showFilters; $('dataBtn').onclick=showData; $('closePanelBtn').onclick=closePanel;
-    $('closeStationBtn').onclick=hideStation; $('openStationBtn').onclick=showStation; $('antennaBtn').onclick=showCompassPanel; $('compassWidget').onclick=showCompassPanel; $('stationProfileBtn').onclick=showProfile; $('stationMuxBtn').onclick=showMux;
+    $('closeStationBtn').onclick=hideStation; $('openStationBtn').onclick=showStation; $('antennaBtn').onclick=()=>{startCompass(false); showCompassPanel();}; $('compassWidget').onclick=()=>{startCompass(false); showCompassPanel();}; $('stationProfileBtn').onclick=showProfile; $('stationMuxBtn').onclick=showMux;
     window.addEventListener('online',()=>{$('onlineChip').textContent='Online';$('onlineChip').classList.add('online-chip');}); window.addEventListener('offline',()=>{$('onlineChip').textContent='Offline';$('onlineChip').classList.remove('online-chip');});
   }
-  async function boot(){ load(); bind(); initMap(); await loadTxs(); if('serviceWorker' in navigator) navigator.serviceWorker.register('./service-worker.js?v=18.0-1705261348').catch(()=>{}); setAppHeight(); }
+  async function boot(){ load(); bind(); initMap(); await loadTxs(); if(state.coverageTileUrl) applyCoverageTile(state.coverageTileUrl); startCompass(true); window.addEventListener('pointerdown',()=>startCompass(true),{once:true,passive:true}); if('serviceWorker' in navigator) navigator.serviceWorker.register('./service-worker.js?v=19.0-1705261408').catch(()=>{}); setAppHeight(); }
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', boot); else boot();
 })();

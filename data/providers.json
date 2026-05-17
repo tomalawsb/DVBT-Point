@@ -1,5 +1,5 @@
 {
-  "version": "14.0 - 1705261138",
+  "version": "19.0 - 1705261408",
   "free": {
     "elevation": {
       "name": "Open-Meteo Elevation API",
@@ -15,10 +15,11 @@
   },
   "paidOptional": {
     "coverageApi": {
-      "enabled": false,
+      "enabled": true,
       "endpoint": "",
       "apiKey": "",
       "expectedResponse": "GeoJSON FeatureCollection albo lista punktów {lat, lon, level}."
     }
-  }
+  },
+  "coverage_policy": "Aplikacja nie udaje prawdziwych zasięgów. Wyświetla tylko legalnie podpięty GeoJSON albo licencjonowany XYZ tile URL."
 }
