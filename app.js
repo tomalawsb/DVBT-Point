@@ -1,6 +1,6 @@
 (() => {
   'use strict';
-  const APP_VERSION = '19.14 - 1705262115';
+  const APP_VERSION = '19.15 - 1705262135';
   const STORE = 'dvbt-point-v19-state';
   const $ = id => document.getElementById(id);
   const state = {
@@ -459,6 +459,60 @@
     }
     return out;
   }
+
+
+  // 19.15: profil DEM z kafli Terrarium zamiast zależności tylko od limitowanego API punktowego.
+  // Format Terrarium: elevation = (R * 256 + G + B / 256) - 32768.
+  const TERRAIN_TILE_Z = 10;
+  const terrainTileCache = new Map();
+  function lonToTileX(lon,z){ return Math.floor((lon + 180) / 360 * Math.pow(2,z)); }
+  function latToTileY(lat,z){
+    const r = rad(Math.max(-85.05112878, Math.min(85.05112878, lat)));
+    return Math.floor((1 - Math.log(Math.tan(r) + 1 / Math.cos(r)) / Math.PI) / 2 * Math.pow(2,z));
+  }
+  function tilePixel(lat, lon, z){
+    const n = Math.pow(2,z);
+    const xFloat = (lon + 180) / 360 * n;
+    const r = rad(Math.max(-85.05112878, Math.min(85.05112878, lat)));
+    const yFloat = (1 - Math.log(Math.tan(r) + 1 / Math.cos(r)) / Math.PI) / 2 * n;
+    return {tx:Math.floor(xFloat), ty:Math.floor(yFloat), px:Math.max(0,Math.min(255,Math.floor((xFloat-Math.floor(xFloat))*256))), py:Math.max(0,Math.min(255,Math.floor((yFloat-Math.floor(yFloat))*256)))};
+  }
+  async function loadTerrariumTile(tx,ty,z=TERRAIN_TILE_Z){
+    const key=`${z}/${tx}/${ty}`;
+    if(terrainTileCache.has(key)) return terrainTileCache.get(key);
+    const url=`https://s3.amazonaws.com/elevation-tiles-prod/terrarium/${z}/${tx}/${ty}.png`;
+    const promise=(async()=>{
+      const timeout=withTimeoutSignal(9000);
+      try{
+        const r=await fetch(url,{cache:'force-cache',signal:timeout.signal});
+        timeout.clear();
+        if(!r.ok) throw new Error('HTTP '+r.status);
+        const blob=await r.blob();
+        const bmp=await createImageBitmap(blob);
+        const canvas=document.createElement('canvas'); canvas.width=256; canvas.height=256;
+        const ctx=canvas.getContext('2d',{willReadFrequently:true});
+        ctx.drawImage(bmp,0,0);
+        return ctx.getImageData(0,0,256,256).data;
+      }catch(e){ timeout.clear(); throw e; }
+    })();
+    terrainTileCache.set(key,promise);
+    return promise;
+  }
+  async function fetchElevationsFromTerrarium(points){
+    const z=TERRAIN_TILE_Z;
+    const out=[];
+    for(const p of points){
+      const pos=tilePixel(p.lat,p.lon,z);
+      const data=await loadTerrariumTile(pos.tx,pos.ty,z);
+      const idx=(pos.py*256+pos.px)*4;
+      const r=data[idx], g=data[idx+1], b=data[idx+2];
+      const elev=(r*256 + g + b/256) - 32768;
+      if(!Number.isFinite(elev) || elev < -500 || elev > 9000) throw new Error('Błędna próbka kafla DEM');
+      out.push(Math.round(elev*10)/10);
+    }
+    return out;
+  }
+
   async function fetchElevations(points){
     const cache=loadDemCache();
     const out=new Array(points.length);
@@ -812,7 +866,7 @@
 
   async function showProfile(){
     const t=state.selected; if(!t) return toast('Najpierw wybierz nadajnik.');
-    openPanel('Profil terenu', `${state.rx.label} → ${t.short_name||t.name}`, `<div class="row info-card"><strong>Wysokość anteny odbiorczej</strong><input id="rxHeight" type="number" min="1" max="40" value="${state.rxHeight}"></div><button id="profileDownloadDem" class="panel-btn primary" type="button">Pobierz DEM i odśwież profil</button><div id="profileBox" class="info-card"><strong>Ładuję prawdziwy profil DEM...</strong><span>Pobieram próbki wysokości między punktem odbioru i nadajnikiem. Profil nie będzie zastępowany prostą kreską.</span></div>`);
+    openPanel('Profil terenu', `${state.rx.label} → ${t.short_name||t.name}`, `<div class="row info-card"><strong>Wysokość anteny odbiorczej</strong><input id="rxHeight" type="number" min="1" max="40" value="${state.rxHeight}"></div><button id="profileDownloadDem" class="panel-btn primary" type="button">Pobierz DEM i odśwież profil</button><div id="profileBox" class="info-card"><strong>Ładuję prawdziwy profil DEM...</strong><span>Pobieram prawdziwe próbki DEM z kafli wysokości. Dopiero gdy kafle nie zadziałają, użyję zapasowego API punktowego.</span></div>`);
     $('rxHeight').onchange=e=>{state.rxHeight=Math.max(1,Math.min(40,+e.target.value||6)); save(); showProfile();};
     $('profileDownloadDem').onclick=async()=>{ await fetchProfile(state.rx,t,true).then(p=>renderProfile(p,t)).catch(err=>renderProfileError(err)); };
     try{ const p=await fetchProfile(state.rx,t,false); renderProfile(p,t); }catch(err){ renderProfileError(err); }
@@ -838,11 +892,18 @@
       return cached;
     }
     let elev=null, apiError='';
+    let source='terrarium-tiles';
     try{
-      // Jedno duże zapytanie zamiast kilku małych. Mniej ryzyka limitu 429 i mniej „wiszenia”.
-      elev=await fetchElevationsFromApi(points, 'Nie udało się pobrać profilu DEM.', {retries:1, timeoutMs:9000, chunkSize:128, pauseMs:0});
-    }catch(err){
-      apiError=err.message || String(err);
+      // Najpierw prawdziwy DEM z kafli Terrarium. To omija limit 429 punktowego API Open-Meteo.
+      elev=await fetchElevationsFromTerrarium(points);
+    }catch(tileErr){
+      apiError='Kafle DEM: '+(tileErr.message || String(tileErr));
+      try{
+        source='api-live';
+        elev=await fetchElevationsFromApi(points, 'Nie udało się pobrać profilu DEM.', {retries:1, timeoutMs:9000, chunkSize:64, pauseMs:0});
+      }catch(apiErr){
+        apiError += '; API punktowe: '+(apiErr.message || String(apiErr));
+      }
     }
     if(!Array.isArray(elev) || elev.length!==n || !elev.every(v=>Number.isFinite(+v))){
       if(profileCache[routeKey] && Array.isArray(profileCache[routeKey].elev)){
@@ -850,12 +911,12 @@
         cached.meta={source:'profile-cache-stale', samples:cached.length, apiError};
         return cached;
       }
-      throw new Error(`API wysokości nie zwróciło kompletu próbek. ${apiError}`);
+      throw new Error(`Nie udało się pobrać prawdziwego DEM dla trasy. ${apiError}`);
     }
     profileCache[routeKey]={ts:Date.now(), elev:elev.map(v=>Math.round(+v*10)/10)};
     saveProfileCache(profileCache);
     const result=elev.map((e,i)=>({d:totalDistance*i/(n-1), e:+e}));
-    result.meta={source:'api-live', samples:n};
+    result.meta={source:source, samples:n};
     return result;
   }
 
@@ -910,7 +971,7 @@
     const msg=blocked?'Widoczność: NIE':worst<10?'Widoczność: warunkowa':'Widoczność: TAK';
     const noteClass=blocked?'profile-note bad':worst<10?'profile-note warn':'profile-note ok';
     const meta=p.meta||{};
-    const sourceText = meta.source === 'api-live' ? `DEM: pobrano ${meta.samples||p.length} próbek wysokości z API.` : `DEM: lokalny cache profilu (${meta.samples||p.length} próbek). ${meta.apiError ? 'Odświeżenie API nieudane: '+esc(meta.apiError) : ''}`;
+    const sourceText = meta.source === 'terrarium-tiles' ? `DEM: pobrano ${meta.samples||p.length} próbek z kafli wysokości Terrarium.` : (meta.source === 'api-live' ? `DEM: pobrano ${meta.samples||p.length} próbek wysokości z API punktowego.` : `DEM: lokalny cache profilu (${meta.samples||p.length} próbek). ${meta.apiError ? 'Odświeżenie nieudane: '+esc(meta.apiError) : ''}`);
     const minElev=Math.round(Math.min(...terrain));
     const maxElev=Math.round(Math.max(...terrain));
     const diffElev=Math.round(txAlt-rxAlt);
@@ -1017,6 +1078,6 @@
     $('closeStationBtn').onclick=hideStation; $('openStationBtn').onclick=showStation; $('antennaBtn').onclick=()=>{startCompass(false); showCompassPanel();}; $('compassWidget').onclick=()=>{startCompass(false); showCompassPanel();}; $('stationProfileBtn').onclick=showProfile; $('stationMuxBtn').onclick=showMux; $('stationDemBtn').onclick=downloadDemForSelectedTx;
     window.addEventListener('online',()=>{$('onlineChip').textContent='Online';$('onlineChip').classList.add('online-chip');}); window.addEventListener('offline',()=>{$('onlineChip').textContent='Offline';$('onlineChip').classList.remove('online-chip');});
   }
-  async function boot(){ load(); bind(); initMap(); await loadTxs(); if(state.coverageTileUrl) applyCoverageTile(state.coverageTileUrl); startCompass(true); window.addEventListener('pointerdown',()=>startCompass(true),{once:true,passive:true}); if('serviceWorker' in navigator) navigator.serviceWorker.register('./service-worker.js?v=19.14-1705262115').catch(()=>{}); setAppHeight(); }
+  async function boot(){ load(); bind(); initMap(); await loadTxs(); if(state.coverageTileUrl) applyCoverageTile(state.coverageTileUrl); startCompass(true); window.addEventListener('pointerdown',()=>startCompass(true),{once:true,passive:true}); if('serviceWorker' in navigator) navigator.serviceWorker.register('./service-worker.js?v=19.15-1705262135').catch(()=>{}); setAppHeight(); }
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', boot); else boot();
 })();

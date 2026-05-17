@@ -1,0 +1,4 @@
+19.15 - 1705262135
+- Przepisano pobieranie profilu terenu: najpierw kafle DEM Terrarium, potem zapasowe API punktowe.
+- Usunięto zależność profilu tylko od limitowanego Open-Meteo, które zwracało 429.
+- Profil ma rysować rzeczywisty przebieg terenu, a nie prosty placeholder.
