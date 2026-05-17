@@ -1,0 +1,7 @@
+19.18 - 1705262215
+
+Poprawki profilu terenu:
+- zmniejszono grubość zielonej linii profilu terenu,
+- usunięto cień z linii, żeby nie wyglądała jak gruby marker,
+- naprawiono seledynowe wypełnienie pod profilem: teraz idzie pod całą linią terenu od początku do końca,
+- usunięto szeroką różową plamę między terenem a LOS; przeszkody zostają oznaczane tylko tam, gdzie profil przecina linię widoczności.

@@ -72,7 +72,7 @@ h1,h2,h3,strong,.tx-item strong,.info-card strong,.station-head strong,.station-
 .profile-svg text{font-weight:600!important;}
 
 
-/* 19.17: profil terenu w stylu profesjonalnej karty, bez optycznego przekoszenia SVG */
+/* 19.18: profil terenu w stylu profesjonalnej karty, bez optycznego przekoszenia SVG */
 .profile-pro-card{padding:14px!important;border-radius:20px!important;background:#fff!important;box-shadow:0 8px 24px rgba(15,23,42,.06)}
 .profile-svg.pro{width:100%!important;height:auto!important;aspect-ratio:760/460!important;display:block!important;background:#fff!important;border:0!important;border-radius:14px!important;overflow:visible!important}
 .profile-head-values{margin-bottom:8px!important}

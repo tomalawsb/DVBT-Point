@@ -1,6 +1,6 @@
 (() => {
   'use strict';
-  const APP_VERSION = '19.17 - 1705262205';
+  const APP_VERSION = '19.18 - 1705262215';
   const STORE = 'dvbt-point-v19-state';
   const ANT_CACHE_NAME = 'dvbt-ant-files-v1';
   const $ = id => document.getElementById(id);
@@ -1024,7 +1024,7 @@
     const min=Math.floor((minTerrain-span*.20)/10)*10;
     const max=Math.ceil((maxTerrain+span*.16)/10)*10;
 
-    // 19.17: profesjonalny renderer SVG. Bez preserveAspectRatio="none", bo ono optycznie
+    // 19.18: profesjonalny renderer SVG. Bez preserveAspectRatio="none", bo ono optycznie
     // rozciągało wykres i dawało wrażenie przekoszenia/krzywego profilu na telefonie.
     const W=760,H=460,padL=66,padR=34,padT=34,padB=70;
     const chartW=W-padL-padR;
@@ -1035,7 +1035,10 @@
     const terrainPts=p.map(pt=>[x(pt.d), y(pt.e)]);
     const losPts=p.map(pt=>[x(pt.d), y(rxAlt+(txAlt-rxAlt)*(pt.d/totalDistance))]);
     const terrainPath=terrainPts.map((pt,i)=>`${i?'L':'M'}${pt[0].toFixed(1)},${pt[1].toFixed(1)}`).join(' ');
-    const terrainArea=`M${padL},${H-padB} ${terrainPath} L${W-padR},${H-padB} Z`;
+    // Wypełnienie musi iść dokładnie pod całym profilem terenu, a nie domykać się skośnym klinem.
+    const firstTerrain=terrainPts[0];
+    const lastTerrain=terrainPts[terrainPts.length-1];
+    const terrainArea=`M${firstTerrain[0].toFixed(1)},${H-padB} L${firstTerrain[0].toFixed(1)},${firstTerrain[1].toFixed(1)} ${terrainPts.slice(1).map(pt=>`L${pt[0].toFixed(1)},${pt[1].toFixed(1)}`).join(' ')} L${lastTerrain[0].toFixed(1)},${H-padB} Z`;
     const losPath=`M${padL},${y(rxAlt).toFixed(1)} L${W-padR},${y(txAlt).toFixed(1)}`;
     const muxForFresnel=(t.muxes||[]).find(m=>Number.isFinite(+m.frequency_mhz)) || {};
     const freqForFresnel=+muxForFresnel.frequency_mhz || 650;
@@ -1050,10 +1053,6 @@
       fresnelLower.push([x(pt.d), y(los-radius)]);
     }
     const fresnelArea=`M${fresnelUpper.map(pt=>`${pt[0].toFixed(1)},${clamp(pt[1],padT,H-padB).toFixed(1)}`).join(' L')} L${[...fresnelLower].reverse().map(pt=>`${pt[0].toFixed(1)},${clamp(pt[1],padT,H-padB).toFixed(1)}`).join(' L')} Z`;
-
-    // Delikatna strefa między profilem terenu a linią LOS. To poprawia czytelność jak w Emitelu,
-    // ale nie zastępuje matematyki widoczności — wynik dalej liczymy z realnych próbek DEM.
-    const gapArea = `M${terrainPts.map(pt=>`${pt[0].toFixed(1)},${pt[1].toFixed(1)}`).join(' L')} L${[...losPts].reverse().map(pt=>`${pt[0].toFixed(1)},${pt[1].toFixed(1)}`).join(' L')} Z`;
 
     let worst=999, worstD=0, blocked=false;
     const blockedRects=[];
@@ -1107,10 +1106,6 @@
               <stop offset="0%" stop-color="#22c55e" stop-opacity="0.34"/>
               <stop offset="100%" stop-color="#22c55e" stop-opacity="0.05"/>
             </linearGradient>
-            <linearGradient id="losGapFill" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stop-color="#ef4444" stop-opacity="0.22"/>
-              <stop offset="100%" stop-color="#ef4444" stop-opacity="0.04"/>
-            </linearGradient>
             <linearGradient id="fresnelFill" x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.18"/>
               <stop offset="100%" stop-color="#38bdf8" stop-opacity="0.05"/>
@@ -1127,10 +1122,9 @@
           <text x="20" y="${H/2}" transform="rotate(-90 20 ${H/2})" text-anchor="middle" font-size="15" fill="#334155">m n.p.m.</text>
           <text x="${W/2}" y="${H-4}" text-anchor="middle" font-size="15" fill="#475569">Odległość</text>
           <path d="${fresnelArea}" fill="url(#fresnelFill)" stroke="#38bdf8" stroke-width="1.2" stroke-opacity="0.45" vector-effect="non-scaling-stroke"/>
-          <path d="${gapArea}" fill="url(#losGapFill)"/>
           ${blockedRects.join('')}
           <path d="${terrainArea}" fill="url(#terrainFill)"/>
-          <path d="${terrainPath}" fill="none" stroke="#16a34a" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke" filter="url(#softShadow)"/>
+          <path d="${terrainPath}" fill="none" stroke="#16a34a" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>
           <path d="${losPath}" fill="none" stroke="#64748b" stroke-width="2.6" stroke-linecap="round" stroke-dasharray="10 12" vector-effect="non-scaling-stroke"/>
           <circle cx="${padL}" cy="${clamp(y(rxAlt),padT,H-padB).toFixed(1)}" r="7" fill="#2563eb" stroke="#fff" stroke-width="2" vector-effect="non-scaling-stroke"/>
           <circle cx="${W-padR}" cy="${clamp(y(txAlt),padT,H-padB).toFixed(1)}" r="7" fill="#16a34a" stroke="#fff" stroke-width="2" vector-effect="non-scaling-stroke"/>
@@ -1224,6 +1218,6 @@
     $('closeStationBtn').onclick=hideStation; $('openStationBtn').onclick=showStation; $('antennaBtn').onclick=()=>{startCompass(false); showCompassPanel();}; $('compassWidget').onclick=()=>{startCompass(false); showCompassPanel();}; $('stationProfileBtn').onclick=showProfile; $('stationMuxBtn').onclick=showMux; $('stationDemBtn').onclick=downloadDemForSelectedTx;
     window.addEventListener('online',()=>{$('onlineChip').textContent='Online';$('onlineChip').classList.add('online-chip');}); window.addEventListener('offline',()=>{$('onlineChip').textContent='Offline';$('onlineChip').classList.remove('online-chip');});
   }
-  async function boot(){ load(); bind(); initMap(); await loadTxs(); if(state.coverageTileUrl) applyCoverageTile(state.coverageTileUrl); startCompass(true); window.addEventListener('pointerdown',()=>startCompass(true),{once:true,passive:true}); if('serviceWorker' in navigator) navigator.serviceWorker.register('./service-worker.js?v=19.17-1705262205').catch(()=>{}); setAppHeight(); }
+  async function boot(){ load(); bind(); initMap(); await loadTxs(); if(state.coverageTileUrl) applyCoverageTile(state.coverageTileUrl); startCompass(true); window.addEventListener('pointerdown',()=>startCompass(true),{once:true,passive:true}); if('serviceWorker' in navigator) navigator.serviceWorker.register('./service-worker.js?v=19.18-1705262215').catch(()=>{}); setAppHeight(); }
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', boot); else boot();
 })();
