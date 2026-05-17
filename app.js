@@ -1,6 +1,6 @@
 (() => {
   'use strict';
-  const APP_VERSION = '19.7.4 - 1705261715';
+  const APP_VERSION = '19.8 - 1705261728';
   const STORE = 'dvbt-point-v19-state';
   const $ = id => document.getElementById(id);
   const state = {
@@ -73,7 +73,7 @@
   function toast(msg){ const t=$('toast'); t.textContent=msg; t.hidden=false; clearTimeout(toast._t); toast._t=setTimeout(()=>t.hidden=true,2600); }
   function setDisplayedVersion(){
     document.title = `DVB-T/T2 Point ${APP_VERSION}`;
-    ['versionChip','versionFloating'].forEach(id => {
+    ['versionFloating'].forEach(id => {
       const el = $(id);
       if(el) el.textContent = APP_VERSION;
     });
@@ -169,7 +169,8 @@
     state.homeMarker=L.marker([state.rx.lat,state.rx.lon], {icon, draggable:true, zIndexOffset:500}).addTo(state.map);
     state.homeMarker.on('dragend', e=>setRx(e.target.getLatLng().lat, e.target.getLatLng().lng, 'Punkt wskazany na mapie', false));
     renderHeadingCone();
-    $('locationChip').textContent = `🏠 ${state.rx.label || 'Punkt odbioru'}`;
+    const locationChip = $('locationChip');
+    if (locationChip) locationChip.textContent = `🏠 ${state.rx.label || 'Punkt odbioru'}`;
   }
   function renderHeadingCone(){
     if(state.headingCone) state.map.removeLayer(state.headingCone);
@@ -320,7 +321,7 @@
     const muxCount=state.txs.reduce((sum,t)=>sum+(t.muxes?.length||0),0);
     openPanel('Dane / API','Prawdziwe dane: wysokości, nadajniki i legalne warstwy zasięgu.', `
       <div class="info-card"><strong>Wersja</strong><span>${APP_VERSION}</span></div>
-      <div class="info-card"><strong>Profil terenu / DEM</strong><span>Wersja 19.7.4 nie pobiera już DEM dla całej Polski. DEM pobierasz na żądanie dla wybranego nadajnika i zapisujesz w lokalnym cache przeglądarki. Open-Meteo zostaje tylko jako źródło pobierania brakujących punktów.</span><button id="downloadDemSelected" class="panel-btn primary">Pobierz DEM dla wybranego nadajnika</button><button id="showDemStats" class="panel-btn">Pokaż stan cache DEM</button></div>
+      <div class="info-card"><strong>Profil terenu / DEM</strong><span>DEM pobierasz na żądanie dla wybranego nadajnika i zapisujesz w lokalnym cache przeglądarki. Open-Meteo zostaje tylko jako źródło pobierania brakujących punktów.</span><button id="downloadDemSelected" class="panel-btn primary">Pobierz DEM dla wybranego nadajnika</button><button id="showDemStats" class="panel-btn">Pokaż stan cache DEM</button></div>
       <div class="info-card"><strong>Nadajniki</strong><span>Baza RadioPolska po oczyszczeniu: ${state.txs.length} obiektów nadawczych i ${muxCount} emisji/MUX-ów. Ładowane z data/transmitters.json.</span></div>
       <div class="info-card"><strong>Własne obliczanie zasięgu RF</strong><span>Aplikacja może sama policzyć poglądowy zasięg wybranego nadajnika z mocy ERP, częstotliwości, wysokości anten, profilu DEM z Open-Meteo i lokalnych plików ANT, jeśli zostały pobrane. To nie jest kopia cudzych map — to własne obliczenie uproszczonym modelem.</span><button id="calcRfCoverage" class="panel-btn primary">Oblicz i narysuj zasięg wybranego nadajnika</button><button id="clearRfCoverage" class="panel-btn">Usuń obliczony zasięg</button></div>
       <div class="info-card"><strong>Charakterystyki anten ANT</strong><span>Wersja 19.6 ma diagnostykę plików ANT: sprawdza indeks, pobrane pliki lokalne, poprawność parsera, zakres azymutów i to, czy RF faktycznie ma z czego korzystać. Pliki pobierzesz komendą: python download_ant_patterns.py.</span><button id="runAntDiagnostics" class="panel-btn primary">Uruchom diagnostykę ANT</button></div>
@@ -777,10 +778,10 @@
   function bind(){
     setDisplayedVersion();
     $('searchForm').onsubmit=search; $('locateBtn').onclick=startGpsWatch;
-    $('locationChip').onclick=()=>state.map.setView([state.rx.lat,state.rx.lon],12); $('txListBtn').onclick=showTxList; $('profileBtn').onclick=showProfile; $('layersBtn').onclick=showLayers; $('filtersBtn').onclick=showFilters; $('dataBtn').onclick=showData; $('closePanelBtn').onclick=closePanel;
+    const locationChipBtn = $('locationChip'); if(locationChipBtn) locationChipBtn.onclick=()=>state.map.setView([state.rx.lat,state.rx.lon],12); $('txListBtn').onclick=showTxList; $('profileBtn').onclick=showProfile; $('layersBtn').onclick=showLayers; $('filtersBtn').onclick=showFilters; $('dataBtn').onclick=showData; $('closePanelBtn').onclick=closePanel;
     $('closeStationBtn').onclick=hideStation; $('openStationBtn').onclick=showStation; $('antennaBtn').onclick=()=>{startCompass(false); showCompassPanel();}; $('compassWidget').onclick=()=>{startCompass(false); showCompassPanel();}; $('stationProfileBtn').onclick=showProfile; $('stationMuxBtn').onclick=showMux; $('stationDemBtn').onclick=downloadDemForSelectedTx;
     window.addEventListener('online',()=>{$('onlineChip').textContent='Online';$('onlineChip').classList.add('online-chip');}); window.addEventListener('offline',()=>{$('onlineChip').textContent='Offline';$('onlineChip').classList.remove('online-chip');});
   }
-  async function boot(){ load(); bind(); initMap(); await loadTxs(); if(state.coverageTileUrl) applyCoverageTile(state.coverageTileUrl); startCompass(true); window.addEventListener('pointerdown',()=>startCompass(true),{once:true,passive:true}); if('serviceWorker' in navigator) navigator.serviceWorker.register('./service-worker.js?v=19.7.4-1705261715').catch(()=>{}); setAppHeight(); }
+  async function boot(){ load(); bind(); initMap(); await loadTxs(); if(state.coverageTileUrl) applyCoverageTile(state.coverageTileUrl); startCompass(true); window.addEventListener('pointerdown',()=>startCompass(true),{once:true,passive:true}); if('serviceWorker' in navigator) navigator.serviceWorker.register('./service-worker.js?v=19.8-1705261728').catch(()=>{}); setAppHeight(); }
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', boot); else boot();
 })();

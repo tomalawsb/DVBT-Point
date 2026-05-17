@@ -1,0 +1,20 @@
+DVB-T/T2 Point 19.8 - 1705261728
+
+Zakres: porządkowanie logiki interfejsu.
+
+Zrobione:
+- usunięto spod wyszukiwarki zbędne elementy: punkt odbioru, wersję programu i zdublowane badge,
+- przy wyszukiwarce zostawiono tylko status Online/Offline,
+- wersję programu zostawiono jako mały, nienachalny badge w dolnym rogu,
+- poprawiono typografię, odstępy, wysokości przycisków i zaokrąglenia paneli,
+- uporządkowano układ na telefonie: wyszukiwarka nie zajmuje już całej górnej belki,
+- zabezpieczono JavaScript przed błędem po usunięciu elementu locationChip/versionChip,
+- odświeżono numer wersji w index.html, app.js i service-worker.js,
+- usunięto stare pliki .bak z paczki.
+
+Nie ruszano:
+- silnika RF,
+- danych nadajników,
+- obsługi .ant,
+- DEM na żądanie,
+- scraperów.
