@@ -1172,13 +1172,21 @@
   }
   function startGpsWatch(){
     if(!navigator.geolocation) return toast('Brak GPS w tej przeglądarce.');
-    if(state.gpsWatchId!=null) navigator.geolocation.clearWatch(state.gpsWatchId);
-    state.gpsWatchId = navigator.geolocation.watchPosition(p=>{
+
+    // GPS ma ustawić punkt odbioru tylko jednorazowo.
+    // Wcześniej było tu watchPosition(), które zostawało aktywne w tle
+    // i po ręcznym wyszukaniu miejscowości cofało mapę z powrotem do pozycji GPS.
+    if(state.gpsWatchId!=null){
+      navigator.geolocation.clearWatch(state.gpsWatchId);
+      state.gpsWatchId = null;
+    }
+
+    navigator.geolocation.getCurrentPosition(p=>{
       const {latitude, longitude, heading} = p.coords;
-      state.rx={lat:latitude, lon:longitude, label:'GPS / punkt odbioru'};
+      setRx(latitude, longitude, 'GPS / punkt odbioru', true, true);
       if(Number.isFinite(heading) && heading >= 0 && state.headingSource !== 'ios' && state.headingSource !== 'absolute' && state.headingSource !== 'sensor') applyHeading(heading, 'gps');
-      save(); renderHome(); renderConnection(); selectTx(state.selected?.id || bestTx()?.id,false,false); state.map.panTo([latitude,longitude], {animate:true});
-    },()=>toast('Nie udało się pobrać GPS.'),{enableHighAccuracy:true, timeout:12000, maximumAge:2500});
+      toast('Ustawiono punkt odbioru z GPS.');
+    },()=>toast('Nie udało się pobrać GPS.'),{enableHighAccuracy:true, timeout:12000, maximumAge:10000});
   }
   function showCompassPanel(){
     const t=state.selected; const target=t?Math.round(t.azimuth):'—';
