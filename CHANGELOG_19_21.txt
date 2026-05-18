@@ -1,0 +1,9 @@
+DVB-T/T2 Point 19.21 - 1805260635
+
+Zmiany:
+- uproszczono panel Ustawienia aplikacji,
+- usunięto zbędne opisy z ustawień,
+- karta instalacji PWA pokazuje się tylko wtedy, gdy przeglądarka faktycznie udostępnia instalację,
+- przycisk instalacji nie jest już widoczny jako martwy element,
+- ikona N↑ została zmieniona na statyczny wskaźnik północy,
+- przycisk N↑ nie otwiera już panelu kompasu i nie miesza się z kierunkiem telefonu.

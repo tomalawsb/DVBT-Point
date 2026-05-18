@@ -121,3 +121,11 @@ h1,h2,h3,strong,.tx-item strong,.info-card strong,.station-head strong,.station-
 /* 19.20: czytelniejsze ikony i dłuższe nazwy nadajników */
 #layersBtn{font-size:20px;font-weight:900}
 #stationName{display:block;line-height:1.15}
+
+
+/* 19.21: ustawienia bez zbędnych opisów, instalacja tylko gdy dostępna, statyczna północ */
+.north-btn{font-weight:900;color:#0f172a}
+.north-indicator{display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:.84;gap:1px}
+.north-indicator b{font-size:12px;color:#dc2626;letter-spacing:.02em}
+.north-indicator i{font-style:normal;font-size:18px;color:#0f172a}
+.info-card[hidden]{display:none!important}

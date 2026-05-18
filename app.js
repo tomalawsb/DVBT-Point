@@ -1,6 +1,6 @@
 (() => {
   'use strict';
-  const APP_VERSION = '19.20 - 1805260547';
+  const APP_VERSION = '19.21 - 1805260635';
   const STORE = 'dvbt-point-v19-state';
   const ANT_CACHE_NAME = 'dvbt-ant-files-v1';
   const $ = id => document.getElementById(id);
@@ -91,13 +91,20 @@
   }
   function updateInstallButtons(){
     const available = !!deferredInstallPrompt && !isInstalledPwa();
-    ['installBtn','settingsInstallBtn'].forEach(id=>{
-      const btn=$(id);
-      if(!btn) return;
-      btn.hidden = !available && id === 'installBtn';
-      btn.disabled = !available;
-      btn.textContent = isInstalledPwa() ? 'Zainstalowana' : 'Zainstaluj aplikację';
-    });
+    const topBtn = $('installBtn');
+    if(topBtn){
+      topBtn.hidden = !available;
+      topBtn.disabled = !available;
+      topBtn.textContent = 'Zainstaluj aplikację';
+    }
+    const settingsCard = $('settingsInstallCard');
+    if(settingsCard) settingsCard.hidden = !available;
+    const settingsBtn = $('settingsInstallBtn');
+    if(settingsBtn){
+      settingsBtn.hidden = !available;
+      settingsBtn.disabled = !available;
+      settingsBtn.textContent = 'Zainstaluj aplikację';
+    }
   }
   async function installApp(){
     if(isInstalledPwa()){
@@ -106,7 +113,7 @@
       return;
     }
     if(!deferredInstallPrompt){
-      toast('Instalacja nie jest teraz dostępna. Odśwież stronę albo użyj menu przeglądarki: Zainstaluj aplikację.');
+      toast('Instalacja nie jest teraz dostępna w tej chwili.');
       return;
     }
     const promptEvent=deferredInstallPrompt;
@@ -419,17 +426,15 @@
   }
 
   function showData(){
-    openPanel('Ustawienia aplikacji','Ogólne ustawienia programu. Funkcje wybranego nadajnika są w karcie nadajnika.', `
+    openPanel('Ustawienia aplikacji','', `
       <div class="info-card"><strong>Wersja</strong><span>${APP_VERSION}</span></div>
-      <div class="info-card"><strong>Instalacja aplikacji</strong><span>Ten przycisk pojawia się, gdy przeglądarka pozwala zainstalować stronę jako aplikację PWA. Jeżeli jest wyszarzony, użyj menu przeglądarki albo odśwież stronę po aktualizacji.</span><button id="settingsInstallBtn" class="panel-btn primary" type="button">Zainstaluj aplikację</button></div>
-      <div class="info-card"><strong>Aktualizacja programu</strong><span>Czyści cache aplikacji i wymusza pobranie najnowszych plików programu. Cache ANT zostaje zachowany.</span><button id="refreshPwa" class="panel-btn primary" type="button">Wymuś aktualizację PWA</button></div>
-      <div class="info-card"><strong>Warstwy mapy</strong><span>Podkład mapy i zewnętrzne warstwy zasięgu są pod ikoną mapy po prawej stronie.</span></div>
-      <div class="info-card"><strong>Funkcje nadajnika</strong><span>Profil terenu, DEM, cache DEM, zasięg RF/ITM-lite oraz ANT są teraz dostępne z karty wybranego nadajnika, a nie z ustawień ogólnych.</span></div>`);
-    $('settingsInstallBtn').onclick=installApp;
+      <div id="settingsInstallCard" class="info-card" hidden><strong>Instalacja</strong><button id="settingsInstallBtn" class="panel-btn primary" type="button">Zainstaluj aplikację</button></div>
+      <div class="info-card"><strong>Aktualizacja</strong><button id="refreshPwa" class="panel-btn primary" type="button">Wymuś aktualizację</button></div>`);
+    const installButton = $('settingsInstallBtn');
+    if(installButton) installButton.onclick=installApp;
     updateInstallButtons();
     $('refreshPwa').onclick=async()=>{ const regs=await navigator.serviceWorker?.getRegistrations?.()||[]; for(const r of regs){ await r.unregister(); } const keys=await caches.keys(); await Promise.all(keys.filter(k=>k!==ANT_CACHE_NAME).map(k=>caches.delete(k)));  location.reload(); };
   }
-
 
 
 
@@ -1045,7 +1050,7 @@
       const avgLoss=cells.length ? cells.reduce((a,c)=>a+c.loss,0)/cells.length : 0;
       state.lastRf={tx:t.id, freq, erpKw, bestReach, antPattern:!!antPattern, model:'ITM-lite terrain diffraction'};
       toast(`Narysowano zasięg ITM/terenowy: ${Math.round(bestReach)} km dla ${mux.name||'MUX'}.`);
-      openPanel('Obliczony zasięg ITM / terenowy', stationName, `<div class="info-card"><strong>Wynik</strong><span>Najdalszy punkt z poziomem co najmniej średnim: około ${Math.round(bestReach)} km. Częstotliwość: ${Math.round(freq)} MHz, ERP: ${erpKw} kW, wysokość anteny: ${txHeight} m n.p.t. Charakterystyka ANT: ${antPattern ? 'użyta' : 'brak lokalnego pliku — pominięta'}.</span></div><div class="info-card"><strong>Model 19.20</strong><span>FSPL + profil promieniowy DEM + krzywizna Ziemi + 60% pierwszej strefy Fresnela + strata dyfrakcyjna knife-edge dla przeszkód + korekta ANT.</span></div><div class="info-card"><strong>Diagnostyka</strong><span>Komórek z istotną stratą terenową: ${blockedCells}/${cells.length}. Średnia dodatkowa strata terenowa: ${avgLoss.toFixed(1)} dB. DEM: lokalny cache + kafle Terrarium, a dopiero przy awarii fallback do API punktowego.</span></div><div class="legend-rf"><span><i class="rf-good"></i>bardzo/dobry</span><span><i class="rf-mid"></i>średni</span><span><i class="rf-weak"></i>słaby</span><span><i class="rf-bad"></i>bardzo słaby</span></div>`);
+      openPanel('Obliczony zasięg ITM / terenowy', stationName, `<div class="info-card"><strong>Wynik</strong><span>Najdalszy punkt z poziomem co najmniej średnim: około ${Math.round(bestReach)} km. Częstotliwość: ${Math.round(freq)} MHz, ERP: ${erpKw} kW, wysokość anteny: ${txHeight} m n.p.t. Charakterystyka ANT: ${antPattern ? 'użyta' : 'brak lokalnego pliku — pominięta'}.</span></div><div class="info-card"><strong>Model 19.21</strong><span>FSPL + profil promieniowy DEM + krzywizna Ziemi + 60% pierwszej strefy Fresnela + strata dyfrakcyjna knife-edge dla przeszkód + korekta ANT.</span></div><div class="info-card"><strong>Diagnostyka</strong><span>Komórek z istotną stratą terenową: ${blockedCells}/${cells.length}. Średnia dodatkowa strata terenowa: ${avgLoss.toFixed(1)} dB. DEM: lokalny cache + kafle Terrarium, a dopiero przy awarii fallback do API punktowego.</span></div><div class="legend-rf"><span><i class="rf-good"></i>bardzo/dobry</span><span><i class="rf-mid"></i>średni</span><span><i class="rf-weak"></i>słaby</span><span><i class="rf-bad"></i>bardzo słaby</span></div>`);
     }catch(err){
       const msg = err?.message || String(err);
       openPanel('Błąd obliczania zasięgu', stationName, `<div class="info-card"><strong>Nie udało się obliczyć zasięgu</strong><span>${esc(msg)}</span></div><div class="info-card"><strong>Co teraz</strong><span>Spróbuj ponownie. Program najpierw używa lokalnego cache DEM, potem kafli Terrarium, a dopiero na końcu awaryjnego API. Jeżeli błąd wraca, sprawdź internet albo najpierw kliknij „Pobierz DEM”.</span></div>`);
@@ -1331,10 +1336,10 @@
   function bind(){
     setDisplayedVersion();
     $('searchForm').onsubmit=search; $('locateBtn').onclick=startGpsWatch; const installBtn=$('installBtn'); if(installBtn) installBtn.onclick=installApp;
-    const locationChipBtn = $('locationChip'); if(locationChipBtn) locationChipBtn.onclick=()=>state.map.setView([state.rx.lat,state.rx.lon],12); $('txListBtn').onclick=showTxList; $('northBtn').onclick=()=>{startCompass(false); showCompassPanel();}; $('layersBtn').onclick=showLayers; $('dataBtn').onclick=showData; const aboutBtn=$('aboutBtn'); if(aboutBtn) aboutBtn.onclick=showAbout; $('closePanelBtn').onclick=closePanel;
+    const locationChipBtn = $('locationChip'); if(locationChipBtn) locationChipBtn.onclick=()=>state.map.setView([state.rx.lat,state.rx.lon],12); $('txListBtn').onclick=showTxList; $('northBtn').onclick=()=>{ toast('Północ jest u góry mapy.'); }; $('layersBtn').onclick=showLayers; $('dataBtn').onclick=showData; const aboutBtn=$('aboutBtn'); if(aboutBtn) aboutBtn.onclick=showAbout; $('closePanelBtn').onclick=closePanel;
     $('closeStationBtn').onclick=hideStation; $('openStationBtn').onclick=showStation; $('compassWidget').onclick=()=>{startCompass(false); showCompassPanel();}; $('stationProfileBtn').onclick=showProfile; $('stationMuxBtn').onclick=showMux; $('stationDemBtn').onclick=downloadDemForSelectedTx; $('stationDemCacheBtn').onclick=showSelectedDemStats; $('stationRfBtn').onclick=()=>calculateRfCoverage(); $('stationClearRfBtn').onclick=()=>{ clearRfLayer(); toast('Usunięto obliczony zasięg RF.'); }; $('stationAntBtn').onclick=()=>checkSelectedTransmitterAnt().catch(err=>toast('Błąd sprawdzania ANT: '+(err.message||err))); 
     window.addEventListener('online',()=>{$('onlineChip').textContent='Online';$('onlineChip').classList.add('online-chip');}); window.addEventListener('offline',()=>{$('onlineChip').textContent='Offline';$('onlineChip').classList.remove('online-chip');});
   }
-  async function boot(){ load(); setupPwaInstall(); bind(); initMap(); await loadTxs(); if(state.coverageTileUrl) applyCoverageTile(state.coverageTileUrl); startCompass(true); window.addEventListener('pointerdown',()=>startCompass(true),{once:true,passive:true}); if('serviceWorker' in navigator) navigator.serviceWorker.register('./service-worker.js?v=19.20-1805260547').catch(()=>{}); setAppHeight(); }
+  async function boot(){ load(); setupPwaInstall(); bind(); initMap(); await loadTxs(); if(state.coverageTileUrl) applyCoverageTile(state.coverageTileUrl); startCompass(true); window.addEventListener('pointerdown',()=>startCompass(true),{once:true,passive:true}); if('serviceWorker' in navigator) navigator.serviceWorker.register('./service-worker.js?v=19.21-1805260635').catch(()=>{}); setAppHeight(); }
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', boot); else boot();
 })();
