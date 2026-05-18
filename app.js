@@ -1,11 +1,11 @@
 (() => {
   'use strict';
-  const APP_VERSION = '19.19 - 1805260730';
+  const APP_VERSION = '19.20 - 1805260547';
   const STORE = 'dvbt-point-v19-state';
   const ANT_CACHE_NAME = 'dvbt-ant-files-v1';
   const $ = id => document.getElementById(id);
   const state = {
-    map:null, baseLayer:null, base:'osm', rx:{lat:50.2871, lon:21.4238, label:'Mielec / punkt odbioru'}, rxHeight:6,
+    map:null, baseLayer:null, baseLabelsLayer:null, base:'osm', rx:{lat:50.2871, lon:21.4238, label:'Mielec / punkt odbioru'}, rxHeight:6,
     txs:[], selected:null, markers:L.layerGroup(), line:null, range:null, homeMarker:null, headingCone:null,
     heading:null, rawHeading:null, pendingHeading:null, headingSource:'brak', headingInvert:false, headingOffset:0, compassOn:false, gpsWatchId:null, headingRaf:null, headingSamples:[], headingLastTs:0, coverageLayer:null, rfLayer:null, coverageTileUrl:'', rfBusy:false, lastRf:null, antPatterns:new Map(), demCache:null, demBusy:false
   };
@@ -147,6 +147,23 @@
     return min===max ? `${fmt(max)} kW` : `${fmt(min)}–${fmt(max)} kW`;
   }
 
+  function cleanLocationLabel(value){
+    return String(value || '').replace(/[()]/g,'').replace(/\s*\/\s*/g,' / ').replace(/\s+/g,' ').trim();
+  }
+  function stationDisplayName(t){
+    if(!t) return '—';
+    const loc = cleanLocationLabel(t.location);
+    const site = String(t.site || t.short_name || t.name || '').trim();
+    if(loc && site && !loc.toLowerCase().includes(site.toLowerCase())) return `${loc} — ${site}`;
+    return loc || site || '—';
+  }
+  function stationSubtitleName(t){
+    if(!t) return '—';
+    const raw = String(t.name || '').trim();
+    if(raw) return raw;
+    return stationDisplayName(t);
+  }
+
   function normalizeTx(raw){
     const muxes=(raw.muxes||[]).map(m=>({
       name:m.name||m.mux||'MUX',
@@ -186,11 +203,24 @@
   function setBase(type, persist=true){
     state.base=type || 'osm';
     if(state.baseLayer) state.map.removeLayer(state.baseLayer);
-    const opts={maxZoom:19, updateWhenIdle:true, updateWhenZooming:false, keepBuffer:3, crossOrigin:true, detectRetina:false, attribution:'&copy; OpenStreetMap'};
-    if(state.base==='sat') state.baseLayer=L.tileLayer('https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {...opts, attribution:'Tiles &copy; Esri'});
-    else if(state.base==='light') state.baseLayer=L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {...opts, subdomains:'abcd', attribution:'&copy; OpenStreetMap &copy; CARTO'});
-    else state.baseLayer=L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', opts);
+    if(state.baseLabelsLayer) state.map.removeLayer(state.baseLabelsLayer);
+    const common={maxZoom:19, updateWhenIdle:true, updateWhenZooming:false, keepBuffer:3, crossOrigin:true, detectRetina:false};
+    if(state.base==='sat'){
+      state.baseLayer=L.tileLayer('https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {...common, attribution:'Imagery &copy; Esri'});
+      state.baseLabelsLayer=L.tileLayer('https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {...common, attribution:'Nazwy miejscowości &copy; Esri', pane:'tilePane', opacity:.95});
+    }else if(state.base==='light'){
+      state.baseLayer=L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {...common, subdomains:'abcd', attribution:'&copy; OpenStreetMap &copy; CARTO'});
+    }else if(state.base==='topo'){
+      state.baseLayer=L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {...common, subdomains:'abc', attribution:'Map data: &copy; OpenStreetMap, SRTM | Style: &copy; OpenTopoMap'});
+    }else if(state.base==='hot'){
+      state.baseLayer=L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', {...common, subdomains:'abc', attribution:'&copy; OpenStreetMap, styl HOT'});
+    }else if(state.base==='street'){
+      state.baseLayer=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {...common, attribution:'Tiles &copy; Esri'});
+    }else{
+      state.baseLayer=L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {...common, attribution:'&copy; OpenStreetMap'});
+    }
     state.baseLayer.addTo(state.map);
+    if(state.baseLabelsLayer) state.baseLabelsLayer.addTo(state.map);
     renderHeadingCone();
     setTimeout(()=>state.map.invalidateSize(true),80);
     if(persist) save();
@@ -244,7 +274,7 @@
     for(const t of sortedTxs().filter(passesFilter)){
       const selected=state.selected?.id===t.id;
       const icon=L.divIcon({html:`<div class="tx-marker ${selected?'selected':''}">📡</div>`, className:'', iconSize:[30,30], iconAnchor:[15,15]});
-      L.marker([t.lat,t.lon], {icon, title:t.short_name||t.name}).on('click', e=>{e.originalEvent?.stopPropagation?.(); selectTx(t.id,true,true);}).addTo(state.markers);
+      L.marker([t.lat,t.lon], {icon, title:stationDisplayName(t)}).on('click', e=>{e.originalEvent?.stopPropagation?.(); selectTx(t.id,true,true);}).addTo(state.markers);
     }
   }
   function selectTx(id, pan=true, show=true){
@@ -259,13 +289,13 @@
     state.line=L.polyline([[state.rx.lat,state.rx.lon],[t.lat,t.lon]], {color:'#2563eb', weight:3, opacity:.82}).addTo(state.map);
     const maxErp=Math.max(1,...t.muxes.map(m=>+m.erp_kw||1));
     const radius=Math.min(90000, Math.max(25000, Math.sqrt(maxErp)*8500));
-    state.range=L.circle([t.lat,t.lon], {radius, color:'#f97316', weight:3, opacity:.90, fillColor:'#f97316', fillOpacity:.105, dashArray:'10 8'}).addTo(state.map);
+    state.range=L.circle([t.lat,t.lon], {radius, color:'#f97316', weight:4, opacity:.96, fillColor:'#fb923c', fillOpacity:.18, dashArray:'12 8'}).addTo(state.map);
   }
   function showStation(){ $('stationCard').hidden=false; $('openStationBtn').hidden=true; setTimeout(()=>state.map.invalidateSize(true),80); }
   function hideStation(){ $('stationCard').hidden=true; $('openStationBtn').hidden=false; setTimeout(()=>state.map.invalidateSize(true),80); }
   function updateStationCard(){
     const t=state.selected; if(!t) return;
-    $('stationName').textContent=t.short_name||t.name;
+    $('stationName').textContent=stationDisplayName(t);
     $('stationAzimuth').textContent=`${Math.round(t.azimuth)}°`;
     $('stationDistance').textContent=fmtKm(t.distance);
     $('stationPol').textContent=pols(t);
@@ -275,7 +305,7 @@
   function openPanel(title, subtitle, html){ $('panelTitle').textContent=title; $('panelSubtitle').textContent=subtitle||''; $('panelContent').innerHTML=html; $('appPanel').classList.remove('collapsed'); setTimeout(()=>state.map.invalidateSize(true),80); }
   function closePanel(){ $('appPanel').classList.add('collapsed'); }
   function showTxList(){
-    const html=sortedTxs().map(t=>`<button class="tx-item ${state.selected?.id===t.id?'active':''}" data-tx="${esc(t.id)}"><strong>${esc(t.short_name||t.name)}</strong><span>${fmtKm(t.distance)} · azymut ${Math.round(t.azimuth)}° · moc ERP ${stationPowerText(t)} · MUX ${muxNames(t).map(m=>m.replace('MUX-','')).join('/')}</span></button>`).join('');
+    const html=sortedTxs().map(t=>`<button class="tx-item ${state.selected?.id===t.id?'active':''}" data-tx="${esc(t.id)}"><strong>${esc(stationDisplayName(t))}</strong><span>${fmtKm(t.distance)} · azymut ${Math.round(t.azimuth)}° · moc ERP ${stationPowerText(t)} · MUX ${muxNames(t).map(m=>m.replace('MUX-','')).join('/')}</span></button>`).join('');
     openPanel('Nadajniki','Lista według odległości od punktu odbioru.',html);
     $('panelContent').querySelectorAll('[data-tx]').forEach(b=>b.onclick=()=>{selectTx(b.dataset.tx,true,true); closePanel();});
   }
@@ -299,15 +329,18 @@
       ].filter(Boolean).join(' · ');
       return `<div class="tx-item mux-card"><strong>${esc(m.name)} · ${esc(m.channel)} · ERP ${esc(m.erp_kw||'—')} kW</strong><span>${details}</span></div>`;
     }).join('');
-    const meta=`${t.location?esc(t.location)+' / ':''}${esc(t.site||t.short_name||t.name)} · ${t.site_elevation_m||'—'} m n.p.m. · maszt/antena ${t.height||'—'} m n.p.t.`;
+    const meta=`${esc(stationDisplayName(t))} · ${t.site_elevation_m||'—'} m n.p.m. · maszt/antena ${t.height||'—'} m n.p.t.`;
     openPanel('MUX-y i moce nadajnika', meta, rows);
   }
   function showLayers(){
-    openPanel('Warstwy mapy','Podkład oraz zewnętrzna mapa zasięgu GeoJSON/XYZ.', `
-      <button class="tx-item ${state.base==='osm'?'active':''}" data-base="osm"><strong>Plan OSM</strong><span>Najstabilniejsza mapa.</span></button>
-      <button class="tx-item ${state.base==='light'?'active':''}" data-base="light"><strong>Jasna CARTO</strong><span>Lżejsza wizualnie.</span></button>
-      <button class="tx-item ${state.base==='sat'?'active':''}" data-base="sat"><strong>Satelita Esri</strong><span>Cięższa, wymaga internetu.</span></button>
-      <div class="info-card"><strong>Dodaj zewnętrzną warstwę zasięgu XYZ</strong><span>Wklej adres kafelków HTTPS z tokenami {z}/{x}/{y}. To jest osobna mapa pokrycia, nie zasięg orientacyjny liczony przez aplikację.</span><input id="coverageTileInput" type="text" placeholder="https://.../{z}/{x}/{y}.png" value="${esc(state.coverageTileUrl||'')}"><button id="applyCoverageTileBtn" class="panel-btn primary">Dodaj zewnętrzną warstwę zasięgu</button><button id="clearCoverageTileBtn" class="panel-btn">Usuń zewnętrzną warstwę</button></div>
+    openPanel('Warstwy mapy','Podkład mapy oraz dodatkowa mapa zasięgu GeoJSON/XYZ.', `
+      <button class="tx-item ${state.base==='osm'?'active':''}" data-base="osm"><strong>Plan OSM</strong><span>Klasyczna mapa z nazwami miejscowości.</span></button>
+      <button class="tx-item ${state.base==='hot'?'active':''}" data-base="hot"><strong>OSM Humanitarian</strong><span>Wyraźniejsze drogi i miejscowości.</span></button>
+      <button class="tx-item ${state.base==='light'?'active':''}" data-base="light"><strong>Jasna CARTO</strong><span>Jasny styl do pracy na komputerze.</span></button>
+      <button class="tx-item ${state.base==='topo'?'active':''}" data-base="topo"><strong>Topo</strong><span>Mapa topograficzna z nazwami miejsc.</span></button>
+      <button class="tx-item ${state.base==='street'?'active':''}" data-base="street"><strong>Ulice Esri</strong><span>Mapa drogowa z podpisami miast.</span></button>
+      <button class="tx-item ${state.base==='sat'?'active':''}" data-base="sat"><strong>Satelita Esri + nazwy</strong><span>Zdjęcia satelitarne z dołożonymi nazwami miejscowości.</span></button>
+      <div class="info-card"><strong>Dodatkowa warstwa zasięgu XYZ</strong><span>Wklej adres kafelków HTTPS z tokenami {z}/{x}/{y}. To jest osobna mapa pokrycia, nie zasięg orientacyjny liczony przez aplikację.</span><input id="coverageTileInput" type="text" placeholder="https://.../{z}/{x}/{y}.png" value="${esc(state.coverageTileUrl||'')}"><button id="applyCoverageTileBtn" class="panel-btn primary">Dodaj zewnętrzną warstwę zasięgu</button><button id="clearCoverageTileBtn" class="panel-btn">Usuń zewnętrzną warstwę</button></div>
       <div class="info-card"><strong>Wczytaj mapę zasięgu GeoJSON</strong><span>Wczytuje lokalny plik GeoJSON jako warstwę pomocniczą. Plik musi pochodzić z legalnego źródła.</span><input id="coverageGeoJsonInput" type="file" accept=".geojson,.json,application/geo+json,application/json"><button id="importCoverageGeoJsonBtn" class="panel-btn primary">Wczytaj GeoJSON</button></div>
     `);
     $('panelContent').querySelectorAll('[data-base]').forEach(b=>b.onclick=()=>{setBase(b.dataset.base); closePanel();});
@@ -589,8 +622,22 @@
       else missing.push({i, lat:p.lat, lon:p.lon, key});
     });
     if(missing.length){
-      const elev=await fetchElevationsFromApi(missing, 'Open-Meteo Elevation API nie odpowiedziało podczas obliczania zasięgu.');
-      missing.forEach((p,idx)=>{ out[p.i]=elev[idx]; cache[p.key]=elev[idx]; });
+      let lastTerrariumErr='';
+      for(let start=0; start<missing.length; start+=64){
+        const chunk=missing.slice(start, start+64);
+        let filled=false;
+        try{
+          const terr=await fetchElevationsFromTerrarium(chunk);
+          chunk.forEach((p,idx)=>{ out[p.i]=terr[idx]; cache[p.key]=terr[idx]; });
+          filled=true;
+        }catch(err){
+          lastTerrariumErr = err?.message || String(err);
+        }
+        if(!filled){
+          const api=await fetchElevationsFromApi(chunk, `Nie udało się pobrać wysokości DEM. Terrarium: ${lastTerrariumErr}`);
+          chunk.forEach((p,idx)=>{ out[p.i]=api[idx]; cache[p.key]=api[idx]; });
+        }
+      }
       saveDemCache();
     }
     return out;
@@ -944,11 +991,16 @@
     const t=state.selected; if(!t) return toast('Najpierw wybierz nadajnik.');
     if(state.rfBusy) return toast('Obliczanie zasięgu już trwa.');
     state.rfBusy=true;
+    const stationName = stationDisplayName(t);
+    openPanel('Obliczanie zasięgu ITM / terenowego', stationName, `<div id="rfStatusBox" class="info-card"><strong>Start</strong><span>Przygotowuję obliczenia dla wybranego nadajnika...</span></div>`);
+    const setRfStatus=(title,msg)=>{ const box=$('rfStatusBox'); if(box) box.innerHTML=`<strong>${esc(title)}</strong><span>${esc(msg)}</span>`; };
     toast('Liczenie zasięgu ITM/terenowego z DEM i ANT...');
     try{
+      setRfStatus('Parametry', 'Odczytuję ERP, częstotliwość, wysokość anteny i plik ANT.');
       const {freq, erpKw, mux, txHeight}=txMainParams(t);
       const antPattern=await loadAntPattern(mux);
       const maxKm=Math.max(18, Math.min(95, Math.sqrt(erpKw)*23 + txHeight*0.28));
+      setRfStatus('DEM', 'Pobieram wysokości terenu dla nadajnika i siatki obliczeniowej.');
       const txElevArr=await fetchElevations([{lat:t.lat,lon:t.lon}]);
       const txGround=Number.isFinite(+t.site_elevation_m) ? +t.site_elevation_m : txElevArr[0];
       const txAlt=txGround + txHeight;
@@ -961,6 +1013,7 @@
       for(const ray of rays){
         for(const p of ray.points){ p.elev=+elev[eidx++]; }
       }
+      setRfStatus('Siatka', 'Buduję siatkę zasięgu i liczę straty terenowe.');
       const cells=[];
       for(const ray of rays){
         for(let i=0;i<ray.points.length;i++){
@@ -979,6 +1032,7 @@
           cells.push({poly:[[a.lat,a.lon],[b.lat,b.lon],[c.lat,c.lon],[dpt.lat,dpt.lon]], level, km:p.km, bearing:ray.bearing, loss:itmLoss});
         }
       }
+      setRfStatus('Rysowanie', 'Nakładam obliczony zasięg na mapę.');
       clearRfLayer();
       state.rfLayer=L.layerGroup();
       for(const cell of cells){
@@ -991,7 +1045,11 @@
       const avgLoss=cells.length ? cells.reduce((a,c)=>a+c.loss,0)/cells.length : 0;
       state.lastRf={tx:t.id, freq, erpKw, bestReach, antPattern:!!antPattern, model:'ITM-lite terrain diffraction'};
       toast(`Narysowano zasięg ITM/terenowy: ${Math.round(bestReach)} km dla ${mux.name||'MUX'}.`);
-      openPanel('Obliczony zasięg ITM / terenowy', `${t.short_name||t.name}`, `<div class="info-card"><strong>Wynik</strong><span>Najdalszy punkt z poziomem co najmniej średnim: około ${Math.round(bestReach)} km. Częstotliwość: ${Math.round(freq)} MHz, ERP: ${erpKw} kW, wysokość anteny: ${txHeight} m n.p.t. Charakterystyka ANT: ${antPattern ? 'użyta' : 'brak lokalnego pliku — pominięta'}.</span></div><div class="info-card"><strong>Model 19.10</strong><span>Pierwszy model terenowy typu ITM/Longley-Rice: FSPL + profil promieniowy DEM + krzywizna Ziemi + 60% pierwszej strefy Fresnela + strata dyfrakcyjna knife-edge dla przeszkód + korekta ANT. To nadal nie jest pełny Radio Mobile, ale jest wyraźnie bliższe propagacji terenowej niż sam okrąg/sektor.</span></div><div class="info-card"><strong>Diagnostyka</strong><span>Komórek z istotną stratą terenową: ${blockedCells}/${cells.length}. Średnia dodatkowa strata terenowa: ${avgLoss.toFixed(1)} dB. DEM: lokalny cache przeglądarki z fallbackiem do Open-Meteo.</span></div><div class="legend-rf"><span><i class="rf-good"></i>bardzo/dobry</span><span><i class="rf-mid"></i>średni</span><span><i class="rf-weak"></i>słaby</span><span><i class="rf-bad"></i>bardzo słaby</span></div>`);
+      openPanel('Obliczony zasięg ITM / terenowy', stationName, `<div class="info-card"><strong>Wynik</strong><span>Najdalszy punkt z poziomem co najmniej średnim: około ${Math.round(bestReach)} km. Częstotliwość: ${Math.round(freq)} MHz, ERP: ${erpKw} kW, wysokość anteny: ${txHeight} m n.p.t. Charakterystyka ANT: ${antPattern ? 'użyta' : 'brak lokalnego pliku — pominięta'}.</span></div><div class="info-card"><strong>Model 19.20</strong><span>FSPL + profil promieniowy DEM + krzywizna Ziemi + 60% pierwszej strefy Fresnela + strata dyfrakcyjna knife-edge dla przeszkód + korekta ANT.</span></div><div class="info-card"><strong>Diagnostyka</strong><span>Komórek z istotną stratą terenową: ${blockedCells}/${cells.length}. Średnia dodatkowa strata terenowa: ${avgLoss.toFixed(1)} dB. DEM: lokalny cache + kafle Terrarium, a dopiero przy awarii fallback do API punktowego.</span></div><div class="legend-rf"><span><i class="rf-good"></i>bardzo/dobry</span><span><i class="rf-mid"></i>średni</span><span><i class="rf-weak"></i>słaby</span><span><i class="rf-bad"></i>bardzo słaby</span></div>`);
+    }catch(err){
+      const msg = err?.message || String(err);
+      openPanel('Błąd obliczania zasięgu', stationName, `<div class="info-card"><strong>Nie udało się obliczyć zasięgu</strong><span>${esc(msg)}</span></div><div class="info-card"><strong>Co teraz</strong><span>Spróbuj ponownie. Program najpierw używa lokalnego cache DEM, potem kafli Terrarium, a dopiero na końcu awaryjnego API. Jeżeli błąd wraca, sprawdź internet albo najpierw kliknij „Pobierz DEM”.</span></div>`);
+      toast('Błąd obliczeń RF: ' + msg);
     }finally{
       state.rfBusy=false;
     }
@@ -1010,7 +1068,7 @@
 
   async function showProfile(){
     const t=state.selected; if(!t) return toast('Najpierw wybierz nadajnik.');
-    openPanel('Profil terenu', `${state.rx.label} → ${t.short_name||t.name}`, `<div class="row info-card"><strong>Wysokość anteny odbiorczej</strong><input id="rxHeight" type="number" min="1" max="40" value="${state.rxHeight}"></div><button id="profileDownloadDem" class="panel-btn primary" type="button">Pobierz DEM i odśwież profil</button><div id="profileBox" class="info-card"><strong>Ładuję prawdziwy profil DEM...</strong><span>Pobieram prawdziwe próbki DEM z kafli wysokości. Dopiero gdy kafle nie zadziałają, użyję zapasowego API punktowego.</span></div>`);
+    openPanel('Profil terenu', `${state.rx.label} → ${stationDisplayName(t)}`, `<div class="row info-card"><strong>Wysokość anteny odbiorczej</strong><input id="rxHeight" type="number" min="1" max="40" value="${state.rxHeight}"></div><button id="profileDownloadDem" class="panel-btn primary" type="button">Pobierz DEM i odśwież profil</button><div id="profileBox" class="info-card"><strong>Ładuję prawdziwy profil DEM...</strong><span>Pobieram prawdziwe próbki DEM z kafli wysokości. Dopiero gdy kafle nie zadziałają, użyję zapasowego API punktowego.</span></div>`);
     $('rxHeight').onchange=e=>{state.rxHeight=Math.max(1,Math.min(40,+e.target.value||6)); save(); showProfile();};
     $('profileDownloadDem').onclick=async()=>{ await fetchProfile(state.rx,t,true).then(p=>renderProfile(p,t)).catch(err=>renderProfileError(err)); };
     try{ const p=await fetchProfile(state.rx,t,false); renderProfile(p,t); }catch(err){ renderProfileError(err); }
@@ -1256,24 +1314,27 @@
     $('resetCompassBtn').onclick=()=>{ state.headingOffset=0; state.headingInvert=false; save(); updateCompass(); toast('Zresetowano korektę kompasu.'); };
   }
 
-  function setRx(lat,lon,label,pan,preserveSelected=true){
+  function setRx(lat,lon,label,pan,preserveSelected=true, keepZoom=true){
     const keepId = preserveSelected && state.selected?.id ? state.selected.id : null;
     state.rx={lat,lon,label};
     save();
     renderHome();
     renderConnection();
     selectTx(keepId || bestTx()?.id,false,true);
-    if(pan) state.map.setView([lat,lon],12);
+    if(pan){
+      if(keepZoom && state.map) state.map.panTo([lat,lon], {animate:true});
+      else state.map.setView([lat,lon],12);
+    }
   }
-  async function search(e){ e.preventDefault(); const q=$('searchInput').value.trim(); if(!q) return; try{ const r=await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=pl&q=${encodeURIComponent(q)}`); const j=await r.json(); if(!j[0]) return toast('Nie znaleziono miejsca.'); setRx(+j[0].lat,+j[0].lon,j[0].display_name.split(',').slice(0,2).join(', '),true); }catch{toast('Wyszukiwanie wymaga internetu.');} }
+  async function search(e){ e.preventDefault(); const q=$('searchInput').value.trim(); if(!q) return; try{ const r=await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=pl&q=${encodeURIComponent(q)}`); const j=await r.json(); if(!j[0]) return toast('Nie znaleziono miejsca.'); setRx(+j[0].lat,+j[0].lon,j[0].display_name.split(',').slice(0,2).join(', '),true,true,false); }catch{toast('Wyszukiwanie wymaga internetu.');} }
 
   function bind(){
     setDisplayedVersion();
     $('searchForm').onsubmit=search; $('locateBtn').onclick=startGpsWatch; const installBtn=$('installBtn'); if(installBtn) installBtn.onclick=installApp;
     const locationChipBtn = $('locationChip'); if(locationChipBtn) locationChipBtn.onclick=()=>state.map.setView([state.rx.lat,state.rx.lon],12); $('txListBtn').onclick=showTxList; $('northBtn').onclick=()=>{startCompass(false); showCompassPanel();}; $('layersBtn').onclick=showLayers; $('dataBtn').onclick=showData; const aboutBtn=$('aboutBtn'); if(aboutBtn) aboutBtn.onclick=showAbout; $('closePanelBtn').onclick=closePanel;
-    $('closeStationBtn').onclick=hideStation; $('openStationBtn').onclick=showStation; $('compassWidget').onclick=()=>{startCompass(false); showCompassPanel();}; $('stationProfileBtn').onclick=showProfile; $('stationMuxBtn').onclick=showMux; $('stationDemBtn').onclick=downloadDemForSelectedTx; $('stationDemCacheBtn').onclick=showSelectedDemStats; $('stationRfBtn').onclick=()=>calculateRfCoverage().catch(err=>toast('Błąd obliczeń RF: '+(err.message||err))); $('stationClearRfBtn').onclick=()=>{ clearRfLayer(); toast('Usunięto obliczony zasięg RF.'); }; $('stationAntBtn').onclick=()=>checkSelectedTransmitterAnt().catch(err=>toast('Błąd sprawdzania ANT: '+(err.message||err))); 
+    $('closeStationBtn').onclick=hideStation; $('openStationBtn').onclick=showStation; $('compassWidget').onclick=()=>{startCompass(false); showCompassPanel();}; $('stationProfileBtn').onclick=showProfile; $('stationMuxBtn').onclick=showMux; $('stationDemBtn').onclick=downloadDemForSelectedTx; $('stationDemCacheBtn').onclick=showSelectedDemStats; $('stationRfBtn').onclick=()=>calculateRfCoverage(); $('stationClearRfBtn').onclick=()=>{ clearRfLayer(); toast('Usunięto obliczony zasięg RF.'); }; $('stationAntBtn').onclick=()=>checkSelectedTransmitterAnt().catch(err=>toast('Błąd sprawdzania ANT: '+(err.message||err))); 
     window.addEventListener('online',()=>{$('onlineChip').textContent='Online';$('onlineChip').classList.add('online-chip');}); window.addEventListener('offline',()=>{$('onlineChip').textContent='Offline';$('onlineChip').classList.remove('online-chip');});
   }
-  async function boot(){ load(); setupPwaInstall(); bind(); initMap(); await loadTxs(); if(state.coverageTileUrl) applyCoverageTile(state.coverageTileUrl); startCompass(true); window.addEventListener('pointerdown',()=>startCompass(true),{once:true,passive:true}); if('serviceWorker' in navigator) navigator.serviceWorker.register('./service-worker.js?v=19.19-1805260730').catch(()=>{}); setAppHeight(); }
+  async function boot(){ load(); setupPwaInstall(); bind(); initMap(); await loadTxs(); if(state.coverageTileUrl) applyCoverageTile(state.coverageTileUrl); startCompass(true); window.addEventListener('pointerdown',()=>startCompass(true),{once:true,passive:true}); if('serviceWorker' in navigator) navigator.serviceWorker.register('./service-worker.js?v=19.20-1805260547').catch(()=>{}); setAppHeight(); }
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', boot); else boot();
 })();

@@ -1,5 +1,5 @@
-const CACHE_NAME = 'dvbt-point-19-19-1805260730';
-const CORE = ['./','./index.html','./style.css?v=19.19-1805260730','./app.js?v=19.19-1805260730','./data/transmitters.json','./data/ant/index.json','./manifest.json','./assets/icon.svg','./assets/icon-192.png','./assets/icon-512.png'];
+const CACHE_NAME = 'dvbt-point-19-20-1805260547';
+const CORE = ['./','./index.html','./style.css?v=19.20-1805260547','./app.js?v=19.20-1805260547','./data/transmitters.json','./data/ant/index.json','./manifest.json','./assets/icon.svg','./assets/icon-192.png','./assets/icon-512.png'];
 self.addEventListener('install', event => { self.skipWaiting(); event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(CORE)).catch(()=>{})); });
 self.addEventListener('activate', event => { event.waitUntil((async()=>{ const keys=await caches.keys(); await Promise.all(keys.filter(k=>k!==CACHE_NAME && k!=='dvbt-ant-files-v1').map(k=>caches.delete(k))); await self.clients.claim(); })()); });
 self.addEventListener('fetch', event => {

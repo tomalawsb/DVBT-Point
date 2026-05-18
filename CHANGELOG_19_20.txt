@@ -1,0 +1,11 @@
+DVB-T/T2 Point 19.20 - 1805260547
+
+Zmiany:
+- nadajniki na liście i w karcie pokazują teraz czytelniejszą nazwę: miejscowość/lokalizacja + obiekt,
+- poprawiono obliczanie zasięgu RF: najpierw lokalny cache DEM, potem kafle Terrarium, a dopiero na końcu awaryjne API,
+- dodano stały panel postępu i panel błędu dla obliczania zasięgu RF,
+- dodano nowe warstwy mapy: OSM Humanitarian, Topo, Ulice Esri,
+- warstwa satelitarna ma teraz dołożone nazwy miejscowości,
+- zmieniono ikonę warstw na bardziej czytelną,
+- długie przytrzymanie na mapie przenosi punkt odbioru bez zmiany aktualnego przybliżenia,
+- wzmocniono widoczność koła orientacyjnego zasięgu.
