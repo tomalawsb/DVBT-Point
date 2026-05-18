@@ -1,0 +1,11 @@
+19.19 - 1805260730
+
+Zmiany:
+- Dodano przycisk „Zainstaluj aplikację” dla PWA.
+- Dodano PNG 192/512 w manifeście, żeby instalacja PWA była stabilniejsza w przeglądarkach.
+- Wzmocniono widoczność orientacyjnego koła zasięgu i warstwy RF.
+- Usunięto przycisk profilu terenu z prawej listy ikon; w jego miejscu jest N↑ / kompas.
+- Zmieniono ikonę warstw mapy na czytelniejszą.
+- Ustawienia ogólne oczyszczono z funkcji zależnych od nadajnika.
+- DEM, cache DEM, RF/ITM-lite i ANT są dostępne z karty wybranego nadajnika.
+- Usunięto przycisk „Ustaw antenę” z karty nadajnika.

@@ -5,11 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#f6f8fc" />
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://unpkg.com; style-src 'self' 'unsafe-inline' https://unpkg.com; img-src 'self' data: https:; connect-src 'self' https://api.open-meteo.com https://nominatim.openstreetmap.org https:; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests;">
-  <title>DVB-T/T2 Point 19.18 - 1705262215</title>
+  <title>DVB-T/T2 Point 19.19 - 1805260730</title>
   <link rel="manifest" href="manifest.json" />
   <link rel="icon" href="assets/icon.svg" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="anonymous" />
-  <link rel="stylesheet" href="style.css?v=19.18-1705262215" />
+  <link rel="stylesheet" href="style.css?v=19.19-1805260730" />
 </head>
 <body>
   <div id="app" class="app-shell">
@@ -23,9 +23,10 @@
       </form>
 
       <div class="status-row">
+        <button id="installBtn" class="install-chip" type="button" hidden>Zainstaluj</button>
         <span id="onlineChip" class="status-chip online-chip">Online</span>
       </div>
-      <span id="versionFloating" class="version-floating" aria-label="Wersja aplikacji">19.18 - 1705262215</span>
+      <span id="versionFloating" class="version-floating" aria-label="Wersja aplikacji">19.19 - 1805260730</span>
 
       <button id="locateBtn" class="locate-btn glass-panel" type="button" title="Użyj GPS">⌖</button>
 
@@ -36,9 +37,9 @@
 
       <div class="map-actions">
         <button id="txListBtn" class="map-btn glass-panel" type="button" title="Nadajniki">📡</button>
-        <button id="profileBtn" class="map-btn glass-panel" type="button" title="Profil terenu">▱</button>
-        <button id="layersBtn" class="map-btn glass-panel" type="button" title="Warstwy mapy">▤</button>
-        <button id="dataBtn" class="map-btn glass-panel" type="button" title="Dane i diagnostyka">⚙</button>
+        <button id="northBtn" class="map-btn glass-panel north-btn" type="button" title="Północ / kompas">N↑</button>
+        <button id="layersBtn" class="map-btn glass-panel" type="button" title="Warstwy mapy">🗺</button>
+        <button id="dataBtn" class="map-btn glass-panel" type="button" title="Ustawienia aplikacji">⚙</button>
         <button id="aboutBtn" class="map-btn glass-panel" type="button" title="O programie i instrukcja">?</button>
       </div>
 
@@ -65,10 +66,13 @@
           <div><span>Moc ERP</span><b id="stationPower">—</b></div>
         </div>
         <div class="station-actions">
-          <button id="antennaBtn" class="primary" type="button">Ustaw antenę</button>
-          <button id="stationProfileBtn" type="button">Profil terenu</button>
+          <button id="stationProfileBtn" class="primary" type="button">Profil terenu</button>
           <button id="stationMuxBtn" type="button">MUX-y / moc</button>
           <button id="stationDemBtn" type="button">Pobierz DEM</button>
+          <button id="stationDemCacheBtn" type="button">Cache DEM</button>
+          <button id="stationRfBtn" type="button">Oblicz zasięg</button>
+          <button id="stationClearRfBtn" type="button">Usuń zasięg</button>
+          <button id="stationAntBtn" type="button">Sprawdź ANT</button>
         </div>
       </section>
 
@@ -77,6 +81,6 @@
   </div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin="anonymous"></script>
-  <script src="app.js?v=19.18-1705262215"></script>
+  <script src="app.js?v=19.19-1805260730"></script>
 </body>
 </html>

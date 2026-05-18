@@ -96,3 +96,23 @@ h1,h2,h3,strong,.tx-item strong,.info-card strong,.station-head strong,.station-
 }
 .profile-legend .fresnel{height:10px;width:18px;background:rgba(56,189,248,.24);border:1px solid rgba(56,189,248,.55);border-radius:4px}
 .ant-progress-card{border:1px solid rgba(37,99,235,.18);background:#f8fbff}
+
+
+/* 19.19: instalacja PWA, czytelniejsze ikony, funkcje nadajnika przeniesione do karty */
+.install-chip{height:36px;border:0;border-radius:18px;padding:0 14px;background:#2563eb;color:#fff;font-size:12px;font-weight:800;box-shadow:0 8px 22px rgba(37,99,235,.25);pointer-events:auto}
+.install-chip[hidden]{display:none!important}
+.install-chip:disabled{opacity:.55;cursor:not-allowed}
+.north-btn{font-size:14px!important;font-weight:800!important;letter-spacing:-.03em;color:#0f172a}
+.map-btn{display:flex!important;align-items:center!important;justify-content:center!important;line-height:1!important}
+.station-actions{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+.station-actions button{min-width:0!important;padding:0 8px!important;white-space:normal!important;line-height:1.1!important}
+.station-actions button:first-child{grid-column:auto!important}
+@media(max-width:760px){
+  .status-row{gap:6px!important}
+  .install-chip{height:34px;padding:0 10px;font-size:11px}
+  .station-actions{grid-template-columns:1fr 1fr!important}
+  .station-actions button:first-child{grid-column:auto!important}
+}
+@media(max-width:430px){
+  .install-chip{max-width:96px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+}

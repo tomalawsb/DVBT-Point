@@ -1,6 +1,6 @@
 (() => {
   'use strict';
-  const APP_VERSION = '19.18 - 1705262215';
+  const APP_VERSION = '19.19 - 1805260730';
   const STORE = 'dvbt-point-v19-state';
   const ANT_CACHE_NAME = 'dvbt-ant-files-v1';
   const $ = id => document.getElementById(id);
@@ -10,6 +10,7 @@
     heading:null, rawHeading:null, pendingHeading:null, headingSource:'brak', headingInvert:false, headingOffset:0, compassOn:false, gpsWatchId:null, headingRaf:null, headingSamples:[], headingLastTs:0, coverageLayer:null, rfLayer:null, coverageTileUrl:'', rfBusy:false, lastRf:null, antPatterns:new Map(), demCache:null, demBusy:false
   };
   let profileAbort = null;
+  let deferredInstallPrompt = null;
   function withTimeoutSignal(ms){
     const ctrl = new AbortController();
     const timer = setTimeout(() => ctrl.abort(), ms);
@@ -82,6 +83,49 @@
     ['versionFloating'].forEach(id => {
       const el = $(id);
       if(el) el.textContent = APP_VERSION;
+    });
+  }
+
+  function isInstalledPwa(){
+    return window.matchMedia?.('(display-mode: standalone)')?.matches || window.navigator.standalone === true;
+  }
+  function updateInstallButtons(){
+    const available = !!deferredInstallPrompt && !isInstalledPwa();
+    ['installBtn','settingsInstallBtn'].forEach(id=>{
+      const btn=$(id);
+      if(!btn) return;
+      btn.hidden = !available && id === 'installBtn';
+      btn.disabled = !available;
+      btn.textContent = isInstalledPwa() ? 'Zainstalowana' : 'Zainstaluj aplikację';
+    });
+  }
+  async function installApp(){
+    if(isInstalledPwa()){
+      toast('Aplikacja jest już zainstalowana.');
+      updateInstallButtons();
+      return;
+    }
+    if(!deferredInstallPrompt){
+      toast('Instalacja nie jest teraz dostępna. Odśwież stronę albo użyj menu przeglądarki: Zainstaluj aplikację.');
+      return;
+    }
+    const promptEvent=deferredInstallPrompt;
+    deferredInstallPrompt=null;
+    promptEvent.prompt();
+    try{ await promptEvent.userChoice; }catch{}
+    updateInstallButtons();
+  }
+  function setupPwaInstall(){
+    updateInstallButtons();
+    window.addEventListener('beforeinstallprompt', e=>{
+      e.preventDefault();
+      deferredInstallPrompt=e;
+      updateInstallButtons();
+    });
+    window.addEventListener('appinstalled', ()=>{
+      deferredInstallPrompt=null;
+      updateInstallButtons();
+      toast('Aplikacja została zainstalowana.');
     });
   }
   function esc(s){ return String(s ?? '').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
@@ -215,7 +259,7 @@
     state.line=L.polyline([[state.rx.lat,state.rx.lon],[t.lat,t.lon]], {color:'#2563eb', weight:3, opacity:.82}).addTo(state.map);
     const maxErp=Math.max(1,...t.muxes.map(m=>+m.erp_kw||1));
     const radius=Math.min(90000, Math.max(25000, Math.sqrt(maxErp)*8500));
-    state.range=L.circle([t.lat,t.lon], {radius, color:'#2563eb', weight:1, opacity:.22, fillOpacity:.045}).addTo(state.map);
+    state.range=L.circle([t.lat,t.lon], {radius, color:'#f97316', weight:3, opacity:.90, fillColor:'#f97316', fillOpacity:.105, dashArray:'10 8'}).addTo(state.map);
   }
   function showStation(){ $('stationCard').hidden=false; $('openStationBtn').hidden=true; setTimeout(()=>state.map.invalidateSize(true),80); }
   function hideStation(){ $('stationCard').hidden=true; $('openStationBtn').hidden=false; setTimeout(()=>state.map.invalidateSize(true),80); }
@@ -342,34 +386,30 @@
   }
 
   function showData(){
-    const muxCount=state.txs.reduce((sum,t)=>sum+(t.muxes?.length||0),0);
-    openPanel('Dane i diagnostyka','Najważniejsze funkcje techniczne bez zbędnych opcji.', `
+    openPanel('Ustawienia aplikacji','Ogólne ustawienia programu. Funkcje wybranego nadajnika są w karcie nadajnika.', `
       <div class="info-card"><strong>Wersja</strong><span>${APP_VERSION}</span></div>
-      <div class="info-card"><strong>Baza nadajników</strong><span>Załadowano ${state.txs.length} obiektów nadawczych i ${muxCount} emisji/MUX-ów z data/transmitters.json.</span></div>
-      <div class="info-card"><strong>Profil terenu</strong><span>Profil używa prawdziwych danych wysokości DEM: najpierw lokalny cache, potem kafle Terrarium, a awaryjnie API punktowe. Jeżeli nie ma prawdziwych danych, program pokaże błąd zamiast rysować zmyślony teren.</span><button id="downloadDemSelected" class="panel-btn primary">Pobierz DEM dla wybranego nadajnika</button><button id="showDemStats" class="panel-btn">Stan cache DEM</button></div>
-      <div class="info-card"><strong>Zasięg orientacyjny RF / ITM-lite</strong><span>To jest zasięg obliczony orientacyjnie przez aplikację, a nie oficjalna mapa pokrycia. Program bierze ERP, częstotliwość, wysokość anten, DEM i ANT z cache, jeśli jest dostępny.</span><button id="calcRfCoverage" class="panel-btn primary">Oblicz zasięg orientacyjny</button><button id="clearRfCoverage" class="panel-btn">Usuń obliczony zasięg</button></div>
-      <div class="info-card"><strong>ANT wybranego nadajnika</strong><span>Przycisk sprawdza tylko aktualnie wybrany nadajnik. Program pobiera brakujące pliki ANT dla jego MUX-ów i zapisuje je w cache przeglądarki, żeby następnym razem nie pobierać ich ponownie.</span><button id="runAntDiagnostics" class="panel-btn primary">Sprawdź ANT wybranego nadajnika</button></div>
-      <button id="refreshPwa" class="panel-btn primary">Wymuś aktualizację PWA</button>`);
-    $('calcRfCoverage').onclick=()=>calculateRfCoverage().catch(err=>toast('Błąd obliczeń RF: '+(err.message||err)));
-    $('clearRfCoverage').onclick=()=>{ clearRfLayer(); toast('Usunięto obliczony zasięg RF.'); };
-    $('runAntDiagnostics').onclick=()=>checkSelectedTransmitterAnt().catch(err=>toast('Błąd sprawdzania ANT: '+(err.message||err)));
-    $('downloadDemSelected').onclick=()=>downloadDemForSelectedTx();
-    $('showDemStats').onclick=()=>{ const st=demStats(); toast('Cache DEM: '+st.points+' punktów lokalnie.'); };
+      <div class="info-card"><strong>Instalacja aplikacji</strong><span>Ten przycisk pojawia się, gdy przeglądarka pozwala zainstalować stronę jako aplikację PWA. Jeżeli jest wyszarzony, użyj menu przeglądarki albo odśwież stronę po aktualizacji.</span><button id="settingsInstallBtn" class="panel-btn primary" type="button">Zainstaluj aplikację</button></div>
+      <div class="info-card"><strong>Aktualizacja programu</strong><span>Czyści cache aplikacji i wymusza pobranie najnowszych plików programu. Cache ANT zostaje zachowany.</span><button id="refreshPwa" class="panel-btn primary" type="button">Wymuś aktualizację PWA</button></div>
+      <div class="info-card"><strong>Warstwy mapy</strong><span>Podkład mapy i zewnętrzne warstwy zasięgu są pod ikoną mapy po prawej stronie.</span></div>
+      <div class="info-card"><strong>Funkcje nadajnika</strong><span>Profil terenu, DEM, cache DEM, zasięg RF/ITM-lite oraz ANT są teraz dostępne z karty wybranego nadajnika, a nie z ustawień ogólnych.</span></div>`);
+    $('settingsInstallBtn').onclick=installApp;
+    updateInstallButtons();
     $('refreshPwa').onclick=async()=>{ const regs=await navigator.serviceWorker?.getRegistrations?.()||[]; for(const r of regs){ await r.unregister(); } const keys=await caches.keys(); await Promise.all(keys.filter(k=>k!==ANT_CACHE_NAME).map(k=>caches.delete(k)));  location.reload(); };
   }
 
 
 
+
   function showAbout(){
     openPanel('O programie','Instrukcja obsługi i opis funkcji.', `
-      <div class="info-card"><strong>Do czego służy program</strong><span>Aplikacja pomaga dobrać nadajnik DVB-T/T2 dla wskazanego punktu odbioru. Pokazuje odległość, azymut, MUX-y, moc ERP, profil terenu, kompas anteny i warstwy pomocnicze.</span></div>
+      <div class="info-card"><strong>Do czego służy program</strong><span>Aplikacja pomaga dobrać nadajnik DVB-T/T2 dla wskazanego punktu odbioru. Pokazuje odległość, azymut, MUX-y, moc ERP, profil terenu, kompas/północ oraz warstwy pomocnicze.</span></div>
       <div class="info-card"><strong>1. Ustaw punkt odbioru</strong><span>Wpisz adres w polu wyszukiwania, użyj GPS albo przytrzymaj palec na mapie. Od wersji 19.13 zmiana punktu odbioru nie przełącza automatycznie wcześniej wybranego nadajnika.</span></div>
       <div class="info-card"><strong>2. Wybierz nadajnik</strong><span>Kliknij marker nadajnika albo przycisk z listą nadajników. Na karcie nadajnika zobaczysz azymut, odległość, polaryzację i moc ERP dla emisji/MUX-ów.</span></div>
-      <div class="info-card"><strong>3. Ustaw antenę</strong><span>Przycisk „Ustaw antenę” otwiera kompas. Niebieska igła oznacza kierunek do nadajnika, pomarańczowa kierunek telefonu. Stożek na mapie pokazuje orientacyjny kierunek trzymania telefonu.</span></div>
+      <div class="info-card"><strong>3. Kompas</strong><span>Kompas jest dostępny z górnego widżetu oraz z przycisku N↑ po prawej stronie. Niebieska igła oznacza kierunek do nadajnika, pomarańczowa kierunek telefonu. Stożek na mapie pokazuje orientacyjny kierunek trzymania telefonu.</span></div>
       <div class="info-card"><strong>4. Profil terenu</strong><span>Profil wymaga danych wysokości DEM. Program pobiera je z API wysokości i zapisuje w lokalnym cache przeglądarki. Jeżeli API nie odpowiada, program nie udaje prawdziwego terenu prostą kreską — pokaże informację o braku DEM albo użyje tylko częściowego cache jako profil przybliżony.</span></div>
       <div class="info-card"><strong>5. DEM i zasięg terenowy</strong><span>Przycisk „Pobierz DEM” zapisuje lokalnie wysokości dla okolicy wybranego nadajnika. Obliczony zasięg RF/ITM-lite jest orientacyjny, nie oficjalny. Bierze pod uwagę ERP, częstotliwość, wysokość anten, teren i pliki ANT z cache, jeśli są dostępne.</span></div>
       <div class="info-card"><strong>6. Warstwy mapy</strong><span>Warstwy przełączają podkład mapy oraz opcjonalną zewnętrzną mapę zasięgu GeoJSON/XYZ. Taka warstwa jest osobnym źródłem danych i nie jest tym samym co orientacyjny zasięg liczony przez aplikację.</span></div>
-      <div class="info-card"><strong>7. Dane i diagnostyka</strong><span>Panel „Dane i diagnostyka” pokazuje liczbę nadajników, stan cache DEM, diagnostykę plików ANT, obliczenia zasięgu i przycisk wymuszenia aktualizacji PWA.</span></div>
+      <div class="info-card"><strong>7. Dane i diagnostyka</strong><span>Panel ustawień zawiera tylko ustawienia ogólne aplikacji i aktualizację PWA. Funkcje zależne od nadajnika są w karcie wybranego nadajnika.</span></div>
       <div class="info-card"><strong>Wersja</strong><span>${APP_VERSION}</span></div>`);
   }
 
@@ -413,6 +453,22 @@
     return Number.isFinite(+val) ? +val : null;
   }
   function demStats(){ const c=loadDemCache(); return {points:Object.keys(c).length}; }
+  function showSelectedDemStats(){
+    const t=state.selected;
+    if(!t) return toast('Najpierw wybierz nadajnik.');
+    const cache=loadDemCache();
+    const radius=demRadiusForTx(t);
+    const grid=buildDemGridForTx(t, radius);
+    const cached=grid.filter(p=>Number.isFinite(+cache[demKeyFromPoint(p)])).length;
+    const missing=Math.max(0, grid.length-cached);
+    const pct=grid.length ? Math.round(cached*100/grid.length) : 0;
+    const total=demStats().points;
+    openPanel('Cache DEM nadajnika', `${t.short_name||t.name}`, `
+      <div class="info-card"><strong>Stan cache dla tego nadajnika</strong><span>Promień kontroli: około ${Math.round(radius)} km. Punkty wymagane: ${grid.length}. W cache: ${cached}. Braki: ${missing}. Pokrycie: ${pct}%.</span></div>
+      <div class="info-card"><strong>Cache DEM całej aplikacji</strong><span>Łącznie zapisanych punktów DEM: ${total}. Dane są zapisane lokalnie w przeglądarce dla tej strony.</span></div>
+      <button id="cacheDownloadDem" class="panel-btn primary" type="button">Pobierz brakujące DEM</button>`);
+    $('cacheDownloadDem').onclick=downloadDemForSelectedTx;
+  }
   async function fetchElevationsFromApi(points, errText, opts={}){
     const out=[];
     const retries = Number.isFinite(+opts.retries) ? Math.max(1, +opts.retries) : 3;
@@ -927,7 +983,7 @@
       state.rfLayer=L.layerGroup();
       for(const cell of cells){
         const color=rfColor(cell.level);
-        L.polygon(cell.poly,{color, weight:.35, opacity:.30, fillColor:color, fillOpacity:.17, interactive:false}).addTo(state.rfLayer);
+        L.polygon(cell.poly,{color, weight:.75, opacity:.60, fillColor:color, fillOpacity:.30, interactive:false}).addTo(state.rfLayer);
       }
       state.rfLayer.addTo(state.map);
       const bestReach=Math.max(0,...cells.filter(c=>c.level>=-88).map(c=>c.km));
@@ -1172,21 +1228,13 @@
   }
   function startGpsWatch(){
     if(!navigator.geolocation) return toast('Brak GPS w tej przeglądarce.');
-
-    // GPS ma ustawić punkt odbioru tylko jednorazowo.
-    // Wcześniej było tu watchPosition(), które zostawało aktywne w tle
-    // i po ręcznym wyszukaniu miejscowości cofało mapę z powrotem do pozycji GPS.
-    if(state.gpsWatchId!=null){
-      navigator.geolocation.clearWatch(state.gpsWatchId);
-      state.gpsWatchId = null;
-    }
-
-    navigator.geolocation.getCurrentPosition(p=>{
+    if(state.gpsWatchId!=null) navigator.geolocation.clearWatch(state.gpsWatchId);
+    state.gpsWatchId = navigator.geolocation.watchPosition(p=>{
       const {latitude, longitude, heading} = p.coords;
-      setRx(latitude, longitude, 'GPS / punkt odbioru', true, true);
+      state.rx={lat:latitude, lon:longitude, label:'GPS / punkt odbioru'};
       if(Number.isFinite(heading) && heading >= 0 && state.headingSource !== 'ios' && state.headingSource !== 'absolute' && state.headingSource !== 'sensor') applyHeading(heading, 'gps');
-      toast('Ustawiono punkt odbioru z GPS.');
-    },()=>toast('Nie udało się pobrać GPS.'),{enableHighAccuracy:true, timeout:12000, maximumAge:10000});
+      save(); renderHome(); renderConnection(); selectTx(state.selected?.id || bestTx()?.id,false,false); state.map.panTo([latitude,longitude], {animate:true});
+    },()=>toast('Nie udało się pobrać GPS.'),{enableHighAccuracy:true, timeout:12000, maximumAge:2500});
   }
   function showCompassPanel(){
     const t=state.selected; const target=t?Math.round(t.azimuth):'—';
@@ -1221,11 +1269,11 @@
 
   function bind(){
     setDisplayedVersion();
-    $('searchForm').onsubmit=search; $('locateBtn').onclick=startGpsWatch;
-    const locationChipBtn = $('locationChip'); if(locationChipBtn) locationChipBtn.onclick=()=>state.map.setView([state.rx.lat,state.rx.lon],12); $('txListBtn').onclick=showTxList; $('profileBtn').onclick=showProfile; $('layersBtn').onclick=showLayers; $('dataBtn').onclick=showData; const aboutBtn=$('aboutBtn'); if(aboutBtn) aboutBtn.onclick=showAbout; $('closePanelBtn').onclick=closePanel;
-    $('closeStationBtn').onclick=hideStation; $('openStationBtn').onclick=showStation; $('antennaBtn').onclick=()=>{startCompass(false); showCompassPanel();}; $('compassWidget').onclick=()=>{startCompass(false); showCompassPanel();}; $('stationProfileBtn').onclick=showProfile; $('stationMuxBtn').onclick=showMux; $('stationDemBtn').onclick=downloadDemForSelectedTx;
+    $('searchForm').onsubmit=search; $('locateBtn').onclick=startGpsWatch; const installBtn=$('installBtn'); if(installBtn) installBtn.onclick=installApp;
+    const locationChipBtn = $('locationChip'); if(locationChipBtn) locationChipBtn.onclick=()=>state.map.setView([state.rx.lat,state.rx.lon],12); $('txListBtn').onclick=showTxList; $('northBtn').onclick=()=>{startCompass(false); showCompassPanel();}; $('layersBtn').onclick=showLayers; $('dataBtn').onclick=showData; const aboutBtn=$('aboutBtn'); if(aboutBtn) aboutBtn.onclick=showAbout; $('closePanelBtn').onclick=closePanel;
+    $('closeStationBtn').onclick=hideStation; $('openStationBtn').onclick=showStation; $('compassWidget').onclick=()=>{startCompass(false); showCompassPanel();}; $('stationProfileBtn').onclick=showProfile; $('stationMuxBtn').onclick=showMux; $('stationDemBtn').onclick=downloadDemForSelectedTx; $('stationDemCacheBtn').onclick=showSelectedDemStats; $('stationRfBtn').onclick=()=>calculateRfCoverage().catch(err=>toast('Błąd obliczeń RF: '+(err.message||err))); $('stationClearRfBtn').onclick=()=>{ clearRfLayer(); toast('Usunięto obliczony zasięg RF.'); }; $('stationAntBtn').onclick=()=>checkSelectedTransmitterAnt().catch(err=>toast('Błąd sprawdzania ANT: '+(err.message||err))); 
     window.addEventListener('online',()=>{$('onlineChip').textContent='Online';$('onlineChip').classList.add('online-chip');}); window.addEventListener('offline',()=>{$('onlineChip').textContent='Offline';$('onlineChip').classList.remove('online-chip');});
   }
-  async function boot(){ load(); bind(); initMap(); await loadTxs(); if(state.coverageTileUrl) applyCoverageTile(state.coverageTileUrl); startCompass(true); window.addEventListener('pointerdown',()=>startCompass(true),{once:true,passive:true}); if('serviceWorker' in navigator) navigator.serviceWorker.register('./service-worker.js?v=19.18-1705262215').catch(()=>{}); setAppHeight(); }
+  async function boot(){ load(); setupPwaInstall(); bind(); initMap(); await loadTxs(); if(state.coverageTileUrl) applyCoverageTile(state.coverageTileUrl); startCompass(true); window.addEventListener('pointerdown',()=>startCompass(true),{once:true,passive:true}); if('serviceWorker' in navigator) navigator.serviceWorker.register('./service-worker.js?v=19.19-1805260730').catch(()=>{}); setAppHeight(); }
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', boot); else boot();
 })();
