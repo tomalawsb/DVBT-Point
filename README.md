@@ -1,6 +1,6 @@
-# DVB-T/T2 Point — 19.21 - 1805260635
+# DVB-T/T2 Point — 19.23 - 1805260658
 
-Etap 19.21:
+Etap 19.23:
 - przycisk „Sprawdź ANT wybranego nadajnika” działa tylko dla aktualnie wybranego nadajnika i jego MUX-ów,
 - brakujące ANT są pobierane pojedynczo i zapisywane w cache przeglądarki,
 - obliczanie RF korzysta z ANT zapisanych w cache,

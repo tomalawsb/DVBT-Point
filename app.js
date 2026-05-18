@@ -1,13 +1,13 @@
 (() => {
   'use strict';
-  const APP_VERSION = '19.21 - 1805260635';
+  const APP_VERSION = '19.23 - 1805260658';
   const STORE = 'dvbt-point-v19-state';
   const ANT_CACHE_NAME = 'dvbt-ant-files-v1';
   const $ = id => document.getElementById(id);
   const state = {
     map:null, baseLayer:null, baseLabelsLayer:null, base:'osm', rx:{lat:50.2871, lon:21.4238, label:'Mielec / punkt odbioru'}, rxHeight:6,
     txs:[], selected:null, markers:L.layerGroup(), line:null, range:null, homeMarker:null, headingCone:null,
-    heading:null, rawHeading:null, pendingHeading:null, headingSource:'brak', headingInvert:false, headingOffset:0, compassOn:false, gpsWatchId:null, headingRaf:null, headingSamples:[], headingLastTs:0, coverageLayer:null, rfLayer:null, coverageTileUrl:'', rfBusy:false, lastRf:null, antPatterns:new Map(), demCache:null, demBusy:false
+    heading:null, rawHeading:null, pendingHeading:null, headingSource:'brak', headingInvert:false, headingOffset:0, compassOn:false, gpsWatchId:null, headingRaf:null, headingSamples:[], headingLastTs:0, coverageLayer:null, rfLayer:null, coverageTileUrl:'', showCoverageOnly:false, rfBusy:false, lastRf:null, antPatterns:new Map(), demCache:null, demBusy:false
   };
   let profileAbort = null;
   let deferredInstallPrompt = null;
@@ -75,8 +75,8 @@
   window.visualViewport?.addEventListener('resize', setAppHeight);
   window.addEventListener('orientationchange', () => setTimeout(setAppHeight, 250));
 
-  function save(){ localStorage.setItem(STORE, JSON.stringify({rx:state.rx, rxHeight:state.rxHeight, base:state.base, selectedId:state.selected?.id || null, headingInvert:state.headingInvert, headingOffset:state.headingOffset, coverageTileUrl:state.coverageTileUrl||''})); }
-  function load(){ try{ const s=JSON.parse(localStorage.getItem(STORE)||'{}'); Object.assign(state, {rx:s.rx||state.rx, rxHeight:s.rxHeight||state.rxHeight, base:s.base||state.base, headingInvert:!!s.headingInvert, headingOffset:+s.headingOffset||0, coverageTileUrl:s.coverageTileUrl||''}); state._selectedId=s.selectedId; }catch{} }
+  function save(){ localStorage.setItem(STORE, JSON.stringify({rx:state.rx, rxHeight:state.rxHeight, base:state.base, selectedId:state.selected?.id || null, headingInvert:state.headingInvert, headingOffset:state.headingOffset, coverageTileUrl:state.coverageTileUrl||'', showCoverageOnly:!!state.showCoverageOnly})); }
+  function load(){ try{ const s=JSON.parse(localStorage.getItem(STORE)||'{}'); Object.assign(state, {rx:s.rx||state.rx, rxHeight:s.rxHeight||state.rxHeight, base:s.base||state.base, headingInvert:!!s.headingInvert, headingOffset:+s.headingOffset||0, coverageTileUrl:s.coverageTileUrl||'', showCoverageOnly:!!s.showCoverageOnly}); state._selectedId=s.selectedId; }catch{} }
   function toast(msg){ const t=$('toast'); t.textContent=msg; t.hidden=false; clearTimeout(toast._t); toast._t=setTimeout(()=>t.hidden=true,2600); }
   function setDisplayedVersion(){
     document.title = `DVB-T/T2 Point ${APP_VERSION}`;
@@ -254,10 +254,47 @@
       openPanel('Błąd danych nadajników','Aplikacja działa, ale nie ma poprawnej bazy nadajników.', `<div class="info-card"><strong>Nie wczytano data/transmitters.json</strong><span>${esc(err.message || err)}</span></div>`);
     }
   }
-  function bestTx(){ return sortedTxs()[0]; }
   function sortedTxs(){ return state.txs.map(t=>({...t, distance:dist(state.rx,t), azimuth:az(state.rx,t)})).sort((a,b)=>a.distance-b.distance); }
-  function txById(id){ return sortedTxs().find(t=>t.id===id); }
-  function passesFilter(t){ return true; }
+  function estimatedCoverageRadiusKm(t){
+    const maxErp=Math.max(1,...(t?.muxes||[]).map(m=>+m.erp_kw||1));
+    return Math.min(90, Math.max(25, Math.sqrt(maxErp)*8.5));
+  }
+  function isTxInEstimatedCoverage(t){
+    if(!t) return false;
+    const d=Number.isFinite(t.distance) ? t.distance : dist(state.rx,t);
+    return d <= estimatedCoverageRadiusKm(t);
+  }
+  function passesFilter(t){ return !state.showCoverageOnly || isTxInEstimatedCoverage(t); }
+  function visibleTxs(){ return sortedTxs().filter(passesFilter); }
+  function bestTx(){ return visibleTxs()[0] || null; }
+  function txById(id){ return visibleTxs().find(t=>t.id===id); }
+  function normSearchText(value){
+    return String(value || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/ł/g,'l').replace(/[^a-z0-9]+/g,' ').trim();
+  }
+  function txSearchText(t){
+    return normSearchText([
+      stationDisplayName(t), stationSubtitleName(t), t.name, t.short_name, t.location, t.site, t.id,
+      ...(t.muxes||[]).flatMap(m=>[m.name, m.channel, m.band, m.operator, m.frequency_mhz])
+    ].filter(Boolean).join(' '));
+  }
+  function applyCoverageOnlyFilter(){
+    renderTxMarkers();
+    if(state.selected && passesFilter(state.selected)){
+      renderConnection();
+      updateStationCard();
+      return true;
+    }
+    const next=bestTx();
+    if(next){
+      selectTx(next.id,false,false);
+      showStation();
+      return true;
+    }
+    state.selected=null;
+    renderConnection();
+    hideStation();
+    return false;
+  }
 
   function renderAll(){ renderHome(); renderTxMarkers(); }
   function renderHome(){
@@ -292,7 +329,7 @@
   }
   function renderConnection(){
     if(state.line) state.map.removeLayer(state.line); if(state.range) state.map.removeLayer(state.range);
-    const t=state.selected; if(!t) return;
+    const t=state.selected; if(!t || !passesFilter(t)) return;
     state.line=L.polyline([[state.rx.lat,state.rx.lon],[t.lat,t.lon]], {color:'#2563eb', weight:3, opacity:.82}).addTo(state.map);
     const maxErp=Math.max(1,...t.muxes.map(m=>+m.erp_kw||1));
     const radius=Math.min(90000, Math.max(25000, Math.sqrt(maxErp)*8500));
@@ -312,9 +349,30 @@
   function openPanel(title, subtitle, html){ $('panelTitle').textContent=title; $('panelSubtitle').textContent=subtitle||''; $('panelContent').innerHTML=html; $('appPanel').classList.remove('collapsed'); setTimeout(()=>state.map.invalidateSize(true),80); }
   function closePanel(){ $('appPanel').classList.add('collapsed'); }
   function showTxList(){
-    const html=sortedTxs().map(t=>`<button class="tx-item ${state.selected?.id===t.id?'active':''}" data-tx="${esc(t.id)}"><strong>${esc(stationDisplayName(t))}</strong><span>${fmtKm(t.distance)} · azymut ${Math.round(t.azimuth)}° · moc ERP ${stationPowerText(t)} · MUX ${muxNames(t).map(m=>m.replace('MUX-','')).join('/')}</span></button>`).join('');
-    openPanel('Nadajniki','Lista według odległości od punktu odbioru.',html);
-    $('panelContent').querySelectorAll('[data-tx]').forEach(b=>b.onclick=()=>{selectTx(b.dataset.tx,true,true); closePanel();});
+    const filterNote = state.showCoverageOnly ? '<div class="info-card compact-note"><strong>Aktywny filtr</strong><span>Pokazywane są tylko nadajniki w szacowanym zasięgu punktu odbioru.</span></div>' : '';
+    openPanel('Nadajniki','Lista według odległości od punktu odbioru.', `
+      <div class="tx-search-card">
+        <input id="txSearchInput" type="search" placeholder="Szukaj nadajnika, miasta albo obiektu" autocomplete="off">
+      </div>
+      ${filterNote}
+      <div id="txListResults" class="tx-list-results"></div>
+    `);
+    const input=$('txSearchInput');
+    const results=$('txListResults');
+    const renderList=(query='')=>{
+      const q=normSearchText(query);
+      const base=visibleTxs();
+      const items=base.filter(t=>!q || txSearchText(t).includes(q));
+      if(!items.length){
+        results.innerHTML = `<div class="info-card"><strong>Brak wyników</strong><span>${state.showCoverageOnly ? 'Zmień szukaną frazę albo wyłącz filtr zasięgu w ustawieniach.' : 'Zmień szukaną frazę.'}</span></div>`;
+        return;
+      }
+      results.innerHTML=items.map(t=>`<button class="tx-item ${state.selected?.id===t.id?'active':''}" data-tx="${esc(t.id)}"><strong>${esc(stationDisplayName(t))}</strong><span>${fmtKm(t.distance)} · azymut ${Math.round(t.azimuth)}° · moc ERP ${stationPowerText(t)} · zasięg szac. ${Math.round(estimatedCoverageRadiusKm(t))} km · MUX ${muxNames(t).map(m=>m.replace('MUX-','')).join('/')}</span></button>`).join('');
+      results.querySelectorAll('[data-tx]').forEach(b=>b.onclick=()=>{selectTx(b.dataset.tx,true,true); closePanel();});
+    };
+    input.addEventListener('input', e=>renderList(e.target.value));
+    setTimeout(()=>input.focus({preventScroll:true}),80);
+    renderList('');
   }
   function showMux(){
     const t=state.selected; if(!t) return;
@@ -428,11 +486,14 @@
   function showData(){
     openPanel('Ustawienia aplikacji','', `
       <div class="info-card"><strong>Wersja</strong><span>${APP_VERSION}</span></div>
+      <div class="info-card"><strong>Mapa nadajników</strong><label class="switch-row"><input id="coverageOnlyToggle" type="checkbox" ${state.showCoverageOnly?'checked':''}><span>Tylko nadajniki w zasięgu punktu odbioru</span></label></div>
       <div id="settingsInstallCard" class="info-card" hidden><strong>Instalacja</strong><button id="settingsInstallBtn" class="panel-btn primary" type="button">Zainstaluj aplikację</button></div>
       <div class="info-card"><strong>Aktualizacja</strong><button id="refreshPwa" class="panel-btn primary" type="button">Wymuś aktualizację</button></div>`);
     const installButton = $('settingsInstallBtn');
     if(installButton) installButton.onclick=installApp;
     updateInstallButtons();
+    const coverageToggle=$('coverageOnlyToggle');
+    if(coverageToggle) coverageToggle.onchange=()=>{ state.showCoverageOnly=coverageToggle.checked; save(); const ok=applyCoverageOnlyFilter(); toast(state.showCoverageOnly ? (ok?'Włączono filtr nadajników w zasięgu.':'Brak nadajników w szacowanym zasięgu.') : 'Wyłączono filtr nadajników.'); };
     $('refreshPwa').onclick=async()=>{ const regs=await navigator.serviceWorker?.getRegistrations?.()||[]; for(const r of regs){ await r.unregister(); } const keys=await caches.keys(); await Promise.all(keys.filter(k=>k!==ANT_CACHE_NAME).map(k=>caches.delete(k)));  location.reload(); };
   }
 
@@ -1050,7 +1111,7 @@
       const avgLoss=cells.length ? cells.reduce((a,c)=>a+c.loss,0)/cells.length : 0;
       state.lastRf={tx:t.id, freq, erpKw, bestReach, antPattern:!!antPattern, model:'ITM-lite terrain diffraction'};
       toast(`Narysowano zasięg ITM/terenowy: ${Math.round(bestReach)} km dla ${mux.name||'MUX'}.`);
-      openPanel('Obliczony zasięg ITM / terenowy', stationName, `<div class="info-card"><strong>Wynik</strong><span>Najdalszy punkt z poziomem co najmniej średnim: około ${Math.round(bestReach)} km. Częstotliwość: ${Math.round(freq)} MHz, ERP: ${erpKw} kW, wysokość anteny: ${txHeight} m n.p.t. Charakterystyka ANT: ${antPattern ? 'użyta' : 'brak lokalnego pliku — pominięta'}.</span></div><div class="info-card"><strong>Model 19.21</strong><span>FSPL + profil promieniowy DEM + krzywizna Ziemi + 60% pierwszej strefy Fresnela + strata dyfrakcyjna knife-edge dla przeszkód + korekta ANT.</span></div><div class="info-card"><strong>Diagnostyka</strong><span>Komórek z istotną stratą terenową: ${blockedCells}/${cells.length}. Średnia dodatkowa strata terenowa: ${avgLoss.toFixed(1)} dB. DEM: lokalny cache + kafle Terrarium, a dopiero przy awarii fallback do API punktowego.</span></div><div class="legend-rf"><span><i class="rf-good"></i>bardzo/dobry</span><span><i class="rf-mid"></i>średni</span><span><i class="rf-weak"></i>słaby</span><span><i class="rf-bad"></i>bardzo słaby</span></div>`);
+      openPanel('Obliczony zasięg ITM / terenowy', stationName, `<div class="info-card"><strong>Wynik</strong><span>Najdalszy punkt z poziomem co najmniej średnim: około ${Math.round(bestReach)} km. Częstotliwość: ${Math.round(freq)} MHz, ERP: ${erpKw} kW, wysokość anteny: ${txHeight} m n.p.t. Charakterystyka ANT: ${antPattern ? 'użyta' : 'brak lokalnego pliku — pominięta'}.</span></div><div class="info-card"><strong>Model 19.23</strong><span>FSPL + profil promieniowy DEM + krzywizna Ziemi + 60% pierwszej strefy Fresnela + strata dyfrakcyjna knife-edge dla przeszkód + korekta ANT.</span></div><div class="info-card"><strong>Diagnostyka</strong><span>Komórek z istotną stratą terenową: ${blockedCells}/${cells.length}. Średnia dodatkowa strata terenowa: ${avgLoss.toFixed(1)} dB. DEM: lokalny cache + kafle Terrarium, a dopiero przy awarii fallback do API punktowego.</span></div><div class="legend-rf"><span><i class="rf-good"></i>bardzo/dobry</span><span><i class="rf-mid"></i>średni</span><span><i class="rf-weak"></i>słaby</span><span><i class="rf-bad"></i>bardzo słaby</span></div>`);
     }catch(err){
       const msg = err?.message || String(err);
       openPanel('Błąd obliczania zasięgu', stationName, `<div class="info-card"><strong>Nie udało się obliczyć zasięgu</strong><span>${esc(msg)}</span></div><div class="info-card"><strong>Co teraz</strong><span>Spróbuj ponownie. Program najpierw używa lokalnego cache DEM, potem kafli Terrarium, a dopiero na końcu awaryjnego API. Jeżeli błąd wraca, sprawdź internet albo najpierw kliknij „Pobierz DEM”.</span></div>`);
@@ -1259,6 +1320,17 @@
     const t=state.selected; const target=t?Math.round(t.azimuth):0;
     $('targetNeedle').style.transform=`translate(-50%,-100%) rotate(${target}deg)`;
     if(state.heading!=null) $('phoneNeedle').style.transform=`translate(-50%,-100%) rotate(${state.heading}deg)`;
+
+    const northNeedle = $('northNeedle');
+    if(northNeedle){
+      const northRotation = state.heading == null ? 0 : -state.heading;
+      northNeedle.style.transform = `rotate(${northRotation}deg)`;
+      northNeedle.classList.toggle('active', state.heading != null);
+      $('northBtn').title = state.heading == null
+        ? 'Północ / czekam na kompas'
+        : `Północ · telefon ${Math.round(state.heading)}°`;
+    }
+
     let txt=state.compassOn?'Czekam na czujnik':'Czujnik automatyczny';
     let cls='';
     if(state.heading!=null && t){
@@ -1336,10 +1408,10 @@
   function bind(){
     setDisplayedVersion();
     $('searchForm').onsubmit=search; $('locateBtn').onclick=startGpsWatch; const installBtn=$('installBtn'); if(installBtn) installBtn.onclick=installApp;
-    const locationChipBtn = $('locationChip'); if(locationChipBtn) locationChipBtn.onclick=()=>state.map.setView([state.rx.lat,state.rx.lon],12); $('txListBtn').onclick=showTxList; $('northBtn').onclick=()=>{ toast('Północ jest u góry mapy.'); }; $('layersBtn').onclick=showLayers; $('dataBtn').onclick=showData; const aboutBtn=$('aboutBtn'); if(aboutBtn) aboutBtn.onclick=showAbout; $('closePanelBtn').onclick=closePanel;
+    const locationChipBtn = $('locationChip'); if(locationChipBtn) locationChipBtn.onclick=()=>state.map.setView([state.rx.lat,state.rx.lon],12); $('txListBtn').onclick=showTxList; $('northBtn').onclick=()=>{ startCompass(false); toast(state.heading==null?'Włączam kompas. Porusz telefonem, aby wskazać północ.':'Północ wskazuje obrotowa ikona.'); }; $('layersBtn').onclick=showLayers; $('dataBtn').onclick=showData; const aboutBtn=$('aboutBtn'); if(aboutBtn) aboutBtn.onclick=showAbout; $('closePanelBtn').onclick=closePanel;
     $('closeStationBtn').onclick=hideStation; $('openStationBtn').onclick=showStation; $('compassWidget').onclick=()=>{startCompass(false); showCompassPanel();}; $('stationProfileBtn').onclick=showProfile; $('stationMuxBtn').onclick=showMux; $('stationDemBtn').onclick=downloadDemForSelectedTx; $('stationDemCacheBtn').onclick=showSelectedDemStats; $('stationRfBtn').onclick=()=>calculateRfCoverage(); $('stationClearRfBtn').onclick=()=>{ clearRfLayer(); toast('Usunięto obliczony zasięg RF.'); }; $('stationAntBtn').onclick=()=>checkSelectedTransmitterAnt().catch(err=>toast('Błąd sprawdzania ANT: '+(err.message||err))); 
     window.addEventListener('online',()=>{$('onlineChip').textContent='Online';$('onlineChip').classList.add('online-chip');}); window.addEventListener('offline',()=>{$('onlineChip').textContent='Offline';$('onlineChip').classList.remove('online-chip');});
   }
-  async function boot(){ load(); setupPwaInstall(); bind(); initMap(); await loadTxs(); if(state.coverageTileUrl) applyCoverageTile(state.coverageTileUrl); startCompass(true); window.addEventListener('pointerdown',()=>startCompass(true),{once:true,passive:true}); if('serviceWorker' in navigator) navigator.serviceWorker.register('./service-worker.js?v=19.21-1805260635').catch(()=>{}); setAppHeight(); }
+  async function boot(){ load(); setupPwaInstall(); bind(); initMap(); await loadTxs(); if(state.coverageTileUrl) applyCoverageTile(state.coverageTileUrl); startCompass(true); window.addEventListener('pointerdown',()=>startCompass(true),{once:true,passive:true}); if('serviceWorker' in navigator) navigator.serviceWorker.register('./service-worker.js?v=19.23-1805260658').catch(()=>{}); setAppHeight(); }
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', boot); else boot();
 })();

@@ -1,0 +1,8 @@
+19.22 - 1805260652
+
+Zmiana:
+- poprawiono tylko ikonę północy/kompasu po prawej stronie,
+- ikona N obraca się teraz względem kierunku telefonu i pokazuje, gdzie jest północ,
+- dotknięcie ikony wymusza uruchomienie czujnika kompasu, jeśli przeglądarka wymaga interakcji użytkownika.
+
+Nie zmieniano logiki zasięgu, warstw, profilu terenu ani danych nadajników.

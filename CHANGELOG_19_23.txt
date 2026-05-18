@@ -1,0 +1,8 @@
+DVB-T/T2 Point 19.23 - 1805260658
+
+Zmiany:
+- dodano wyszukiwarkę w panelu Nadajniki,
+- wyszukiwarka znajduje nadajnik po mieście, lokalizacji, obiekcie, nazwie nadajnika i danych MUX,
+- dodano w ustawieniach filtr: tylko nadajniki w szacowanym zasięgu punktu odbioru,
+- po włączeniu filtra mapa ukrywa nadajniki spoza szacowanego zasięgu użytkownika,
+- starszy plik CHANGELOG usunięty, zostają maksymalnie 3 najnowsze pliki zmian.
