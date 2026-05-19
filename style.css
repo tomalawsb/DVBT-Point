@@ -203,3 +203,9 @@ h1,h2,h3,strong,.tx-item strong,.info-card strong,.station-head strong,.station-
   .app-panel.tx-list-mode .tx-search-card input{height:44px!important;font-size:16px!important}
   .legend-rf-detailed span{grid-template-columns:18px 92px 1fr!important}
 }
+
+
+/* 19.32: stała legenda kolorów zasięgu w Pomocy/Ustawieniach */
+.legend-help-card{margin-top:10px!important}
+.legend-help-card span{line-height:1.42!important}
+.panel-btn.primary#settingsLegendBtn,.panel-btn.primary#aboutLegendBtn{margin-top:10px!important}

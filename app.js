@@ -1,6 +1,6 @@
 (() => {
   'use strict';
-  const APP_VERSION = '19.30 - 1905260815';
+  const APP_VERSION = '19.32 - 1905261015';
   const STORE = 'dvbt-point-v19-state';
   const ANT_CACHE_NAME = 'dvbt-ant-files-v1';
   const RF_ALGO_VERSION = '19.30-export-full-profile-v1';
@@ -531,9 +531,12 @@
   function showData(){
     openPanel('Ustawienia aplikacji','', `
       <div class="info-card"><strong>Wersja</strong><span>${APP_VERSION}</span></div>
+      <div class="info-card"><strong>Legenda zasięgu</strong><span>Stały opis kolorów z orientacyjnymi wartościami dBµV/m. Nie wymaga liczenia zasięgu.</span><button id="settingsLegendBtn" class="panel-btn primary" type="button">Pokaż legendę kolorów</button></div>
       <div class="info-card"><strong>Mapa nadajników</strong><label class="switch-row"><input id="coverageOnlyToggle" type="checkbox" ${state.showCoverageOnly?'checked':''}><span>Tylko nadajniki w zasięgu punktu odbioru</span></label></div>
       <div id="settingsInstallCard" class="info-card" hidden><strong>Instalacja</strong><button id="settingsInstallBtn" class="panel-btn primary" type="button">Zainstaluj aplikację</button></div>
       <div class="info-card"><strong>Aktualizacja</strong><button id="refreshPwa" class="panel-btn primary" type="button">Wymuś aktualizację</button></div>`);
+    const legendButton = $('settingsLegendBtn');
+    if(legendButton) legendButton.onclick=showCoverageLegend;
     const installButton = $('settingsInstallBtn');
     if(installButton) installButton.onclick=installApp;
     updateInstallButtons();
@@ -554,7 +557,10 @@
       <div class="info-card"><strong>5. DEM i zasięg terenowy</strong><span>Przycisk „Pobierz DEM” zapisuje lokalnie wysokości dla okolicy wybranego nadajnika. Obliczony zasięg RF/ITM-lite jest orientacyjny, nie oficjalny. Bierze pod uwagę ERP, częstotliwość, wysokość anten, teren i pliki ANT z cache, jeśli są dostępne.</span></div>
       <div class="info-card"><strong>6. Warstwy mapy</strong><span>Warstwy przełączają podkład mapy oraz opcjonalną zewnętrzną mapę zasięgu GeoJSON/XYZ. Taka warstwa jest osobnym źródłem danych i nie jest tym samym co orientacyjny zasięg liczony przez aplikację.</span></div>
       <div class="info-card"><strong>7. Dane i diagnostyka</strong><span>Panel ustawień zawiera tylko ustawienia ogólne aplikacji i aktualizację PWA. Funkcje zależne od nadajnika są w karcie wybranego nadajnika.</span></div>
+      <div class="info-card"><strong>Legenda kolorów zasięgu</strong><span>Tu możesz sprawdzić, co oznacza czerwony, pomarańczowy, żółty, seledynowy, zielony i niebieski kolor bez uruchamiania obliczeń.</span><button id="aboutLegendBtn" class="panel-btn primary" type="button">Pokaż legendę kolorów</button></div>
       <div class="info-card"><strong>Wersja</strong><span>${APP_VERSION}</span></div>`);
+    const legendButton = $('aboutLegendBtn');
+    if(legendButton) legendButton.onclick=showCoverageLegend;
   }
 
   function clearRfLayer(){
@@ -1165,6 +1171,15 @@
       ${RF_BANDS.map(b=>`<span><i style="background:${b.color}"></i><b>${b.label}</b><em>${b.desc}</em></span>`).join('')}
       <span class="terrain-legend"><i></i><b>Profil terenu</b><em>może obniżyć kolor o 1–2 stopnie, ale nie zastępuje oceny poziomu sygnału</em></span>
     </div>`;
+  }
+
+  function showCoverageLegend(){
+    openPanel('Legenda kolorów zasięgu','Orientacyjna ocena poziomu sygnału DVB-T/T2.', `
+      <div class="info-card legend-help-card"><strong>Co oznaczają kolory</strong><span>Kolor pokazuje szacowany poziom pola w dBµV/m. To jest wynik orientacyjny z modelu aplikacji, a nie oficjalna mapa operatora.</span></div>
+      ${rfLegendHtml()}
+      <div class="info-card legend-help-card"><strong>Ważne</strong><span>Profil terenu i strefa Fresnela są oceniane osobno. Dlatego dobry kolor sygnału może nadal mieć ostrzeżenie terenowe, jeśli trasa jest warunkowa.</span></div>
+      <div class="info-card legend-help-card"><strong>Jak czytać wynik</strong><span>Czerwony oznacza odbiór ryzykowny, żółty graniczny, seledynowy i zielony zwykle użyteczny, a niebieski bardzo mocny. Ostateczny odbiór zależy jeszcze od anteny, wysokości montażu, kabla, wzmacniacza, zakłóceń i charakterystyki emisji nadajnika.</span></div>
+    `);
   }
 
   function rfDistanceStepKm(maxKm){
