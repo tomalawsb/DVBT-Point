@@ -1,6 +1,6 @@
 (() => {
   'use strict';
-  const APP_VERSION = '19.24 - 1905260652';
+  const APP_VERSION = '19.25 - 1905260701';
   const STORE = 'dvbt-point-v19-state';
   const ANT_CACHE_NAME = 'dvbt-ant-files-v1';
   const $ = id => document.getElementById(id);
@@ -1163,10 +1163,27 @@
     $('profileBox').innerHTML=`<div class="profile-error"><strong>Nie mam prawdziwych danych DEM dla tej trasy.</strong><span>${esc(err.message||'API wysokości nie odpowiedziało.')}</span><span>Nie rysuję fałszywego profilu prostą linią. Kliknij „Pobierz DEM i odśwież profil” albo spróbuj później, gdy API wysokości przestanie zwracać limit.</span></div>`;
   }
 
+  // POPRAWKA KRYTYCZNA 19.25 — NIE ZMIENIAĆ BEZ TESTU PROFILU TERENU:
+  // Profil nie może mieć stałych 128 próbek, bo przy trasach kilkudziesięciu kilometrów
+  // daje to odstęp rzędu kilkuset metrów i może pomijać lokalne przeszkody.
+  // Liczba próbek jest teraz dobierana dynamicznie: średnio co ok. 40 m,
+  // z rozsądnym minimum i limitem, żeby nie przeciążyć przeglądarki.
+  const PROFILE_SAMPLE_SPACING_M = 40;
+  const PROFILE_MIN_SAMPLES = 256;
+  const PROFILE_MAX_SAMPLES = 1800;
+
+  function profileSampleCount(totalDistanceKm){
+    const distanceM = Math.max(1, totalDistanceKm * 1000);
+    const bySpacing = Math.ceil(distanceM / PROFILE_SAMPLE_SPACING_M) + 1;
+    return Math.min(PROFILE_MAX_SAMPLES, Math.max(PROFILE_MIN_SAMPLES, bySpacing));
+  }
+
   async function fetchProfile(a,t,force=false){
     if(profileAbort) profileAbort.abort(); profileAbort=new AbortController();
-    const n=128, points=[];
     const totalDistance = Math.max(0.1, Number.isFinite(+t.distance) ? +t.distance : dist(a,t));
+    const n = profileSampleCount(totalDistance);
+    const sampleSpacingM = Math.round((totalDistance * 1000) / Math.max(1, n - 1));
+    const points=[];
     for(let i=0;i<n;i++){
       const f=i/(n-1);
       points.push({lat:a.lat+(t.lat-a.lat)*f, lon:a.lon+(t.lon-a.lon)*f});
@@ -1175,7 +1192,7 @@
     const profileCache=loadProfileCache();
     if(!force && profileCache[routeKey] && Array.isArray(profileCache[routeKey].elev) && profileCache[routeKey].elev.length===n){
       const cached=profileCache[routeKey].elev.map((e,i)=>({d:totalDistance*i/(n-1), e:+e}));
-      cached.meta={source:'profile-cache', samples:n};
+      cached.meta={source:'profile-cache', samples:n, sampleSpacingM};
       return cached;
     }
     let elev=null, apiError='';
@@ -1195,7 +1212,7 @@
     if(!Array.isArray(elev) || elev.length!==n || !elev.every(v=>Number.isFinite(+v))){
       if(profileCache[routeKey] && Array.isArray(profileCache[routeKey].elev)){
         const cached=profileCache[routeKey].elev.map((e,i)=>({d:totalDistance*i/(profileCache[routeKey].elev.length-1), e:+e}));
-        cached.meta={source:'profile-cache-stale', samples:cached.length, apiError};
+        cached.meta={source:'profile-cache-stale', samples:cached.length, sampleSpacingM: Math.round((totalDistance * 1000) / Math.max(1, cached.length - 1)), apiError};
         return cached;
       }
       throw new Error(`Nie udało się pobrać prawdziwego DEM dla trasy. ${apiError}`);
@@ -1203,7 +1220,7 @@
     profileCache[routeKey]={ts:Date.now(), elev:elev.map(v=>Math.round(+v*10)/10)};
     saveProfileCache(profileCache);
     const result=elev.map((e,i)=>({d:totalDistance*i/(n-1), e:+e}));
-    result.meta={source:source, samples:n};
+    result.meta={source:source, samples:n, sampleSpacingM};
     return result;
   }
 
@@ -1285,7 +1302,8 @@
     const msg=blocked?'Widoczność: NIE':worst<10?'Widoczność: warunkowa':'Widoczność: TAK';
     const noteClass=blocked?'profile-note bad':worst<10?'profile-note warn':'profile-note ok';
     const meta=p.meta||{};
-    const sourceText = meta.source === 'terrarium-tiles' ? `DEM: pobrano ${meta.samples||p.length} próbek z kafli wysokości Terrarium.` : (meta.source === 'api-live' ? `DEM: pobrano ${meta.samples||p.length} próbek wysokości z API punktowego.` : `DEM: lokalny cache profilu (${meta.samples||p.length} próbek). ${meta.apiError ? 'Odświeżenie nieudane: '+esc(meta.apiError) : ''}`);
+    const spacingText = meta.sampleSpacingM ? `, średnio co ${meta.sampleSpacingM} m` : '';
+    const sourceText = meta.source === 'terrarium-tiles' ? `DEM: pobrano ${meta.samples||p.length} próbek${spacingText} z kafli wysokości Terrarium.` : (meta.source === 'api-live' ? `DEM: pobrano ${meta.samples||p.length} próbek${spacingText} wysokości z API punktowego.` : `DEM: lokalny cache profilu (${meta.samples||p.length} próbek${spacingText}). ${meta.apiError ? 'Odświeżenie nieudane: '+esc(meta.apiError) : ''}`);
     const minElev=Math.round(Math.min(...terrain));
     const maxElev=Math.round(Math.max(...terrain));
     const diffElev=Math.round(txAlt-rxAlt);
@@ -1456,6 +1474,6 @@
     $('closeStationBtn').onclick=hideStation; $('openStationBtn').onclick=showStation; $('compassWidget').onclick=()=>{startCompass(false); showCompassPanel();}; $('stationProfileBtn').onclick=showProfile; $('stationMuxBtn').onclick=showMux; $('stationDemBtn').onclick=downloadDemForSelectedTx; $('stationDemCacheBtn').onclick=showSelectedDemStats; $('stationRfBtn').onclick=()=>calculateRfCoverage(); $('stationClearRfBtn').onclick=()=>{ clearRfLayer(); toast('Usunięto obliczony zasięg RF.'); }; $('stationAntBtn').onclick=()=>checkSelectedTransmitterAnt().catch(err=>toast('Błąd sprawdzania ANT: '+(err.message||err))); 
     window.addEventListener('online',()=>{$('onlineChip').textContent='Online';$('onlineChip').classList.add('online-chip');}); window.addEventListener('offline',()=>{$('onlineChip').textContent='Offline';$('onlineChip').classList.remove('online-chip');});
   }
-  async function boot(){ load(); setupPwaInstall(); bind(); initMap(); await loadTxs(); if(state.coverageTileUrl) applyCoverageTile(state.coverageTileUrl); startCompass(true); window.addEventListener('pointerdown',()=>startCompass(true),{once:true,passive:true}); if('serviceWorker' in navigator) navigator.serviceWorker.register('./service-worker.js?v=19.24-1905260652').catch(()=>{}); setAppHeight(); }
+  async function boot(){ load(); setupPwaInstall(); bind(); initMap(); await loadTxs(); if(state.coverageTileUrl) applyCoverageTile(state.coverageTileUrl); startCompass(true); window.addEventListener('pointerdown',()=>startCompass(true),{once:true,passive:true}); if('serviceWorker' in navigator) navigator.serviceWorker.register('./service-worker.js?v=19.25-1905260701').catch(()=>{}); setAppHeight(); }
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', boot); else boot();
 })();

@@ -1,0 +1,18 @@
+DVB-T/T2 Point 19.25 - 1905260701
+
+Zmiana techniczna:
+- poprawiono profil terenu: usunięto stałe 128 próbek DEM,
+- liczba próbek profilu jest teraz dobierana dynamicznie do długości trasy,
+- domyślny odstęp próbek wynosi około 40 m,
+- minimalna liczba próbek: 256,
+- maksymalna liczba próbek: 1800,
+- w panelu profilu dodano informację o liczbie próbek i średnim odstępie między nimi.
+
+Przykład:
+- dla trasy około 43,6 km program pobiera teraz około 1091 próbek zamiast 128,
+- odstęp między próbkami spada z około 343 m do około 40 m.
+
+Ważne:
+- nie zmieniano algorytmu rysowania zasięgu,
+- nie zmieniano danych nadajników,
+- nie zmieniano wcześniejszych poprawek GPS, kompasu i ikon warstw.
