@@ -1,0 +1,14 @@
+19.31 - 1905260945
+
+Zmiany:
+- Uporządkowano kartę nadajnika: na wierzchu zostały Profil terenu, Oblicz zasięg oraz MUX-y / moc.
+- Pozostałe funkcje nadajnika przeniesiono pod rozwijany przycisk „Więcej opcji”.
+- Dodano dokładniejszą legendę kolorów RF z opisem orientacyjnych zakresów dBµV/m.
+- Zmieniono logikę koloru zasięgu: kolor pokazuje głównie poziom sygnału, a profil terenu może obniżyć ocenę, ale nie miesza się z nią w sposób zero-jedynkowy.
+- Poprawiono panel listy nadajników na telefonie: po pojawieniu się klawiatury pole wyszukiwania zostaje w widocznym panelu.
+
+Pliki zmienione:
+- index.html
+- app.js
+- style.css
+- service-worker.js

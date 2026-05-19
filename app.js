@@ -379,7 +379,7 @@
     $('stationPower').textContent=stationPowerText(t);
   }
 
-  function openPanel(title, subtitle, html){ $('panelTitle').textContent=title; $('panelSubtitle').textContent=subtitle||''; $('panelContent').innerHTML=html; $('appPanel').classList.remove('collapsed'); setTimeout(()=>state.map.invalidateSize(true),80); }
+  function openPanel(title, subtitle, html){ $('panelTitle').textContent=title; $('panelSubtitle').textContent=subtitle||''; $('panelContent').innerHTML=html; $('appPanel').classList.remove('tx-list-mode'); $('appPanel').classList.remove('collapsed'); setTimeout(()=>state.map.invalidateSize(true),80); }
   function closePanel(){
     $('appPanel').classList.add('collapsed');
     if(pendingRfModeResolve){
@@ -397,6 +397,7 @@
       ${filterNote}
       <div id="txListResults" class="tx-list-results"></div>
     `);
+    $('appPanel').classList.add('tx-list-mode');
     const input=$('txSearchInput');
     const results=$('txListResults');
     const renderList=(query='')=>{
@@ -411,7 +412,11 @@
       results.querySelectorAll('[data-tx]').forEach(b=>b.onclick=()=>{selectTx(b.dataset.tx,true,true); closePanel();});
     };
     input.addEventListener('input', e=>renderList(e.target.value));
-    setTimeout(()=>input.focus({preventScroll:true}),80);
+    input.addEventListener('focus', ()=>{
+      $('appPanel').classList.add('tx-list-mode');
+      setTimeout(()=>{ $('panelContent').scrollTop=0; input.scrollIntoView({block:'nearest'}); }, 80);
+    });
+    setTimeout(()=>{ input.focus({preventScroll:true}); $('panelContent').scrollTop=0; },80);
     renderList('');
   }
   function showMux(){
@@ -1128,27 +1133,38 @@
     return prev.gainDb + (next.gainDb-prev.gainDb)*f;
   }
   function rfColor(level, cell=null){
-    // 19.29: lokalna siatka przy punkcie odbioru ma pierwszeństwo profilu terenu.
-    // Jeżeli próbki profilu pokazują zasłonięcie 60% strefy Fresnela, kolor nie może zostać zielony tylko dlatego, że sam bilans RF wyszedł mocny.
+    // 19.31: kolor pokazuje głównie szacowany poziom pola, a profil terenu może go obniżyć maksymalnie o jeden stopień.
+    // Dzięki temu czerwony nie pojawia się tylko dlatego, że profil jest warunkowy.
+    const scale=rfBand(level);
+    let idx=scale.index;
     if(cell && Number.isFinite(+cell.profileMargin)){
       const margin=+cell.profileMargin;
-      if(margin < -30) return '#dc2626';
-      if(margin < -12) return '#f97316';
-      if(margin < 0) return '#f59e0b';
-      if(margin < 8) return '#84cc16';
+      if(margin < -20) idx=Math.max(0, idx-2);
+      else if(margin < 0) idx=Math.max(0, idx-1);
     }
-    if(level >= -68) return '#16a34a';
-    if(level >= -78) return '#84cc16';
-    if(level >= -88) return '#f59e0b';
-    if(level >= -98) return '#f97316';
-    return '#dc2626';
+    return RF_BANDS[idx]?.color || RF_BANDS[0].color;
   }
-  function rfLabel(level){
-    if(level >= -68) return 'bardzo dobry';
-    if(level >= -78) return 'dobry';
-    if(level >= -88) return 'średni';
-    if(level >= -98) return 'słaby';
-    return 'bardzo słaby';
+  const RF_BANDS=[
+    {min:-Infinity, color:'#dc2626', label:'bardzo słaby', desc:'poniżej ok. 48 dBµV/m'},
+    {min:-98, color:'#f97316', label:'słaby', desc:'ok. 48–53 dBµV/m'},
+    {min:-88, color:'#facc15', label:'średni', desc:'ok. 53–60 dBµV/m'},
+    {min:-78, color:'#84cc16', label:'dobry', desc:'ok. 60–65 dBµV/m'},
+    {min:-68, color:'#16a34a', label:'bardzo dobry', desc:'ok. 65–70 dBµV/m'},
+    {min:-58, color:'#06b6d4', label:'mocny', desc:'ok. 70–74 dBµV/m'},
+    {min:-48, color:'#2563eb', label:'bardzo mocny', desc:'powyżej ok. 74 dBµV/m'}
+  ];
+  function rfBand(level){
+    const v=Number.isFinite(+level) ? +level : -Infinity;
+    let index=0;
+    for(let i=0;i<RF_BANDS.length;i++) if(v >= RF_BANDS[i].min) index=i;
+    return {...RF_BANDS[index], index};
+  }
+  function rfLabel(level){ return rfBand(level).label; }
+  function rfLegendHtml(){
+    return `<div class="legend-rf legend-rf-detailed">
+      ${RF_BANDS.map(b=>`<span><i style="background:${b.color}"></i><b>${b.label}</b><em>${b.desc}</em></span>`).join('')}
+      <span class="terrain-legend"><i></i><b>Profil terenu</b><em>może obniżyć kolor o 1–2 stopnie, ale nie zastępuje oceny poziomu sygnału</em></span>
+    </div>`;
   }
 
   function rfDistanceStepKm(maxKm){
@@ -1682,7 +1698,7 @@
         state.lastRf={tx:t.id, freq, erpKw, bestReach, antPattern:!!cached.meta.antPattern, model:`ITM-lite ${cached.meta.mode || mode} cached`};
         state.lastRfCache=normalizeRfCacheRecord(cached);
         toast('Narysowano zasięg z cache przeglądarki.');
-        openPanel('Obliczony zasięg RF / terenowy', stationName, `<div class="info-card"><strong>Wynik z cache</strong><span>Użyto zapisanego wyniku: ${cached.cells.length} komórek. Tryb: ${cached.meta.mode==='quick'?'szybki':'pełny'}. Najdalszy punkt z poziomem co najmniej średnim: około ${Math.round(bestReach)} km.</span></div><div class="info-card"><strong>Diagnostyka</strong><span>Komórek z istotną stratą terenową: ${blockedCells}/${cached.cells.length}. Średnia dodatkowa strata terenowa: ${avgLoss.toFixed(1)} dB. Cache: IndexedDB przeglądarki.</span></div><div class="legend-rf"><span><i class="rf-good"></i>bardzo/dobry</span><span><i class="rf-mid"></i>średni</span><span><i class="rf-weak"></i>słaby</span><span><i class="rf-bad"></i>bardzo słaby</span></div>`);
+        openPanel('Obliczony zasięg RF / terenowy', stationName, `<div class="info-card"><strong>Wynik z cache</strong><span>Użyto zapisanego wyniku: ${cached.cells.length} komórek. Tryb: ${cached.meta.mode==='quick'?'szybki':'pełny'}. Najdalszy punkt z poziomem co najmniej średnim: około ${Math.round(bestReach)} km.</span></div><div class="info-card"><strong>Diagnostyka</strong><span>Komórek z istotną stratą terenową: ${blockedCells}/${cached.cells.length}. Średnia dodatkowa strata terenowa: ${avgLoss.toFixed(1)} dB. Cache: IndexedDB przeglądarki.</span></div>${rfLegendHtml()}`);
         return;
       }
 
@@ -1740,7 +1756,7 @@
       const localCount=cells.filter(c=>c.kind==='local').length;
       state.lastRf={tx:t.id, freq, erpKw, bestReach, antPattern:!!antPattern, model:`ITM-lite terrain diffraction ${mode}`};
       toast(`Narysowano zasięg: ${cells.length} komórek${saved ? ' i zapisano w cache' : ''}.`);
-      openPanel(mode==='quick' ? 'Obliczony szybki zasięg RF / terenowy' : (mode==='full_profile' ? 'Obliczony pełny zasięg z profilem terenu' : 'Obliczony gęsty zasięg RF / terenowy'), stationName, `<div class="info-card"><strong>Wynik</strong><span>Najdalszy punkt z poziomem co najmniej średnim: około ${Math.round(bestReach)} km. Komórek: ${cells.length}${mode==='quick' ? `, w tym lokalnych dokładnych: ${localCount}` : ''}. Cache: ${saved ? 'zapisany w IndexedDB' : 'nie udało się zapisać'}.</span></div><div class="info-card"><strong>Model 19.30</strong><span>${esc(modeDescription)} DEM z kafli Terrarium na zoomie ${TERRAIN_TILE_Z}, krzywizna Ziemi, 60% pierwszej strefy Fresnela, strata dyfrakcyjna knife-edge, korekta ANT oraz lokalna korekta koloru według profilu terenu.</span></div><div class="info-card"><strong>Diagnostyka</strong><span>Komórek z istotną stratą terenową: ${blockedCells}/${cells.length}. Średnia dodatkowa strata terenowa: ${avgLoss.toFixed(1)} dB. Pierwsze liczenie zapisuje się lokalnie w IndexedDB. Możesz je wyeksportować przyciskiem „Eksport cache”.</span></div><div class="legend-rf"><span><i class="rf-good"></i>bardzo/dobry</span><span><i class="rf-mid"></i>średni</span><span><i class="rf-weak"></i>średni/słaby</span><span><i class="rf-bad"></i>bardzo słaby</span></div>`);
+      openPanel(mode==='quick' ? 'Obliczony szybki zasięg RF / terenowy' : (mode==='full_profile' ? 'Obliczony pełny zasięg z profilem terenu' : 'Obliczony gęsty zasięg RF / terenowy'), stationName, `<div class="info-card"><strong>Wynik</strong><span>Najdalszy punkt z poziomem co najmniej średnim: około ${Math.round(bestReach)} km. Komórek: ${cells.length}${mode==='quick' ? `, w tym lokalnych dokładnych: ${localCount}` : ''}. Cache: ${saved ? 'zapisany w IndexedDB' : 'nie udało się zapisać'}.</span></div><div class="info-card"><strong>Model 19.30</strong><span>${esc(modeDescription)} DEM z kafli Terrarium na zoomie ${TERRAIN_TILE_Z}, krzywizna Ziemi, 60% pierwszej strefy Fresnela, strata dyfrakcyjna knife-edge, korekta ANT oraz osobna korekta profilu terenu. Kolor oznacza głównie orientacyjny poziom pola, a profil może obniżyć ocenę maksymalnie o 1–2 stopnie.</span></div><div class="info-card"><strong>Diagnostyka</strong><span>Komórek z istotną stratą terenową: ${blockedCells}/${cells.length}. Średnia dodatkowa strata terenowa: ${avgLoss.toFixed(1)} dB. Pierwsze liczenie zapisuje się lokalnie w IndexedDB. Możesz je wyeksportować przyciskiem „Eksport cache”.</span></div>${rfLegendHtml()}`);
     }catch(err){
       const msg = err?.message || String(err);
       openPanel('Błąd obliczania zasięgu', stationName, `<div class="info-card"><strong>Nie udało się obliczyć zasięgu</strong><span>${esc(msg)}</span></div><div class="info-card"><strong>Co teraz</strong><span>Gęsta siatka pobiera dużo kafli DEM i zapisuje duży wynik w IndexedDB. Jeżeli błąd wraca, sprawdź internet, odśwież stronę albo wyczyść dane strony.</span></div>`);
