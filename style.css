@@ -167,3 +167,11 @@ h1,h2,h3,strong,.tx-item strong,.info-card strong,.station-head strong,.station-
 .switch-row{display:flex;align-items:center;gap:10px;margin-top:8px;color:#0f172a;font-size:13px;line-height:1.25;cursor:pointer}
 .switch-row input{width:18px;height:18px;accent-color:#2563eb;flex:0 0 auto}
 .switch-row span{font-size:13px!important;color:#0f172a!important;font-weight:600!important}
+
+/* 19.24 — poprawiona, własna ikona warstw; nie wracać do znaku tekstowego ▤. */
+.layers-icon{position:relative;display:inline-block;width:24px;height:22px;vertical-align:middle}
+.layers-icon i{position:absolute;left:3px;width:18px;height:10px;border:2px solid #2563eb;border-radius:5px;background:rgba(255,255,255,.94);box-shadow:0 3px 7px rgba(15,23,42,.12);transform:skewY(-18deg)}
+.layers-icon i:nth-child(1){top:0}
+.layers-icon i:nth-child(2){top:6px;opacity:.82}
+.layers-icon i:nth-child(3){top:12px;opacity:.65}
+.map-btn:hover .layers-icon i{border-color:#1d4ed8}

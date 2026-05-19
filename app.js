@@ -1,6 +1,6 @@
 (() => {
   'use strict';
-  const APP_VERSION = '19.23 - 1805260658';
+  const APP_VERSION = '19.24 - 1905260652';
   const STORE = 'dvbt-point-v19-state';
   const ANT_CACHE_NAME = 'dvbt-ant-files-v1';
   const $ = id => document.getElementById(id);
@@ -18,10 +18,17 @@
   }
 
   function normDeg(v){ return ((v % 360) + 360) % 360; }
-  function smoothHeading(prev, next, strength=.075){
+  function smoothHeading(prev, next, strength=.42){
     if(prev==null) return normDeg(next);
     const delta=((next-prev+540)%360)-180;
     return normDeg(prev + delta*strength);
+  }
+  function adaptiveHeadingStrength(prev, next){
+    if(prev==null) return 1;
+    const jump = Math.abs(diff(prev, next));
+    if(jump >= 45) return .85;
+    if(jump >= 15) return .58;
+    return .38;
   }
   function circularMeanDeg(values){
     if(!values.length) return null;
@@ -34,27 +41,29 @@
     state.headingRaf = requestAnimationFrame(() => {
       state.headingRaf = null;
       const now = performance.now();
-      if(now - state.headingLastTs < 90){ scheduleHeadingApply(); return; }
+      if(now - state.headingLastTs < 30){ scheduleHeadingApply(); return; }
       state.headingLastTs = now;
-      const mean = circularMeanDeg(state.headingSamples.slice(-7));
+      const mean = circularMeanDeg(state.headingSamples.slice(-3));
       if(mean == null) return;
       if(state.heading != null){
         const jump = Math.abs(diff(state.heading, mean));
-        if(jump < 1.2) return;
+        if(jump < .45) return;
       }
-      state.heading = smoothHeading(state.heading, mean, .075);
+      state.heading = smoothHeading(state.heading, mean, adaptiveHeadingStrength(state.heading, mean));
       updateCompass();
     });
   }
   function applyHeading(raw, source='sensor'){
     if(!Number.isFinite(raw)) return;
     let h = raw;
-    if(source !== 'ios') h = state.headingInvert ? raw : (360 - raw);
+    // POPRAWKA KRYTYCZNA 19.24 — NIE ZMIENIAĆ BEZ TESTU W TERENIE:
+    // GPS podaje kurs ruchu już w stopniach od północy, dlatego nie wolno go odwracać jak alpha z czujnika.
+    if(source !== 'ios' && source !== 'gps') h = state.headingInvert ? raw : (360 - raw);
     h = normDeg(h + (state.headingOffset || 0));
     state.rawHeading = raw;
     state.headingSource = source;
     state.headingSamples.push(h);
-    if(state.headingSamples.length > 12) state.headingSamples.shift();
+    if(state.headingSamples.length > 6) state.headingSamples.shift();
     scheduleHeadingApply();
   }
   function setManualHeading(value){
@@ -307,9 +316,19 @@
     if (locationChip) locationChip.textContent = `🏠 ${state.rx.label || 'Punkt odbioru'}`;
   }
   function renderHeadingCone(){
-    if(state.headingCone) state.map.removeLayer(state.headingCone);
-    if(state.heading == null) return;
-    const coneHtml = `<div class="heading-cone" style="transform:rotate(${Math.round(state.heading)}deg)"><svg viewBox="0 0 100 100" aria-hidden="true"><path d="M50 50 L30 2 Q50 -7 70 2 Z"/><circle cx="50" cy="50" r="4"/></svg></div>`;
+    if(state.heading == null){
+      if(state.headingCone){ state.map.removeLayer(state.headingCone); state.headingCone=null; }
+      return;
+    }
+    const rotation = Math.round(state.heading);
+    if(state.headingCone){
+      state.headingCone.setLatLng([state.rx.lat,state.rx.lon]);
+      const el = state.headingCone.getElement()?.querySelector('.heading-cone');
+      if(el){ el.style.transform = `rotate(${rotation}deg)`; return; }
+      state.map.removeLayer(state.headingCone);
+      state.headingCone=null;
+    }
+    const coneHtml = `<div class="heading-cone" style="transform:rotate(${rotation}deg)"><svg viewBox="0 0 100 100" aria-hidden="true"><path d="M50 50 L30 2 Q50 -7 70 2 Z"/><circle cx="50" cy="50" r="4"/></svg></div>`;
     const coneIcon=L.divIcon({html:coneHtml, className:'', iconSize:[110,110], iconAnchor:[55,55]});
     state.headingCone=L.marker([state.rx.lat,state.rx.lon], {icon:coneIcon, interactive:false, pane:'headingPane', zIndexOffset:1200}).addTo(state.map);
   }
@@ -1359,17 +1378,42 @@
   }
   function onOrientation(e){
     if(typeof e.webkitCompassHeading==='number'){ applyHeading(e.webkitCompassHeading, 'ios'); return; }
-    if(typeof e.alpha==='number'){ applyHeading(e.alpha, e.absolute ? 'absolute' : 'sensor'); }
+    if(typeof e.alpha!=='number') return;
+    const source = (e.type === 'deviceorientationabsolute' || e.absolute) ? 'absolute' : 'sensor';
+    if(source === 'sensor' && (state.headingSource === 'ios' || state.headingSource === 'absolute')) return;
+    applyHeading(e.alpha, source);
   }
+
+  function stopGpsWatch(){
+    if(state.gpsWatchId!=null && navigator.geolocation){
+      navigator.geolocation.clearWatch(state.gpsWatchId);
+      state.gpsWatchId=null;
+    }
+  }
+
+  function applyGpsPosition(p, pan=true){
+    const {latitude, longitude, heading} = p.coords;
+    if(!Number.isFinite(latitude) || !Number.isFinite(longitude)) return;
+    state.rx={lat:latitude, lon:longitude, label:'GPS / punkt odbioru'};
+    if(Number.isFinite(heading) && heading >= 0 && state.headingSource !== 'ios' && state.headingSource !== 'absolute' && state.headingSource !== 'sensor') applyHeading(heading, 'gps');
+    save();
+    renderHome();
+    renderConnection();
+    selectTx(state.selected?.id || bestTx()?.id,false,false);
+    if(pan) state.map.setView([latitude,longitude], Math.max(state.map.getZoom(), 12), {animate:true});
+  }
+
   function startGpsWatch(){
     if(!navigator.geolocation) return toast('Brak GPS w tej przeglądarce.');
-    if(state.gpsWatchId!=null) navigator.geolocation.clearWatch(state.gpsWatchId);
-    state.gpsWatchId = navigator.geolocation.watchPosition(p=>{
-      const {latitude, longitude, heading} = p.coords;
-      state.rx={lat:latitude, lon:longitude, label:'GPS / punkt odbioru'};
-      if(Number.isFinite(heading) && heading >= 0 && state.headingSource !== 'ios' && state.headingSource !== 'absolute' && state.headingSource !== 'sensor') applyHeading(heading, 'gps');
-      save(); renderHome(); renderConnection(); selectTx(state.selected?.id || bestTx()?.id,false,false); state.map.panTo([latitude,longitude], {animate:true});
-    },()=>toast('Nie udało się pobrać GPS.'),{enableHighAccuracy:true, timeout:12000, maximumAge:2500});
+    // POPRAWKA KRYTYCZNA 19.24 — NIE ZMIENIAĆ BEZ TESTU W TERENIE:
+    // Przycisk GPS ma ustawić punkt tylko raz. Nie używać tutaj watchPosition + panTo,
+    // bo ciągłe aktualizacje GPS blokują ręczne przesuwanie mapy i wyszukiwarkę miejscowości.
+    stopGpsWatch();
+    navigator.geolocation.getCurrentPosition(
+      p=>{ applyGpsPosition(p, true); toast('Ustawiono punkt z GPS. Mapa nie będzie już automatycznie wracać.'); },
+      ()=>toast('Nie udało się pobrać GPS.'),
+      {enableHighAccuracy:true, timeout:12000, maximumAge:2500}
+    );
   }
   function showCompassPanel(){
     const t=state.selected; const target=t?Math.round(t.azimuth):'—';
@@ -1384,7 +1428,7 @@
         <button id="invertCompassBtn" class="panel-btn">Odwróć czujnik</button>
         <button id="resetCompassBtn" class="panel-btn">Reset korekty</button>
       </div>
-      <div class="info-card"><strong>Uwaga</strong><span>Włączyłem mocne wygładzanie, więc wskazanie powinno skakać mniej. Kompas telefonu nadal może przekłamywać przy maszcie, antenie, blasze, aucie i magnesach. Skalibruj telefon ruchem ósemki.</span></div>`);
+      <div class="info-card"><strong>Uwaga</strong><span>Wygładzanie jest teraz szybsze i adaptacyjne, więc wskazanie powinno reagować bez dużego opóźnienia. Kompas telefonu nadal może przekłamywać przy maszcie, antenie, blasze, aucie i magnesach. Skalibruj telefon ruchem ósemki.</span></div>`);
     startCompass(true);
     $('manualHeading').oninput=e=>{ $('manualHeadingValue').textContent=`${e.target.value}°`; setManualHeading(e.target.value); };
     $('invertCompassBtn').onclick=()=>{ state.headingInvert=!state.headingInvert; save(); toast(state.headingInvert?'Odwrócono kierunek czujnika.':'Przywrócono standardowy kierunek czujnika.'); };
@@ -1412,6 +1456,6 @@
     $('closeStationBtn').onclick=hideStation; $('openStationBtn').onclick=showStation; $('compassWidget').onclick=()=>{startCompass(false); showCompassPanel();}; $('stationProfileBtn').onclick=showProfile; $('stationMuxBtn').onclick=showMux; $('stationDemBtn').onclick=downloadDemForSelectedTx; $('stationDemCacheBtn').onclick=showSelectedDemStats; $('stationRfBtn').onclick=()=>calculateRfCoverage(); $('stationClearRfBtn').onclick=()=>{ clearRfLayer(); toast('Usunięto obliczony zasięg RF.'); }; $('stationAntBtn').onclick=()=>checkSelectedTransmitterAnt().catch(err=>toast('Błąd sprawdzania ANT: '+(err.message||err))); 
     window.addEventListener('online',()=>{$('onlineChip').textContent='Online';$('onlineChip').classList.add('online-chip');}); window.addEventListener('offline',()=>{$('onlineChip').textContent='Offline';$('onlineChip').classList.remove('online-chip');});
   }
-  async function boot(){ load(); setupPwaInstall(); bind(); initMap(); await loadTxs(); if(state.coverageTileUrl) applyCoverageTile(state.coverageTileUrl); startCompass(true); window.addEventListener('pointerdown',()=>startCompass(true),{once:true,passive:true}); if('serviceWorker' in navigator) navigator.serviceWorker.register('./service-worker.js?v=19.23-1805260658').catch(()=>{}); setAppHeight(); }
+  async function boot(){ load(); setupPwaInstall(); bind(); initMap(); await loadTxs(); if(state.coverageTileUrl) applyCoverageTile(state.coverageTileUrl); startCompass(true); window.addEventListener('pointerdown',()=>startCompass(true),{once:true,passive:true}); if('serviceWorker' in navigator) navigator.serviceWorker.register('./service-worker.js?v=19.24-1905260652').catch(()=>{}); setAppHeight(); }
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', boot); else boot();
 })();

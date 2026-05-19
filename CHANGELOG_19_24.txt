@@ -1,0 +1,12 @@
+DVB-T/T2 Point 19.24 - 1905260652
+
+Zmiany:
+- poprawiono działanie przycisku GPS: lokalizacja ustawia punkt tylko raz i nie blokuje dalszego przesuwania mapy,
+- dodano w kodzie komentarze ostrzegające, żeby nie przywracać watchPosition + panTo w obsłudze przycisku GPS,
+- przyspieszono kompas: mniejsze opóźnienie, krótsza średnia próbek i adaptacyjne wygładzanie,
+- poprawiono obsługę kursu GPS, który nie jest już błędnie odwracany jak alpha z czujnika,
+- zoptymalizowano stożek kierunku na mapie: marker nie jest usuwany i tworzony od nowa przy każdej zmianie kierunku,
+- zmieniono ikonę warstw z brzydkiego znaku tekstowego na własną ikonę SVG/CSS z trzema warstwami.
+
+Nie zmieniano:
+- nie ruszano algorytmu profilu terenu i obliczeń DEM/LOS; punkt 4 został tylko przeanalizowany.
