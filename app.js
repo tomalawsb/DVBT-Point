@@ -1,12 +1,18 @@
 (() => {
   'use strict';
-  const APP_VERSION = '19.26 - 1905260717';
+  const APP_VERSION = '19.27 - 1905260750';
   const STORE = 'dvbt-point-v19-state';
   const ANT_CACHE_NAME = 'dvbt-ant-files-v1';
-  const RF_ALGO_VERSION = '19.26-dense-idb-v1';
+  const RF_ALGO_VERSION = '19.27-dense-quick-idb-v2';
   const RF_DB_NAME = 'dvbt-point-rf-cache-v1';
   const RF_DB_STORE = 'coverages';
   const RF_BEARING_STEP_DEG = 1;
+  const RF_QUICK_BEARING_STEP_DEG = 5;
+  // POPRAWKA KRYTYCZNA 19.27 — NIE ZMIENIAĆ BEZ TESTU ZASIĘGU W TERENIE:
+  // Szybkie liczenie ma zostawić pełny podgląd orientacyjny, ale bardzo gęsto przeliczać obszar 500 m wokół punktu odbioru.
+  const RF_QUICK_LOCAL_RADIUS_KM = 0.5;
+  const RF_QUICK_LOCAL_GRID_STEP_KM = 0.05;
+  const RF_QUICK_PROFILE_STEP_KM = 0.08;
   const $ = id => document.getElementById(id);
   const state = {
     map:null, baseLayer:null, baseLabelsLayer:null, base:'osm', rx:{lat:50.2871, lon:21.4238, label:'Mielec / punkt odbioru'}, rxHeight:6,
@@ -15,6 +21,7 @@
   };
   let profileAbort = null;
   let deferredInstallPrompt = null;
+  let pendingRfModeResolve = null;
   function withTimeoutSignal(ms){
     const ctrl = new AbortController();
     const timer = setTimeout(() => ctrl.abort(), ms);
@@ -370,7 +377,14 @@
   }
 
   function openPanel(title, subtitle, html){ $('panelTitle').textContent=title; $('panelSubtitle').textContent=subtitle||''; $('panelContent').innerHTML=html; $('appPanel').classList.remove('collapsed'); setTimeout(()=>state.map.invalidateSize(true),80); }
-  function closePanel(){ $('appPanel').classList.add('collapsed'); }
+  function closePanel(){
+    $('appPanel').classList.add('collapsed');
+    if(pendingRfModeResolve){
+      const resolve=pendingRfModeResolve;
+      pendingRfModeResolve=null;
+      resolve(null);
+    }
+  }
   function showTxList(){
     const filterNote = state.showCoverageOnly ? '<div class="info-card compact-note"><strong>Aktywny filtr</strong><span>Pokazywane są tylko nadajniki w szacowanym zasięgu punktu odbioru.</span></div>' : '';
     openPanel('Nadajniki','Lista według odległości od punktu odbioru.', `
@@ -1085,14 +1099,26 @@
       tx.onabort=()=>{ db.close(); resolve(false); };
     });
   }
-  function rfCacheKey(t, mux, freq, erpKw, txHeight, maxKm, distanceStep){
+  function rfCacheKey(t, mux, freq, erpKw, txHeight, maxKm, distanceStep, mode='full', local=null){
     const antKey=String(mux?.ant_pattern_path || mux?.ant_file_url || 'no-ant');
-    return [RF_ALGO_VERSION, t.id, mux?.name||'', mux?.channel||'', Math.round(freq*10)/10, Math.round(erpKw*1000), Math.round(txHeight), Math.round(state.rxHeight*10)/10, Math.round(maxKm*10)/10, RF_BEARING_STEP_DEG, distanceStep, antKey].join('|');
+    const localKey=local ? `${(+local.lat).toFixed(4)},${(+local.lon).toFixed(4)},r${RF_QUICK_LOCAL_RADIUS_KM},g${RF_QUICK_LOCAL_GRID_STEP_KM}` : 'all';
+    return [RF_ALGO_VERSION, mode, t.id, mux?.name||'', mux?.channel||'', Math.round(freq*10)/10, Math.round(erpKw*1000), Math.round(txHeight), Math.round(state.rxHeight*10)/10, Math.round(maxKm*10)/10, RF_BEARING_STEP_DEG, distanceStep, localKey, antKey].join('|');
+  }
+  function rfLocalCellPolygon(cell){
+    const half=Math.max(0.01, (+cell.sizeKm || RF_QUICK_LOCAL_GRID_STEP_KM) / 2);
+    const latKm=111.32;
+    const lonKm=Math.max(1, 111.32*Math.cos(rad(+cell.lat || 0)));
+    const dLat=half/latKm;
+    const dLon=half/lonKm;
+    return [[cell.lat-dLat,cell.lon-dLon],[cell.lat-dLat,cell.lon+dLon],[cell.lat+dLat,cell.lon+dLon],[cell.lat+dLat,cell.lon-dLon]];
   }
   function rfCellPolygon(t, cell, bearingStep, distanceStep){
-    const halfBearing=bearingStep/2;
-    const inner=Math.max(0.05, cell.km-distanceStep/2);
-    const outer=cell.km+distanceStep/2;
+    if(cell.kind === 'local' && Number.isFinite(+cell.lat) && Number.isFinite(+cell.lon)) return rfLocalCellPolygon(cell);
+    const bs=Number.isFinite(+cell.bearingStep) ? +cell.bearingStep : bearingStep;
+    const ds=Number.isFinite(+cell.distanceStep) ? +cell.distanceStep : distanceStep;
+    const halfBearing=bs/2;
+    const inner=Math.max(0.05, cell.km-ds/2);
+    const outer=cell.km+ds/2;
     const a=destinationPoint(t.lat,t.lon,cell.bearing-halfBearing,inner);
     const b=destinationPoint(t.lat,t.lon,cell.bearing+halfBearing,inner);
     const c=destinationPoint(t.lat,t.lon,cell.bearing+halfBearing,outer);
@@ -1109,7 +1135,7 @@
       const color=rfColor(cell.level);
       L.polygon(rfCellPolygon(t, cell, meta.bearingStep, meta.distanceStep), {renderer, color, weight:.45, opacity:.50, fillColor:color, fillOpacity:.26, interactive:false}).addTo(state.rfLayer);
       if(i>0 && i % chunkSize === 0){
-        if(setRfStatus) setRfStatus('Rysowanie', `Rysuję gęstą siatkę: ${i} / ${cells.length} komórek.`);
+        if(setRfStatus) setRfStatus('Rysowanie', `Rysuję siatkę: ${i} / ${cells.length} komórek.`);
         await sleep(0);
       }
     }
@@ -1183,86 +1209,208 @@
       points: distances.map(km=>({bearing, km, ...destinationPoint(t.lat,t.lon,bearing,km)}))
     }));
   }
+
+  function rfQuickDistanceStepKm(maxKm){
+    if(maxKm <= 25) return 0.75;
+    if(maxKm <= 50) return 1.25;
+    return 2.00;
+  }
+
+  function buildLocalEndpointGrid(center, radiusKm=RF_QUICK_LOCAL_RADIUS_KM, stepKm=RF_QUICK_LOCAL_GRID_STEP_KM){
+    const pts=[];
+    const latKm=111.32;
+    const lonKm=Math.max(1, 111.32*Math.cos(rad(center.lat)));
+    for(let y=-radiusKm; y<=radiusKm+0.0001; y+=stepKm){
+      for(let x=-radiusKm; x<=radiusKm+0.0001; x+=stepKm){
+        if(Math.sqrt(x*x+y*y) <= radiusKm + stepKm*.35){
+          pts.push({lat:center.lat + y/latKm, lon:center.lon + x/lonKm, localOffsetKm:Math.sqrt(x*x+y*y)});
+        }
+      }
+    }
+    return pts;
+  }
+
+  function askRfCalcMode(t){
+    if(pendingRfModeResolve){
+      const old=pendingRfModeResolve;
+      pendingRfModeResolve=null;
+      old(null);
+    }
+    return new Promise(resolve=>{
+      pendingRfModeResolve=resolve;
+      openPanel('Tryb obliczania zasięgu', stationDisplayName(t), `
+        <div class="info-card"><strong>Wybierz sposób liczenia</strong><span>Całość liczy bardzo gęstą siatkę dla całego obszaru. Szybkie liczenie robi rzadszą siatkę ogólną, a ekstremalnie gęstą tylko w promieniu ${Math.round(RF_QUICK_LOCAL_RADIUS_KM*1000)} m od punktu odbioru.</span></div>
+        <button id="rfQuickModeBtn" class="panel-btn primary" type="button">Szybkie liczenie — dokładnie przy mnie</button>
+        <button id="rfFullModeBtn" class="panel-btn" type="button">Oblicz całość — pełna gęsta siatka</button>
+        <button id="rfCancelModeBtn" class="panel-btn" type="button">Anuluj</button>
+      `);
+      const done=(mode)=>{
+        pendingRfModeResolve=null;
+        closePanel();
+        resolve(mode);
+      };
+      $('rfQuickModeBtn').onclick=()=>done('quick');
+      $('rfFullModeBtn').onclick=()=>done('full');
+      $('rfCancelModeBtn').onclick=()=>done(null);
+    });
+  }
+
+  async function buildRfCellsFromRays(rays, freq, erpDbm, antPattern, txAlt, distanceStep, setRfStatus=null, label='Obliczenia'){
+    const allPoints=[];
+    for(const ray of rays) allPoints.push(...ray.points.map(p=>({lat:p.lat, lon:p.lon})));
+    const elev=await fetchElevationsFromTerrarium(allPoints, (done,total)=>{
+      if(setRfStatus && (done % 6 === 0 || done === total)) setRfStatus('DEM', `Pobieram kafle DEM: ${done} / ${total}. Próbek: ${allPoints.length}.`);
+    });
+    let eidx=0;
+    for(const ray of rays){
+      for(const p of ray.points){ p.elev=+elev[eidx++]; }
+    }
+    const cells=[];
+    for(let r=0; r<rays.length; r++){
+      const ray=rays[r];
+      for(let i=0;i<ray.points.length;i++){
+        const p=ray.points[i];
+        const distKm=Math.max(0.05,p.km);
+        const fspl=freeSpaceLossDb(freq, distKm);
+        const itmLoss=terrainItmLossDb(ray.points, i, freq, txAlt, state.rxHeight);
+        const antGain=antennaGainDb(antPattern, ray.bearing);
+        const reliabilityMargin=distKm>40 ? (distKm-40)*0.08 : 0;
+        const level=erpDbm + antGain - fspl - itmLoss - reliabilityMargin;
+        cells.push({bearing:ray.bearing, km:p.km, level:Math.round(level*10)/10, loss:Math.round(itmLoss*10)/10, distanceStep});
+      }
+      if(setRfStatus && r>0 && r % 12 === 0){
+        setRfStatus(label, `Przeliczono kierunki: ${r} / ${rays.length}. Komórek: ${cells.length}.`);
+        await sleep(0);
+      }
+    }
+    return cells;
+  }
+
+  async function buildQuickLocalCells(t, maxKm, freq, erpDbm, antPattern, txAlt, setRfStatus=null){
+    const endpoints=buildLocalEndpointGrid(state.rx, RF_QUICK_LOCAL_RADIUS_KM, RF_QUICK_LOCAL_GRID_STEP_KM)
+      .map(p=>({ ...p, km:dist({lat:t.lat,lon:t.lon}, p), bearing:az({lat:t.lat,lon:t.lon}, p) }))
+      .filter(p=>p.km <= maxKm + RF_QUICK_LOCAL_RADIUS_KM);
+    if(!endpoints.length) return [];
+
+    const routePoints=[];
+    const routes=endpoints.map(end=>{
+      const points=[];
+      for(let d=RF_QUICK_PROFILE_STEP_KM; d<end.km; d+=RF_QUICK_PROFILE_STEP_KM){
+        const pp=destinationPoint(t.lat,t.lon,end.bearing,d);
+        const rp={km:+d.toFixed(4), lat:pp.lat, lon:pp.lon};
+        points.push(rp);
+        routePoints.push({lat:rp.lat, lon:rp.lon});
+      }
+      const endpoint={km:end.km, lat:end.lat, lon:end.lon};
+      points.push(endpoint);
+      routePoints.push({lat:endpoint.lat, lon:endpoint.lon});
+      return {end, points};
+    });
+
+    if(setRfStatus) setRfStatus('DEM lokalny', `Pobieram DEM dla dokładnej siatki ${Math.round(RF_QUICK_LOCAL_RADIUS_KM*1000)} m: ${routePoints.length} próbek profilu.`);
+    const elev=await fetchElevationsFromTerrarium(routePoints, (done,total)=>{
+      if(setRfStatus && (done % 6 === 0 || done === total)) setRfStatus('DEM lokalny', `Kafle DEM lokalne: ${done} / ${total}. Próbek profilu: ${routePoints.length}.`);
+    });
+    let eidx=0;
+    const cells=[];
+    for(let r=0; r<routes.length; r++){
+      const route=routes[r];
+      for(const p of route.points){ p.elev=+elev[eidx++]; }
+      const distKm=Math.max(0.05, route.end.km);
+      const fspl=freeSpaceLossDb(freq, distKm);
+      const itmLoss=terrainItmLossDb(route.points, route.points.length-1, freq, txAlt, state.rxHeight);
+      const antGain=antennaGainDb(antPattern, route.end.bearing);
+      const reliabilityMargin=distKm>40 ? (distKm-40)*0.08 : 0;
+      const level=erpDbm + antGain - fspl - itmLoss - reliabilityMargin;
+      cells.push({
+        kind:'local', lat:route.end.lat, lon:route.end.lon, sizeKm:RF_QUICK_LOCAL_GRID_STEP_KM,
+        bearing:Math.round(route.end.bearing*10)/10, km:Math.round(route.end.km*1000)/1000,
+        level:Math.round(level*10)/10, loss:Math.round(itmLoss*10)/10
+      });
+      if(setRfStatus && r>0 && r % 40 === 0){
+        setRfStatus('Lokalna siatka', `Przeliczono lokalne komórki: ${r} / ${routes.length}.`);
+        await sleep(0);
+      }
+    }
+    return cells;
+  }
+
   async function calculateRfCoverage(){
     const t=state.selected; if(!t) return toast('Najpierw wybierz nadajnik.');
     if(state.rfBusy) return toast('Obliczanie zasięgu już trwa.');
+    const mode=await askRfCalcMode(t);
+    if(!mode) return;
     state.rfBusy=true;
     const stationName = stationDisplayName(t);
-    openPanel('Obliczanie gęstego zasięgu RF / terenowego', stationName, `<div id="rfStatusBox" class="info-card"><strong>Start</strong><span>Przygotowuję obliczenia dla wybranego nadajnika...</span></div>`);
+    openPanel(mode==='quick' ? 'Szybkie obliczanie zasięgu RF / terenowego' : 'Obliczanie gęstego zasięgu RF / terenowego', stationName, `<div id="rfStatusBox" class="info-card"><strong>Start</strong><span>Przygotowuję obliczenia dla wybranego nadajnika...</span></div>`);
     const setRfStatus=(title,msg)=>{ const box=$('rfStatusBox'); if(box) box.innerHTML=`<strong>${esc(title)}</strong><span>${esc(msg)}</span>`; };
-    toast('Liczenie bardzo gęstej siatki zasięgu...');
+    toast(mode==='quick' ? 'Szybkie liczenie: dokładna siatka przy punkcie odbioru...' : 'Liczenie bardzo gęstej siatki zasięgu...');
     try{
       setRfStatus('Parametry', 'Odczytuję ERP, częstotliwość, wysokość anteny i plik ANT.');
       const {freq, erpKw, mux, txHeight}=txMainParams(t);
       const antPattern=await loadAntPattern(mux);
       const maxKm=Math.max(18, Math.min(95, Math.sqrt(erpKw)*23 + txHeight*0.28));
-      const distanceStep=rfDistanceStepKm(maxKm);
-      const cacheKey=rfCacheKey(t, mux, freq, erpKw, txHeight, maxKm, distanceStep);
+      const distanceStep=mode==='quick' ? rfQuickDistanceStepKm(maxKm) : rfDistanceStepKm(maxKm);
+      const localKey=mode==='quick' ? state.rx : null;
+      const cacheKey=rfCacheKey(t, mux, freq, erpKw, txHeight, maxKm, distanceStep, mode, localKey);
       const cached=await getRfCache(cacheKey);
       if(cached && cached.meta && Array.isArray(cached.cells) && cached.cells.length){
         setRfStatus('Cache', `Znalazłem zapisany wynik w przeglądarce: ${cached.cells.length} komórek. Rysuję bez ponownego liczenia.`);
         await drawRfCells(t, cached.cells, cached.meta, setRfStatus);
         const {bestReach, blockedCells, avgLoss}=summarizeRfCells(cached.cells);
-        state.lastRf={tx:t.id, freq, erpKw, bestReach, antPattern:!!cached.meta.antPattern, model:'ITM-lite terrain diffraction dense cached'};
+        state.lastRf={tx:t.id, freq, erpKw, bestReach, antPattern:!!cached.meta.antPattern, model:`ITM-lite ${cached.meta.mode || mode} cached`};
         toast('Narysowano zasięg z cache przeglądarki.');
-        openPanel('Obliczony zasięg RF / terenowy', stationName, `<div class="info-card"><strong>Wynik z cache</strong><span>Użyto zapisanego wyniku: ${cached.cells.length} komórek. Najdalszy punkt z poziomem co najmniej średnim: około ${Math.round(bestReach)} km. Siatka: ${cached.meta.bearingStep}° / ${cached.meta.distanceStep} km.</span></div><div class="info-card"><strong>Diagnostyka</strong><span>Komórek z istotną stratą terenową: ${blockedCells}/${cached.cells.length}. Średnia dodatkowa strata terenowa: ${avgLoss.toFixed(1)} dB. Cache: IndexedDB przeglądarki.</span></div><div class="legend-rf"><span><i class="rf-good"></i>bardzo/dobry</span><span><i class="rf-mid"></i>średni</span><span><i class="rf-weak"></i>słaby</span><span><i class="rf-bad"></i>bardzo słaby</span></div>`);
+        openPanel('Obliczony zasięg RF / terenowy', stationName, `<div class="info-card"><strong>Wynik z cache</strong><span>Użyto zapisanego wyniku: ${cached.cells.length} komórek. Tryb: ${cached.meta.mode==='quick'?'szybki':'pełny'}. Najdalszy punkt z poziomem co najmniej średnim: około ${Math.round(bestReach)} km.</span></div><div class="info-card"><strong>Diagnostyka</strong><span>Komórek z istotną stratą terenową: ${blockedCells}/${cached.cells.length}. Średnia dodatkowa strata terenowa: ${avgLoss.toFixed(1)} dB. Cache: IndexedDB przeglądarki.</span></div><div class="legend-rf"><span><i class="rf-good"></i>bardzo/dobry</span><span><i class="rf-mid"></i>średni</span><span><i class="rf-weak"></i>słaby</span><span><i class="rf-bad"></i>bardzo słaby</span></div>`);
         return;
       }
 
-      setRfStatus('Siatka', `Buduję bardzo gęstą siatkę: ${RF_BEARING_STEP_DEG}° / ${distanceStep} km. Wynik zostanie zapisany w IndexedDB.`);
+      setRfStatus('DEM', 'Pobieram wysokość nadajnika z kafli Terrarium.');
       const txElevArr=await fetchElevationsFromTerrarium([{lat:t.lat,lon:t.lon}]);
       const txGround=Number.isFinite(+t.site_elevation_m) ? +t.site_elevation_m : txElevArr[0];
       const txAlt=txGround + txHeight;
       const erpDbm=60 + 10*Math.log10(Math.max(0.001, erpKw));
-      const rays=buildItmRays(t, maxKm, RF_BEARING_STEP_DEG, distanceStep);
-      const allPoints=[];
-      for(const ray of rays) allPoints.push(...ray.points.map(p=>({lat:p.lat, lon:p.lon})));
-      setRfStatus('DEM', `Pobieram dokładne wysokości z kafli Terrarium: ${allPoints.length} próbek. Pierwsze liczenie może potrwać.`);
-      const elev=await fetchElevationsFromTerrarium(allPoints, (done,total)=>{
-        if(done % 6 === 0 || done === total) setRfStatus('DEM', `Pobieram kafle DEM: ${done} / ${total}. Próbek siatki: ${allPoints.length}.`);
-      });
-      let eidx=0;
-      for(const ray of rays){
-        for(const p of ray.points){ p.elev=+elev[eidx++]; }
+      let cells=[];
+      let modeDescription='';
+
+      if(mode === 'quick'){
+        setRfStatus('Siatka', `Buduję szybką siatkę: ogólnie ${RF_QUICK_BEARING_STEP_DEG}° / ${distanceStep} km + lokalnie ${Math.round(RF_QUICK_LOCAL_GRID_STEP_KM*1000)} m w promieniu ${Math.round(RF_QUICK_LOCAL_RADIUS_KM*1000)} m.`);
+        const coarseRays=buildItmRays(t, maxKm, RF_QUICK_BEARING_STEP_DEG, distanceStep);
+        const coarseCells=await buildRfCellsFromRays(coarseRays, freq, erpDbm, antPattern, txAlt, distanceStep, setRfStatus, 'Obliczenia ogólne');
+        const localCells=await buildQuickLocalCells(t, maxKm, freq, erpDbm, antPattern, txAlt, setRfStatus);
+        cells=coarseCells.concat(localCells);
+        modeDescription=`Szybkie liczenie: rzadsza siatka całego obszaru + bardzo dokładne komórki ${Math.round(RF_QUICK_LOCAL_GRID_STEP_KM*1000)} m w promieniu ${Math.round(RF_QUICK_LOCAL_RADIUS_KM*1000)} m od punktu odbioru.`;
+      }else{
+        setRfStatus('Siatka', `Buduję bardzo gęstą siatkę: ${RF_BEARING_STEP_DEG}° / ${distanceStep} km. Wynik zostanie zapisany w IndexedDB.`);
+        const rays=buildItmRays(t, maxKm, RF_BEARING_STEP_DEG, distanceStep);
+        cells=await buildRfCellsFromRays(rays, freq, erpDbm, antPattern, txAlt, distanceStep, setRfStatus, 'Obliczenia');
+        modeDescription=`Pełne liczenie: bardzo gęsta siatka całego obszaru ${RF_BEARING_STEP_DEG}° / ${distanceStep} km.`;
       }
-      setRfStatus('Obliczenia', `Liczę poziom sygnału i przeszkody terenowe dla ${allPoints.length} punktów.`);
-      const cells=[];
-      for(let r=0; r<rays.length; r++){
-        const ray=rays[r];
-        for(let i=0;i<ray.points.length;i++){
-          const p=ray.points[i];
-          const distKm=Math.max(0.05,p.km);
-          const fspl=freeSpaceLossDb(freq, distKm);
-          const itmLoss=terrainItmLossDb(ray.points, i, freq, txAlt, state.rxHeight);
-          const antGain=antennaGainDb(antPattern, ray.bearing);
-          const reliabilityMargin=distKm>40 ? (distKm-40)*0.08 : 0;
-          const level=erpDbm + antGain - fspl - itmLoss - reliabilityMargin;
-          cells.push({bearing:ray.bearing, km:p.km, level:Math.round(level*10)/10, loss:Math.round(itmLoss*10)/10});
-        }
-        if(r>0 && r % 12 === 0){
-          setRfStatus('Obliczenia', `Przeliczono kierunki: ${r} / ${rays.length}. Komórek: ${cells.length}.`);
-          await sleep(0);
-        }
-      }
+
       const meta={
         algo:RF_ALGO_VERSION,
-        bearingStep:RF_BEARING_STEP_DEG,
+        mode,
+        bearingStep:mode==='quick' ? RF_QUICK_BEARING_STEP_DEG : RF_BEARING_STEP_DEG,
         distanceStep,
+        localRadiusKm:mode==='quick' ? RF_QUICK_LOCAL_RADIUS_KM : null,
+        localGridStepKm:mode==='quick' ? RF_QUICK_LOCAL_GRID_STEP_KM : null,
         maxKm:Math.round(maxKm*10)/10,
         freq, erpKw, txHeight,
         rxHeight:state.rxHeight,
+        rxLat:Math.round(state.rx.lat*100000)/100000,
+        rxLon:Math.round(state.rx.lon*100000)/100000,
         antPattern:!!antPattern,
         terrainTileZ:TERRAIN_TILE_Z,
         createdAt:new Date().toISOString()
       };
       setRfStatus('Cache', `Zapisuję wynik w przeglądarce: ${cells.length} komórek.`);
       const saved=await putRfCache({key:cacheKey, txId:t.id, createdAt:meta.createdAt, meta, cells});
-      setRfStatus('Rysowanie', `Rysuję gęstą siatkę: ${cells.length} komórek.`);
+      setRfStatus('Rysowanie', `Rysuję siatkę: ${cells.length} komórek.`);
       await drawRfCells(t, cells, meta, setRfStatus);
       const {bestReach, blockedCells, avgLoss}=summarizeRfCells(cells);
-      state.lastRf={tx:t.id, freq, erpKw, bestReach, antPattern:!!antPattern, model:'ITM-lite terrain diffraction dense'};
-      toast(`Narysowano gęsty zasięg: ${cells.length} komórek${saved ? ' i zapisano w cache' : ''}.`);
-      openPanel('Obliczony gęsty zasięg RF / terenowy', stationName, `<div class="info-card"><strong>Wynik</strong><span>Najdalszy punkt z poziomem co najmniej średnim: około ${Math.round(bestReach)} km. Komórek: ${cells.length}. Siatka: ${RF_BEARING_STEP_DEG}° / ${distanceStep} km. Cache: ${saved ? 'zapisany w IndexedDB' : 'nie udało się zapisać'}.</span></div><div class="info-card"><strong>Model 19.26</strong><span>Gęsta siatka RF + dokładne próbki DEM z kafli Terrarium na zoomie ${TERRAIN_TILE_Z} + krzywizna Ziemi + 60% pierwszej strefy Fresnela + strata dyfrakcyjna knife-edge + korekta ANT.</span></div><div class="info-card"><strong>Diagnostyka</strong><span>Komórek z istotną stratą terenową: ${blockedCells}/${cells.length}. Średnia dodatkowa strata terenowa: ${avgLoss.toFixed(1)} dB. Pierwsze liczenie jest ciężkie, kolejne dla tych samych parametrów idzie z cache przeglądarki.</span></div><div class="legend-rf"><span><i class="rf-good"></i>bardzo/dobry</span><span><i class="rf-mid"></i>średni</span><span><i class="rf-weak"></i>średni/słaby</span><span><i class="rf-bad"></i>bardzo słaby</span></div>`);
+      const localCount=cells.filter(c=>c.kind==='local').length;
+      state.lastRf={tx:t.id, freq, erpKw, bestReach, antPattern:!!antPattern, model:`ITM-lite terrain diffraction ${mode}`};
+      toast(`Narysowano zasięg: ${cells.length} komórek${saved ? ' i zapisano w cache' : ''}.`);
+      openPanel(mode==='quick' ? 'Obliczony szybki zasięg RF / terenowy' : 'Obliczony gęsty zasięg RF / terenowy', stationName, `<div class="info-card"><strong>Wynik</strong><span>Najdalszy punkt z poziomem co najmniej średnim: około ${Math.round(bestReach)} km. Komórek: ${cells.length}${mode==='quick' ? `, w tym lokalnych dokładnych: ${localCount}` : ''}. Cache: ${saved ? 'zapisany w IndexedDB' : 'nie udało się zapisać'}.</span></div><div class="info-card"><strong>Model 19.27</strong><span>${esc(modeDescription)} DEM z kafli Terrarium na zoomie ${TERRAIN_TILE_Z}, krzywizna Ziemi, 60% pierwszej strefy Fresnela, strata dyfrakcyjna knife-edge i korekta ANT.</span></div><div class="info-card"><strong>Diagnostyka</strong><span>Komórek z istotną stratą terenową: ${blockedCells}/${cells.length}. Średnia dodatkowa strata terenowa: ${avgLoss.toFixed(1)} dB. Pierwsze liczenie zapisuje się lokalnie w IndexedDB.</span></div><div class="legend-rf"><span><i class="rf-good"></i>bardzo/dobry</span><span><i class="rf-mid"></i>średni</span><span><i class="rf-weak"></i>średni/słaby</span><span><i class="rf-bad"></i>bardzo słaby</span></div>`);
     }catch(err){
       const msg = err?.message || String(err);
       openPanel('Błąd obliczania zasięgu', stationName, `<div class="info-card"><strong>Nie udało się obliczyć zasięgu</strong><span>${esc(msg)}</span></div><div class="info-card"><strong>Co teraz</strong><span>Gęsta siatka pobiera dużo kafli DEM i zapisuje duży wynik w IndexedDB. Jeżeli błąd wraca, sprawdź internet, odśwież stronę albo wyczyść dane strony.</span></div>`);
@@ -1606,6 +1754,6 @@
     $('closeStationBtn').onclick=hideStation; $('openStationBtn').onclick=showStation; $('compassWidget').onclick=()=>{startCompass(false); showCompassPanel();}; $('stationProfileBtn').onclick=showProfile; $('stationMuxBtn').onclick=showMux; $('stationDemBtn').onclick=downloadDemForSelectedTx; $('stationDemCacheBtn').onclick=showSelectedDemStats; $('stationRfBtn').onclick=()=>calculateRfCoverage(); $('stationClearRfBtn').onclick=()=>{ clearRfLayer(); toast('Usunięto obliczony zasięg RF.'); }; $('stationAntBtn').onclick=()=>checkSelectedTransmitterAnt().catch(err=>toast('Błąd sprawdzania ANT: '+(err.message||err))); 
     window.addEventListener('online',()=>{$('onlineChip').textContent='Online';$('onlineChip').classList.add('online-chip');}); window.addEventListener('offline',()=>{$('onlineChip').textContent='Offline';$('onlineChip').classList.remove('online-chip');});
   }
-  async function boot(){ load(); setupPwaInstall(); bind(); initMap(); await loadTxs(); if(state.coverageTileUrl) applyCoverageTile(state.coverageTileUrl); startCompass(true); window.addEventListener('pointerdown',()=>startCompass(true),{once:true,passive:true}); if('serviceWorker' in navigator) navigator.serviceWorker.register('./service-worker.js?v=19.26-1905260717').catch(()=>{}); setAppHeight(); }
+  async function boot(){ load(); setupPwaInstall(); bind(); initMap(); await loadTxs(); if(state.coverageTileUrl) applyCoverageTile(state.coverageTileUrl); startCompass(true); window.addEventListener('pointerdown',()=>startCompass(true),{once:true,passive:true}); if('serviceWorker' in navigator) navigator.serviceWorker.register('./service-worker.js?v=19.27-1905260750').catch(()=>{}); setAppHeight(); }
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', boot); else boot();
 })();

@@ -1,0 +1,8 @@
+DVB-T/T2 Point 19.27 - 1905260750
+
+Zmiany:
+- Dodano wybór trybu obliczania zasięgu: „Szybkie liczenie” albo „Oblicz całość”.
+- Szybkie liczenie tworzy rzadszą siatkę ogólną oraz bardzo dokładną lokalną siatkę 50 m w promieniu 500 m od punktu odbioru.
+- Wyniki obu trybów są zapisywane oddzielnie w IndexedDB, z osobnym kluczem cache dla pozycji punktu odbioru.
+- Pełne liczenie bardzo gęstej siatki zostało zachowane.
+- Nie zmieniano mechanizmu pobierania profilu terenu DEM.
