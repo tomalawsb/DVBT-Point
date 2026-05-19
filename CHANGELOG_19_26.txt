@@ -1,0 +1,15 @@
+DVB-T/T2 Point 19.26 - 1905260717
+
+Zmiany:
+1. Zmieniono liczenie zasięgu RF z rzadkiej siatki 10° / 3 km na bardzo gęstą siatkę:
+   - 1° kątowo,
+   - 0,10 km dla krótszych zasięgów,
+   - 0,20 km dla średnich zasięgów,
+   - 0,25 km dla dużych zasięgów.
+2. Wynik obliczeń zasięgu jest zapisywany w IndexedDB przeglądarki.
+3. Przy ponownym liczeniu tych samych parametrów program rysuje wynik z cache bez ponownego liczenia.
+4. DEM dla RF pobierany jest dokładniej z kafli Terrarium na zoomie 12.
+5. Rysowanie zasięgu używa renderera Canvas Leaflet, żeby duża liczba komórek była lżejsza dla mapy.
+
+Uwaga:
+Pierwsze liczenie może być ciężkie i długie. Cache może zajmować dużo miejsca w przeglądarce.
