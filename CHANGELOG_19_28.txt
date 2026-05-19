@@ -1,0 +1,14 @@
+19.28 - 1905260750
+
+Zmiana:
+- Profil terenu najpierw próbuje pobrać DEM dotychczasową metodą.
+- Jeżeli dotychczasowa metoda zwróci błąd, program uruchamia awaryjny tryb kafli DEM.
+- Tryb awaryjny używa tej samej dokładności profilu, ale pobiera kafle wolniej: dłuższy timeout, ponowienia, drugi adres kafli Terrarium i krótkie pauzy między kaflami.
+- Dodano zabezpieczenie przed zapamiętywaniem w pamięci przeglądarki uszkodzonego/odrzuconego kafla DEM.
+
+Nie zmieniono:
+- rysowania zasięgu,
+- szybkiego liczenia zasięgu,
+- kompasu,
+- GPS,
+- ikon warstw.

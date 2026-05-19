@@ -1,0 +1,14 @@
+DVB-T/T2 Point 19.29 - 1905260805
+
+Zmiany:
+- Szybkie liczenie zasięgu lokalnego zwiększone z 500 m do 1000 m wokół punktu odbioru.
+- Lokalne komórki 50 m są korygowane próbkami profilu terenu do środka komórki.
+- Jeżeli profil lokalnej komórki pokazuje zasłonięcie 60% strefy Fresnela, kolor komórki nie zostaje sztucznie zielony mimo mocnego bilansu RF.
+- Cache RF został rozdzielony nową wersją algorytmu, więc stare wyniki z 19.27/19.28 nie będą błędnie użyte.
+
+Nie ruszano:
+- awaryjnej metody DEM 19.28,
+- GPS,
+- kompasu,
+- ikon warstw,
+- pełnego trybu gęstej siatki.
