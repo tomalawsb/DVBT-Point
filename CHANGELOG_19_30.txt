@@ -1,0 +1,14 @@
+19.30 - 1905260815
+
+Zmiany:
+- Dodano eksport obliczonego zasięgu RF/terenowego do pliku .dvbtcache.
+- Dodano import pliku .dvbtcache i zapis importu do IndexedDB przeglądarki.
+- Dodano trzeci tryb liczenia: pełna siatka z profilem terenu.
+- Szybkie liczenie nadal zawsze korzysta z lokalnego profilu terenu w promieniu 1 km od punktu odbioru.
+- Pełna siatka bez profilu została zostawiona jako szybszy tryb orientacyjny.
+- Pełna siatka z profilem jest ciężka obliczeniowo i przeznaczona głównie do liczenia na komputerze oraz eksportu cache na telefon.
+
+Nie zmieniano:
+- logiki GPS z 19.24,
+- awaryjnego pobierania DEM z 19.28,
+- lokalnego szybkiego zasięgu 1 km z 19.29.
