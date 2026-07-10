@@ -1,0 +1,6 @@
+Punkt wyjścia projektu:
+Oryginalny plik: DVBT-Point-main(1).zip
+SHA-256: 0806f0a9338b3e6a4bcab8c7d62b25835bff6eb5a3eccb712b2b44e78fc5cce0
+
+Na tej kopii wykonano analizę etapu 1, a następnie zmiany etapu 2.
+Aktualny kod etapu 2 nie jest już identyczny z plikiem bazowym.

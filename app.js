@@ -1,7 +1,10 @@
 (() => {
   'use strict';
-  const APP_VERSION = '19.32 - 1905261015';
+  const APP_VERSION = '19.39 - 1007260932';
   const STORE = 'dvbt-point-v19-state';
+  const MAP_MAX_ZOOM = 22;
+  const MAP_MIN_ZOOM = 5;
+  const LOCATION_FOCUS_ZOOM = 18;
   const ANT_CACHE_NAME = 'dvbt-ant-files-v1';
   const RF_ALGO_VERSION = '19.30-export-full-profile-v1';
   const RF_DB_NAME = 'dvbt-point-rf-cache-v1';
@@ -19,8 +22,8 @@
   const $ = id => document.getElementById(id);
   const state = {
     map:null, baseLayer:null, baseLabelsLayer:null, base:'osm', rx:{lat:50.2871, lon:21.4238, label:'Mielec / punkt odbioru'}, rxHeight:6,
-    txs:[], selected:null, markers:L.layerGroup(), line:null, range:null, homeMarker:null, headingCone:null,
-    heading:null, rawHeading:null, pendingHeading:null, headingSource:'brak', headingInvert:false, headingOffset:0, compassOn:false, gpsWatchId:null, headingRaf:null, headingSamples:[], headingLastTs:0, coverageLayer:null, rfLayer:null, coverageTileUrl:'', showCoverageOnly:false, rfBusy:false, lastRf:null, antPatterns:new Map(), demCache:null, demBusy:false, lastRfCache:null
+    txs:[], selected:null, selectedMuxKey:null, markers:L.layerGroup(), line:null, range:null, homeMarker:null, headingCone:null,
+    heading:null, rawHeading:null, pendingHeading:null, headingSource:'brak', headingAccuracy:null, headingInvert:false, headingOffset:0, compassOn:false, gpsWatchId:null, gpsAccuracy:null, gpsRequestActive:false, headingRaf:null, headingSamples:[], headingLastTs:0, headingLastInput:null, headingInputTs:0, coverageLayer:null, rfLayer:null, coverageTileUrl:'', showCoverageOnly:false, rfBusy:false, lastRf:null, antPatterns:new Map(), demCache:null, demBusy:false, lastRfCache:null, compassStatusText:'Kompas'
   };
   let profileAbort = null;
   let deferredInstallPrompt = null;
@@ -67,24 +70,75 @@
       updateCompass();
     });
   }
-  function applyHeading(raw, source='sensor'){
-    if(!Number.isFinite(raw)) return;
-    let h = raw;
-    // POPRAWKA KRYTYCZNA 19.24 — NIE ZMIENIAĆ BEZ TESTU W TERENIE:
-    // GPS podaje kurs ruchu już w stopniach od północy, dlatego nie wolno go odwracać jak alpha z czujnika.
-    if(source !== 'ios' && source !== 'gps') h = state.headingInvert ? raw : (360 - raw);
-    h = normDeg(h + (state.headingOffset || 0));
-    state.rawHeading = raw;
-    state.headingSource = source;
+  function screenOrientationAngle(){
+    const modern = Number(window.screen?.orientation?.angle);
+    if(Number.isFinite(modern)) return normDeg(modern);
+    const legacy=Number(window.orientation);
+    // Starsze window.orientation ma przeciwny znak niż ScreenOrientation.angle.
+    return Number.isFinite(legacy) ? normDeg(-legacy) : 0;
+  }
+  function absoluteCompassHeading(e){
+    if(typeof e.alpha!=='number' || !Number.isFinite(e.alpha)) return null;
+    const alpha=e.alpha;
+    const beta=typeof e.beta==='number' && Number.isFinite(e.beta) ? e.beta : null;
+    const gamma=typeof e.gamma==='number' && Number.isFinite(e.gamma) ? e.gamma : null;
+    const topHeading=normDeg(360-alpha-screenOrientationAngle());
+
+    // Dla telefonu trzymanego płasko lub pod umiarkowanym kątem kierunkiem
+    // odniesienia jest górna krawędź aktualnego ekranu. Gdy telefon jest niemal
+    // pionowo i ta krawędź przestaje mieć poziomy kierunek, używamy zgodnego ze
+    // specyfikacją W3C poziomego rzutu osi prostopadłej do ekranu.
+    if(!Number.isFinite(beta) || !Number.isFinite(gamma) || Math.abs(Math.cos(rad(beta))) >= .18) return topHeading;
+    const x=rad(beta), y=rad(gamma), z=rad(alpha);
+    const cX=Math.cos(x), cY=Math.cos(y), cZ=Math.cos(z);
+    const sX=Math.sin(x), sY=Math.sin(y), sZ=Math.sin(z);
+    const vx=-cZ*sY-sZ*sX*cY;
+    const vy=-sZ*sY+cZ*sX*cY;
+    if(Math.hypot(vx,vy)<.08) return topHeading;
+    return normDeg(Math.atan2(vx,vy)*180/Math.PI);
+  }
+  function resetHeadingFilter(){
+    state.headingSamples=[];
+    state.headingLastInput=null;
+    state.headingInputTs=0;
+    state.headingLastTs=0;
+  }
+  function applyHeading(compassHeading, source='absolute', accuracy=null){
+    if(!Number.isFinite(compassHeading)) return;
+    let h=normDeg(compassHeading);
+    // Zachowujemy awaryjną opcję odwrócenia tylko dla czujnika Android/standard.
+    // Kurs GPS i webkitCompassHeading są już gotowymi kierunkami kompasowymi.
+    if(source!=='ios' && source!=='gps' && state.headingInvert) h=normDeg(360-h);
+    h=normDeg(h+(state.headingOffset||0));
+
+    const now=performance.now();
+    const sourceChanged=source!==state.headingSource && state.headingSource!=='brak' && state.headingSource!=='czujnik aktywny';
+    if(!sourceChanged && state.headingLastInput!=null && now-state.headingInputTs<18 && Math.abs(diff(state.headingLastInput,h))<.2) return;
+
+    state.rawHeading=normDeg(compassHeading);
+    state.headingSource=source;
+    state.headingAccuracy=Number.isFinite(accuracy) && accuracy>=0 ? accuracy : null;
+    state.headingLastInput=h;
+    state.headingInputTs=now;
+
+    if(sourceChanged || !state.headingSamples.length){
+      state.headingSamples=[h];
+      state.heading=h;
+      updateCompass();
+      return;
+    }
     state.headingSamples.push(h);
-    if(state.headingSamples.length > 6) state.headingSamples.shift();
+    if(state.headingSamples.length>6) state.headingSamples.shift();
     scheduleHeadingApply();
   }
   function setManualHeading(value){
-    state.heading = normDeg(+value || 0);
-    state.rawHeading = state.heading;
-    state.headingSource = 'ręczny';
-    state.headingSamples = [state.heading];
+    state.heading=normDeg(+value||0);
+    state.rawHeading=state.heading;
+    state.headingSource='ręczny';
+    state.headingAccuracy=null;
+    state.headingSamples=[state.heading];
+    state.headingLastInput=state.heading;
+    state.headingInputTs=performance.now();
     updateCompass();
   }
 
@@ -98,12 +152,12 @@
   window.visualViewport?.addEventListener('resize', setAppHeight);
   window.addEventListener('orientationchange', () => setTimeout(setAppHeight, 250));
 
-  function save(){ localStorage.setItem(STORE, JSON.stringify({rx:state.rx, rxHeight:state.rxHeight, base:state.base, selectedId:state.selected?.id || null, headingInvert:state.headingInvert, headingOffset:state.headingOffset, coverageTileUrl:state.coverageTileUrl||'', showCoverageOnly:!!state.showCoverageOnly})); }
-  function load(){ try{ const s=JSON.parse(localStorage.getItem(STORE)||'{}'); Object.assign(state, {rx:s.rx||state.rx, rxHeight:s.rxHeight||state.rxHeight, base:s.base||state.base, headingInvert:!!s.headingInvert, headingOffset:+s.headingOffset||0, coverageTileUrl:s.coverageTileUrl||'', showCoverageOnly:!!s.showCoverageOnly}); state._selectedId=s.selectedId; }catch{} }
+  function save(){ localStorage.setItem(STORE, JSON.stringify({rx:state.rx, rxHeight:state.rxHeight, base:state.base, selectedId:state.selected?.id || null, selectedMuxKey:state.selectedMuxKey || null, headingInvert:state.headingInvert, headingOffset:state.headingOffset, coverageTileUrl:state.coverageTileUrl||'', showCoverageOnly:!!state.showCoverageOnly})); }
+  function load(){ try{ const s=JSON.parse(localStorage.getItem(STORE)||'{}'); Object.assign(state, {rx:s.rx||state.rx, rxHeight:s.rxHeight||state.rxHeight, base:s.base||state.base, selectedMuxKey:s.selectedMuxKey||null, headingInvert:!!s.headingInvert, headingOffset:+s.headingOffset||0, coverageTileUrl:s.coverageTileUrl||'', showCoverageOnly:!!s.showCoverageOnly}); state._selectedId=s.selectedId; }catch{} }
   function toast(msg){ const t=$('toast'); t.textContent=msg; t.hidden=false; clearTimeout(toast._t); toast._t=setTimeout(()=>t.hidden=true,2600); }
   function setDisplayedVersion(){
     document.title = `DVB-T/T2 Point ${APP_VERSION}`;
-    ['versionFloating'].forEach(id => {
+    ['versionFloating','drawerVersion'].forEach(id => {
       const el = $(id);
       if(el) el.textContent = APP_VERSION;
     });
@@ -166,6 +220,23 @@
   function fmtKm(k){ return k<10 ? `${k.toFixed(1)} km` : `${Math.round(k)} km`; }
   function muxNames(t){ return [...new Set((t.muxes||[]).map(m=>m.name))]; }
   function pols(t){ return [...new Set((t.muxes||[]).map(m=>m.polarization||m.pol).filter(Boolean))].join('/') || '—'; }
+  function muxKey(m){ return [m?.name||'MUX',m?.channel||'',m?.frequency_mhz||''].join('|'); }
+  function defaultMuxForTx(t){ return (t?.muxes||[]).slice().sort((a,b)=>(+b.erp_kw||0)-(+a.erp_kw||0))[0] || null; }
+  function selectedMuxForTx(t=state.selected){
+    if(!t) return null;
+    const muxes=t.muxes||[];
+    const selected=muxes.find(m=>muxKey(m)===state.selectedMuxKey) || defaultMuxForTx(t);
+    if(selected) state.selectedMuxKey=muxKey(selected);
+    return selected;
+  }
+  function muxPowerText(m){
+    const value=Number(String(m?.erp_kw ?? m?.erp ?? '').replace(',', '.'));
+    if(!Number.isFinite(value) || value<=0) return '—';
+    return `${Number.isInteger(value)?value:+value.toFixed(3)} kW`.replace('.', ',');
+  }
+  function muxOptionText(m){
+    return [m?.name||'MUX',m?.channel||'',m?.frequency_mhz?`${m.frequency_mhz} MHz`:'',muxPowerText(m)].filter(Boolean).join(' · ');
+  }
   function stationPowerText(t){
     const values=(t?.muxes||[])
       .map(m=>Number(String(m.erp_kw ?? m.erp ?? '').replace(',', '.')))
@@ -218,11 +289,23 @@
   }
 
   function initMap(){
-    state.map = L.map('map', {center:[state.rx.lat,state.rx.lon], zoom:8, minZoom:5, maxZoom:18, zoomControl:false, attributionControl:true, inertia:true, tap:true, preferCanvas:true});
+    state.map = L.map('map', {
+      center:[state.rx.lat,state.rx.lon],
+      zoom:8,
+      minZoom:MAP_MIN_ZOOM,
+      maxZoom:MAP_MAX_ZOOM,
+      zoomControl:false,
+      attributionControl:true,
+      inertia:true,
+      tap:true,
+      preferCanvas:true,
+      zoomAnimation:true,
+      fadeAnimation:true
+    });
     state.map.createPane('headingPane');
     state.map.getPane('headingPane').style.zIndex = 690;
     state.map.getPane('headingPane').style.pointerEvents = 'none';
-    L.control.zoom({position:'bottomright'}).addTo(state.map);
+    L.control.zoom({position:'bottomleft'}).addTo(state.map);
     state.markers.addTo(state.map);
     setBase(state.base, false);
     state.map.on('click', () => { closePanel(); });
@@ -234,20 +317,22 @@
     state.base=type || 'osm';
     if(state.baseLayer) state.map.removeLayer(state.baseLayer);
     if(state.baseLabelsLayer) state.map.removeLayer(state.baseLabelsLayer);
-    const common={maxZoom:19, updateWhenIdle:true, updateWhenZooming:false, keepBuffer:3, crossOrigin:true, detectRetina:false};
+    // Leaflet nadpowiększa ostatni dostępny poziom kafelków do zoomu 22.
+    // Dzięki maxNativeZoom mapa nie próbuje pobierać nieistniejących kafelków z serwerów.
+    const common={maxZoom:MAP_MAX_ZOOM, updateWhenIdle:true, updateWhenZooming:false, keepBuffer:3, crossOrigin:true, detectRetina:false};
     if(state.base==='sat'){
-      state.baseLayer=L.tileLayer('https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {...common, attribution:'Imagery &copy; Esri'});
-      state.baseLabelsLayer=L.tileLayer('https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {...common, attribution:'Nazwy miejscowości &copy; Esri', pane:'tilePane', opacity:.95});
+      state.baseLayer=L.tileLayer('https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {...common, maxNativeZoom:19, attribution:'Imagery &copy; Esri'});
+      state.baseLabelsLayer=L.tileLayer('https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {...common, maxNativeZoom:19, attribution:'Nazwy miejscowości &copy; Esri', pane:'tilePane', opacity:.95});
     }else if(state.base==='light'){
-      state.baseLayer=L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {...common, subdomains:'abcd', attribution:'&copy; OpenStreetMap &copy; CARTO'});
+      state.baseLayer=L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {...common, maxNativeZoom:20, subdomains:'abcd', attribution:'&copy; OpenStreetMap &copy; CARTO'});
     }else if(state.base==='topo'){
-      state.baseLayer=L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {...common, subdomains:'abc', attribution:'Map data: &copy; OpenStreetMap, SRTM | Style: &copy; OpenTopoMap'});
+      state.baseLayer=L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {...common, maxNativeZoom:17, subdomains:'abc', attribution:'Map data: &copy; OpenStreetMap, SRTM | Style: &copy; OpenTopoMap'});
     }else if(state.base==='hot'){
-      state.baseLayer=L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', {...common, subdomains:'abc', attribution:'&copy; OpenStreetMap, styl HOT'});
+      state.baseLayer=L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', {...common, maxNativeZoom:19, subdomains:'abc', attribution:'&copy; OpenStreetMap, styl HOT'});
     }else if(state.base==='street'){
-      state.baseLayer=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {...common, attribution:'Tiles &copy; Esri'});
+      state.baseLayer=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {...common, maxNativeZoom:19, attribution:'Tiles &copy; Esri'});
     }else{
-      state.baseLayer=L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {...common, attribution:'&copy; OpenStreetMap'});
+      state.baseLayer=L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {...common, maxNativeZoom:19, attribution:'&copy; OpenStreetMap'});
     }
     state.baseLayer.addTo(state.map);
     if(state.baseLabelsLayer) state.baseLabelsLayer.addTo(state.map);
@@ -334,7 +419,7 @@
       if(state.headingCone){ state.map.removeLayer(state.headingCone); state.headingCone=null; }
       return;
     }
-    const rotation = Math.round(state.heading);
+    const rotation = Math.round(state.heading*10)/10;
     if(state.headingCone){
       state.headingCone.setLatLng([state.rx.lat,state.rx.lon]);
       const el = state.headingCone.getElement()?.querySelector('.heading-cone');
@@ -356,30 +441,74 @@
   }
   function selectTx(id, pan=true, show=true){
     const t=txById(id) || bestTx(); if(!t) return;
-    state.selected=t; save(); renderTxMarkers(); renderConnection(); updateStationCard(); updateCompass();
-    if(pan) state.map.fitBounds([[state.rx.lat,state.rx.lon],[t.lat,t.lon]], {paddingTopLeft:[70,120], paddingBottomRight:[70,190], maxZoom:10, animate:true});
+    state.selected=t; selectedMuxForTx(t); save(); renderTxMarkers(); renderConnection(); updateStationCard(); updateCompass();
+    // Nie używamy fitBounds między odbiornikiem a nadajnikiem, bo powodowało to
+    // gwałtowne oddalanie mapy. Zmiana nadajnika zachowuje aktualny zoom.
+    if(pan && state.map) state.map.panTo([state.rx.lat,state.rx.lon], {animate:true, duration:.35});
     if(show) showStation();
   }
   function renderConnection(){
     if(state.line) state.map.removeLayer(state.line); if(state.range) state.map.removeLayer(state.range);
     const t=state.selected; if(!t || !passesFilter(t)) return;
     state.line=L.polyline([[state.rx.lat,state.rx.lon],[t.lat,t.lon]], {color:'#2563eb', weight:3, opacity:.82}).addTo(state.map);
-    const maxErp=Math.max(1,...t.muxes.map(m=>+m.erp_kw||1));
-    const radius=Math.min(90000, Math.max(25000, Math.sqrt(maxErp)*8500));
+    const mux=selectedMuxForTx(t);
+    const erp=Math.max(1,+mux?.erp_kw||1);
+    const radius=Math.min(90000, Math.max(25000, Math.sqrt(erp)*8500));
     state.range=L.circle([t.lat,t.lon], {radius, color:'#f97316', weight:4, opacity:.96, fillColor:'#fb923c', fillOpacity:.18, dashArray:'12 8'}).addTo(state.map);
+    if(mux){
+      const rangeLabel=`${esc(muxOptionText(mux))} · zasięg orientacyjny`;
+      state.range.bindTooltip(rangeLabel, {sticky:true}).bindPopup(`<strong>${rangeLabel}</strong>`);
+    }
   }
-  function showStation(){ $('stationCard').hidden=false; $('openStationBtn').hidden=true; setTimeout(()=>state.map.invalidateSize(true),80); }
-  function hideStation(){ $('stationCard').hidden=true; $('openStationBtn').hidden=false; setTimeout(()=>state.map.invalidateSize(true),80); }
+  function syncFloatingControlOffsets(){
+    const stage=document.querySelector('.map-stage');
+    const card=$('stationCard');
+    if(!stage) return;
+    let bottom=38;
+    if(card && !card.hidden) bottom += Math.ceil(card.getBoundingClientRect().height) + 12;
+    stage.style.setProperty('--locate-bottom', `${bottom}px`);
+  }
+  function showStation(){
+    $('stationCard').hidden=false;
+    $('openStationBtn').hidden=true;
+    requestAnimationFrame(syncFloatingControlOffsets);
+    setTimeout(()=>{ state.map.invalidateSize(true); syncFloatingControlOffsets(); },80);
+  }
+  function hideStation(){
+    $('stationCard').hidden=true;
+    $('openStationBtn').hidden=false;
+    requestAnimationFrame(syncFloatingControlOffsets);
+    setTimeout(()=>{ state.map.invalidateSize(true); syncFloatingControlOffsets(); },80);
+  }
   function updateStationCard(){
     const t=state.selected; if(!t) return;
+    const mux=selectedMuxForTx(t);
     $('stationName').textContent=stationDisplayName(t);
     $('stationAzimuth').textContent=`${Math.round(t.azimuth)}°`;
     $('stationDistance').textContent=fmtKm(t.distance);
-    $('stationPol').textContent=pols(t);
-    $('stationPower').textContent=stationPowerText(t);
+    $('stationPol').textContent=mux?.polarization||mux?.pol||'—';
+    $('stationPower').textContent=muxPowerText(mux);
+    const select=$('stationMuxSelect');
+    if(select){
+      select.innerHTML=(t.muxes||[]).map(m=>`<option value="${esc(muxKey(m))}">${esc(muxOptionText(m))}</option>`).join('');
+      select.value=mux?muxKey(mux):'';
+      select.disabled=!(t.muxes||[]).length;
+    }
+  }
+  function setSelectedMux(key, notify=true){
+    const t=state.selected; if(!t) return;
+    const mux=(t.muxes||[]).find(m=>muxKey(m)===key);
+    if(!mux) return;
+    const changed=state.selectedMuxKey!==muxKey(mux);
+    state.selectedMuxKey=muxKey(mux);
+    if(changed && state.rfLayer) clearRfLayer();
+    save();
+    renderConnection();
+    updateStationCard();
+    if(notify) toast(`Wybrano ${muxOptionText(mux)}.`);
   }
 
-  function openPanel(title, subtitle, html){ $('panelTitle').textContent=title; $('panelSubtitle').textContent=subtitle||''; $('panelContent').innerHTML=html; $('appPanel').classList.remove('tx-list-mode'); $('appPanel').classList.remove('collapsed'); setTimeout(()=>state.map.invalidateSize(true),80); }
+  function openPanel(title, subtitle, html){ $('panelTitle').textContent=title; $('panelSubtitle').textContent=subtitle||''; $('panelContent').innerHTML=html; $('appPanel').classList.remove('tx-list-mode','reference-mode'); $('appPanel').classList.remove('collapsed'); setTimeout(()=>state.map.invalidateSize(true),80); }
   function closePanel(){
     $('appPanel').classList.add('collapsed');
     if(pendingRfModeResolve){
@@ -387,6 +516,39 @@
       pendingRfModeResolve=null;
       resolve(null);
     }
+  }
+
+  function openDrawer(){
+    const drawer=$('navDrawer');
+    const backdrop=$('drawerBackdrop');
+    const button=$('menuBtn');
+    if(!drawer || !backdrop || !button) return;
+    backdrop.hidden=false;
+    requestAnimationFrame(()=>{
+      drawer.classList.add('open');
+      backdrop.classList.add('visible');
+    });
+    drawer.setAttribute('aria-hidden','false');
+    drawer.inert=false;
+    button.setAttribute('aria-expanded','true');
+    document.body.classList.add('drawer-open');
+  }
+  function closeDrawer(){
+    const drawer=$('navDrawer');
+    const backdrop=$('drawerBackdrop');
+    const button=$('menuBtn');
+    if(!drawer || !backdrop || !button) return;
+    drawer.classList.remove('open');
+    backdrop.classList.remove('visible');
+    drawer.setAttribute('aria-hidden','true');
+    drawer.inert=true;
+    button.setAttribute('aria-expanded','false');
+    document.body.classList.remove('drawer-open');
+    setTimeout(()=>{ if(!drawer.classList.contains('open')) backdrop.hidden=true; },230);
+  }
+  function openFromDrawer(action){
+    closeDrawer();
+    setTimeout(action,120);
   }
   function showTxList(){
     const filterNote = state.showCoverageOnly ? '<div class="info-card compact-note"><strong>Aktywny filtr</strong><span>Pokazywane są tylko nadajniki w szacowanym zasięgu punktu odbioru.</span></div>' : '';
@@ -416,9 +578,217 @@
       $('appPanel').classList.add('tx-list-mode');
       setTimeout(()=>{ $('panelContent').scrollTop=0; input.scrollIntoView({block:'nearest'}); }, 80);
     });
-    setTimeout(()=>{ input.focus({preventScroll:true}); $('panelContent').scrollTop=0; },80);
+    // Pole nie dostaje automatycznie fokusu — klawiatura pojawi się dopiero po dotknięciu pola „Szukaj”.
+    $('panelContent').scrollTop=0;
     renderList('');
   }
+  const REFERENCE_SECTIONS = [
+    {id:'channelRaster', title:'Raster kanałów DVB-T', description:'Kanały VHF 7 MHz i UHF 8 MHz wraz z częstotliwościami środkowymi.', icon:'▦', keywords:'kanał kanały częstotliwość częstotliwości vhf uhf raster dvb-t dvb-t2'},
+    {id:'dabRaster', title:'Raster kanałów DAB/DAB+', description:'Bloki DAB w paśmie VHF-III oraz częstotliwości środkowe.', icon:'DAB', keywords:'dab dab+ radio cyfrowe vhf blok częstotliwość'},
+    {id:'signalLevels', title:'Minimalne poziomy sygnału', description:'Wartości odniesienia dla modulacji QPSK, 16-QAM i 64-QAM.', icon:'dB', keywords:'poziom sygnału dbuv qpsk qam fec minimum maksimum'},
+    {id:'levelDifferences', title:'Różnice poziomów sygnału', description:'Dopuszczalne różnice poziomów dla kanałów i standardów.', icon:'Δ', keywords:'różnice poziomów sygnału sąsiedni kanał pal dvb-t cofdm'},
+    {id:'outletIsolation', title:'Tłumienność wzajemna gniazd', description:'Wymagane wartości separacji pomiędzy wyjściami TV i radio.', icon:'↔', keywords:'tłumienność wzajemna izolacja gniazda tv radio db'},
+    {id:'snr', title:'SNR i CNR', description:'Minimalne wartości dla trybu 8k i przeliczenie CNR/SNR.', icon:'S/N', keywords:'snr cnr szum nośna qpsk qam fec 8k'},
+    {id:'mer', title:'MER', description:'Szybkie kryteria oceny jakości modulacji COFDM.', icon:'MER', keywords:'mer jitter modulacja cofdm jakość db'},
+    {id:'ber', title:'BER', description:'Wartości przed i po korekcji błędów Viterbi/Reed-Solomon.', icon:'BER', keywords:'ber viterbi reed solomon qef błędy'},
+    {id:'constellations', title:'Konstelacje', description:'Przykłady prawidłowej konstelacji i typowych zniekształceń.', icon:'⠿', keywords:'konstelacja qam punkty faza amplituda szum zakłócenia'}
+  ];
+
+  function referenceTable(headers, rows, extraClass=''){
+    return `<div class="reference-table-wrap"><table class="reference-table ${extraClass}"><thead><tr>${headers.map(h=>`<th>${h}</th>`).join('')}</tr></thead><tbody>${rows.map(row=>`<tr>${row.map(cell=>`<td>${cell}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
+  }
+
+  function referenceBackButton(){
+    return '<button id="referenceBackBtn" class="reference-back-btn" type="button" aria-label="Wróć do spisu treści"><span aria-hidden="true">←</span> Spis treści</button>';
+  }
+
+  function bindReferenceBack(){
+    const back=$('referenceBackBtn');
+    if(back) back.onclick=showReferenceBook;
+  }
+
+  function showReferenceBook(){
+    openPanel('Książka referencyjna','Kanały, poziomy i parametry pomiarowe.', `
+      <div class="reference-search-wrap">
+        <input id="referenceSearchInput" class="reference-search" type="search" placeholder="Szukaj zagadnienia" autocomplete="off">
+      </div>
+      <div class="reference-intro"><strong>Podręczna wiedza instalatora</strong><span>Wybierz dział. Dane mają charakter referencyjny; końcową ocenę instalacji należy potwierdzić pomiarem odpowiednim miernikiem.</span></div>
+      <div id="referenceList" class="reference-list"></div>
+    `);
+    $('appPanel').classList.add('reference-mode');
+    const input=$('referenceSearchInput');
+    const list=$('referenceList');
+    const render=(query='')=>{
+      const q=normSearchText(query);
+      const items=REFERENCE_SECTIONS.filter(item=>!q || normSearchText(`${item.title} ${item.description} ${item.keywords}`).includes(q));
+      list.innerHTML=items.length ? items.map(item=>`
+        <button class="reference-item" type="button" data-reference-section="${item.id}">
+          <span class="reference-item-icon" aria-hidden="true">${item.icon}</span>
+          <span><strong>${item.title}</strong><small>${item.description}</small></span>
+          <b aria-hidden="true">›</b>
+        </button>`).join('') : '<div class="info-card"><strong>Brak wyników</strong><span>Zmień szukaną frazę.</span></div>';
+      list.querySelectorAll('[data-reference-section]').forEach(button=>button.onclick=()=>showReferenceSection(button.dataset.referenceSection));
+    };
+    input.addEventListener('input',event=>render(event.target.value));
+    render();
+  }
+
+  function showReferenceSection(sectionId){
+    const section=REFERENCE_SECTIONS.find(item=>item.id===sectionId);
+    if(!section) return showReferenceBook();
+    let html='';
+
+    if(sectionId==='channelRaster'){
+      const vhfRows=Array.from({length:8},(_,i)=>{
+        const channel=i+5;
+        return [String(channel), (177.5+i*7).toFixed(3).replace('.',',')];
+      });
+      const uhfRows=Array.from({length:49},(_,i)=>{
+        const channel=i+21;
+        return [String(channel), String(474+i*8)];
+      });
+      html=`
+        ${referenceBackButton()}
+        <div class="reference-note"><strong>Raster DVB-T/T2</strong><span>Podane wartości są częstotliwościami środkowymi kanałów. Dostępność kanałów zależy od obowiązującego planu częstotliwości.</span></div>
+        <h3 class="reference-heading">VHF-III — raster 7 MHz</h3>
+        ${referenceTable(['Nr kanału','Częstotliwość [MHz]'],vhfRows)}
+        <h3 class="reference-heading">UHF — raster 8 MHz</h3>
+        <div class="reference-band-note"><b>Pasmo IV:</b> kanały 21–37<br><b>Pasmo V:</b> kanały 38–69</div>
+        ${referenceTable(['Nr kanału','Częstotliwość [MHz]'],uhfRows,'reference-table-compact')}`;
+    }
+
+    if(sectionId==='dabRaster'){
+      const rows=[
+        ['5A','174,928'],['5B','176,640'],['5C','178,352'],['5D','180,064'],
+        ['6A','181,936'],['6B','183,648'],['6C','185,360'],['6D','187,072'],
+        ['7A','188,928'],['7B','190,640'],['7C','192,352'],['7D','194,064'],
+        ['8A','195,936'],['8B','197,648'],['8C','199,360'],['8D','201,072'],
+        ['9A','202,928'],['9B','204,640'],['9C','206,352'],['9D','208,064'],
+        ['10A','209,936'],['10N','210,096'],['10B','211,648'],['10C','213,360'],['10D','215,072'],
+        ['11A','216,928'],['11N','217,088'],['11B','218,640'],['11C','220,352'],['11D','222,064'],
+        ['12A','223,936'],['12N','224,096'],['12B','225,648'],['12C','227,360'],['12D','229,072'],
+        ['13A','230,784'],['13B','232,496'],['13C','234,208'],['13D','235,776'],['13E','237,488'],['13F','239,200']
+      ];
+      html=`${referenceBackButton()}
+        <div class="reference-note"><strong>DAB/DAB+</strong><span>VHF-III: 174–240 MHz. Tabela przedstawia częstotliwości środkowe bloków.</span></div>
+        ${referenceTable(['Blok','Częstotliwość [MHz]'],rows,'reference-table-compact')}`;
+    }
+
+    if(sectionId==='signalLevels'){
+      const rows=[
+        ['QPSK','1/2','26','74'],['','2/3','28','74'],['','3/4','30','74'],['','5/6','33','74'],['','7/8','35','74'],
+        ['16-QAM','1/2','32','74'],['','2/3','36','74'],['','3/4','39','74'],['','5/6','42','74'],['','7/8','45','74'],
+        ['64-QAM','1/2','42','74'],['','2/3','45','74'],['','3/4','48','74'],['','5/6','51','74'],['','7/8','54','74']
+      ];
+      html=`${referenceBackButton()}
+        <div class="reference-note"><strong>Poziomy na gniazdach abonenckich</strong><span>Wartości referencyjne w dBµV. Przy współistnieniu kanału DVB-T i PAL poziom DVB-T powinien być co najmniej 9 dB niższy od poziomu nośnej wizji PAL.</span></div>
+        ${referenceTable(['Modulacja','FEC','Min. [dBµV]','Max. [dBµV]'],rows,'reference-table-grouped')}`;
+    }
+
+    if(sectionId==='levelDifferences'){
+      const rows=[
+        ['D1/PAL','AM-VSB','174–790','12'],
+        ['D1/PAL','AM-VSB','VHF','6'],
+        ['D1/PAL','AM-VSB','Kanał sąsiedni','3'],
+        ['DVB-T','COFDM','Kanał sąsiedni','3'],
+        ['DVB-T','COFDM','Kanał sąsiedni z AM-VSB','6']
+      ];
+      html=`${referenceBackButton()}
+        <div class="reference-note"><strong>Maksymalne różnice poziomów</strong><span>Wartości pomagają ocenić wyrównanie sygnałów w instalacji zbiorczej.</span></div>
+        ${referenceTable(['Standard','Modulacja','Zakres','Maks. różnica [dB]'],rows)}`;
+    }
+
+    if(sectionId==='outletIsolation'){
+      const rows=[
+        ['TV/TV','174–790 MHz — kanały 7 MHz lub 7/8 MHz','42'],
+        ['TV/TV','174–790 MHz — tylko kanały 8 MHz','30'],
+        ['Radio/Radio','VHF','42'],
+        ['TV/Radio','—','50']
+      ];
+      html=`${referenceBackButton()}
+        <div class="reference-note"><strong>Tłumienność wzajemna</strong><span>Minimalna separacja pomiędzy wyjściami abonenckimi ogranicza wzajemne oddziaływanie odbiorników.</span></div>
+        ${referenceTable(['Usługa','Zakres częstotliwości','Tłumienność [dB]'],rows)}`;
+    }
+
+    if(sectionId==='snr'){
+      const rows=[
+        ['QPSK','1/2','5,4'],['','2/3','8,4'],['','3/4','10,7'],['','5/6','13,1'],['','7/8','16,3'],
+        ['16-QAM','1/2','11,2'],['','2/3','14,2'],['','3/4','16,7'],['','5/6','19,3'],['','7/8','22,8'],
+        ['64-QAM','1/2','16,0'],['','2/3','19,3'],['','3/4','21,7'],['','5/6','25,3'],['','7/8','27,9']
+      ];
+      html=`${referenceBackButton()}
+        <div class="reference-note"><strong>Dane dla trybu 8k</strong><span>Minimalne wartości SNR są wartościami referencyjnymi dla podanych modulacji i FEC.</span></div>
+        ${referenceTable(['Modulacja','FEC','Min. SNR [dB]'],rows,'reference-table-grouped')}
+        <div class="reference-formula"><b>CNR = SNR + 0,33 dB</b><span>Dla DVB-T różnica pomiędzy C/N a S/N wynosi około 0,33 dB.</span></div>`;
+    }
+
+    if(sectionId==='mer'){
+      html=`${referenceBackButton()}
+        <div class="reference-metric-grid">
+          <div class="reference-metric-card"><span>MER</span><strong>≥ 26 dB</strong><small>Minimalna wartość referencyjna dla sygnałów DVB-T z modulacją COFDM.</small></div>
+          <div class="reference-metric-card"><span>Jitter</span><strong>≤ ±5°</strong><small>Jitter fazowy nie powinien być większy niż około pięć stopni.</small></div>
+        </div>
+        <div class="reference-note warning"><strong>Interpretacja</strong><span>Sam poziom sygnału nie gwarantuje poprawnego odbioru. MER pokazuje jakość modulacji i powinien być oceniany razem z BER.</span></div>`;
+    }
+
+    if(sectionId==='ber'){
+      html=`${referenceBackButton()}
+        <div class="reference-metric-list">
+          <div><span>BER przed Viterbi</span><strong>10<sup>−9</sup> – 10<sup>−2</sup></strong></div>
+          <div><span>BER przed Reed-Solomon</span><strong>&lt; 10<sup>−4</sup></strong></div>
+          <div><span>BER po Reed-Solomon</span><strong>&lt; 10<sup>−11</sup> (QEF)</strong></div>
+        </div>
+        <div class="reference-note"><strong>QEF — Quasi Error Free</strong><span>Stan po korekcji błędów, w którym liczba błędów resztkowych jest praktycznie pomijalna.</span></div>`;
+    }
+
+    if(sectionId==='constellations'){
+      html=`${referenceBackButton()}
+        <div class="reference-note"><strong>Jak czytać konstelację</strong><span>Punkty powinny tworzyć zwarte, regularne skupiska. Rozmycie, obrót lub deformacja wskazują na pogorszenie jakości sygnału.</span></div>
+        <div class="constellation-grid">
+          ${referenceConstellationCard('normal','Sygnał prawidłowy','Zwarte i równo rozmieszczone punkty.')}
+          ${referenceConstellationCard('phase','Błędy fazowe','Skupiska przesunięte po łukach lub obrócone.')}
+          ${referenceConstellationCard('amplitude','Błędy amplitudy','Punkty rozciągnięte promieniowo względem środka.')}
+          ${referenceConstellationCard('noise','Szum i zakłócenia','Rozproszone, szerokie skupiska punktów.')}
+        </div>`;
+    }
+
+    openPanel(section.title,section.description,html);
+    $('appPanel').classList.add('reference-mode');
+    bindReferenceBack();
+  }
+
+  function referenceConstellationCard(type,title,description){
+    const coords=[];
+    const grid=[34,58,82,106,130,154,178,202];
+    for(let row=0;row<8;row++){
+      for(let col=0;col<8;col++){
+        const x=grid[col], y=grid[row];
+        if(type==='normal'){
+          coords.push(`<circle cx="${x}" cy="${y}" r="3.6"/>`);
+        }else if(type==='phase'){
+          const dx=((row*5+col*3)%7-3)*1.15;
+          const dy=((row*2+col*5)%7-3)*1.15;
+          coords.push(`<circle cx="${(x+dx).toFixed(1)}" cy="${(y+dy).toFixed(1)}" r="3.2"/>`);
+          coords.push(`<circle class="ghost" cx="${(x-dy*.65).toFixed(1)}" cy="${(y+dx*.65).toFixed(1)}" r="2.1"/>`);
+        }else if(type==='amplitude'){
+          const cx=118, cy=118;
+          const scale=1+(((row+col)%5)-2)*.025;
+          const px=cx+(x-cx)*scale, py=cy+(y-cy)*scale;
+          coords.push(`<circle cx="${px.toFixed(1)}" cy="${py.toFixed(1)}" r="3.1"/>`);
+          coords.push(`<circle class="ghost" cx="${(cx+(x-cx)*(scale+.035)).toFixed(1)}" cy="${(cy+(y-cy)*(scale+.035)).toFixed(1)}" r="1.9"/>`);
+        }else{
+          for(let n=0;n<3;n++){
+            const dx=((row*11+col*7+n*13)%11-5)*1.25;
+            const dy=((row*7+col*13+n*5)%11-5)*1.25;
+            coords.push(`<circle class="noise" cx="${(x+dx).toFixed(1)}" cy="${(y+dy).toFixed(1)}" r="2.1"/>`);
+          }
+        }
+      }
+    }
+    const lines=grid.map(v=>`<line x1="${v}" y1="20" x2="${v}" y2="216"/><line x1="20" y1="${v}" x2="216" y2="${v}"/>`).join('');
+    return `<article class="constellation-card"><svg viewBox="0 0 236 236" role="img" aria-label="${title}"><g class="constellation-grid-lines">${lines}</g><g class="constellation-points">${coords.join('')}</g><text x="118" y="231" text-anchor="middle">I</text><text x="8" y="122" text-anchor="middle">Q</text></svg><strong>${title}</strong><span>${description}</span></article>`;
+  }
+
   function showMux(){
     const t=state.selected; if(!t) return;
     const rows=t.muxes.map(m=>{
@@ -442,21 +812,161 @@
     const meta=`${esc(stationDisplayName(t))} · ${t.site_elevation_m||'—'} m n.p.m. · maszt/antena ${t.height||'—'} m n.p.t.`;
     openPanel('MUX-y i moce nadajnika', meta, rows);
   }
+  function mapLayerIsVisible(layer){
+    return !!(layer && state.map && state.map.hasLayer(layer));
+  }
+  function setOptionalMapLayerVisible(layer, visible){
+    if(!layer || !state.map) return;
+    if(visible){
+      if(!state.map.hasLayer(layer)) layer.addTo(state.map);
+    }else if(state.map.hasLayer(layer)){
+      state.map.removeLayer(layer);
+    }
+  }
+  function renderLayersSheet(){
+    const content=$('layersSheetContent');
+    if(!content) return;
+    const rfAvailable=!!state.rfLayer;
+    const rfVisible=mapLayerIsVisible(state.rfLayer);
+    const coverageAvailable=!!state.coverageLayer;
+    const coverageVisible=mapLayerIsVisible(state.coverageLayer);
+    content.innerHTML=`
+      <section class="layers-section" aria-labelledby="baseMapHeading">
+        <h3 id="baseMapHeading">Typ mapy</h3>
+        <div class="map-type-grid map-type-grid-main">
+          <button class="map-type-card ${state.base==='osm'?'active':''}" type="button" data-base="osm" aria-pressed="${state.base==='osm'}">
+            <span class="map-preview map-preview-osm" aria-hidden="true"><i></i></span><b>Domyślna</b>
+          </button>
+          <button class="map-type-card ${state.base==='sat'?'active':''}" type="button" data-base="sat" aria-pressed="${state.base==='sat'}">
+            <span class="map-preview map-preview-sat" aria-hidden="true"><i></i></span><b>Satelita</b>
+          </button>
+          <button class="map-type-card ${state.base==='topo'?'active':''}" type="button" data-base="topo" aria-pressed="${state.base==='topo'}">
+            <span class="map-preview map-preview-topo" aria-hidden="true"><i></i></span><b>Teren</b>
+          </button>
+        </div>
+      </section>
+
+      <section class="layers-section layers-section-secondary" aria-labelledby="otherMapsHeading">
+        <h3 id="otherMapsHeading">Pozostałe podkłady</h3>
+        <div class="map-type-grid map-type-grid-secondary">
+          <button class="map-type-card compact ${state.base==='hot'?'active':''}" type="button" data-base="hot" aria-pressed="${state.base==='hot'}">
+            <span class="map-preview map-preview-hot" aria-hidden="true"><i></i></span><b>Czytelna</b>
+          </button>
+          <button class="map-type-card compact ${state.base==='light'?'active':''}" type="button" data-base="light" aria-pressed="${state.base==='light'}">
+            <span class="map-preview map-preview-light" aria-hidden="true"><i></i></span><b>Jasna</b>
+          </button>
+          <button class="map-type-card compact ${state.base==='street'?'active':''}" type="button" data-base="street" aria-pressed="${state.base==='street'}">
+            <span class="map-preview map-preview-street" aria-hidden="true"><i></i></span><b>Ulice</b>
+          </button>
+        </div>
+      </section>
+
+      <section class="layers-section layers-section-details" aria-labelledby="detailsHeading">
+        <h3 id="detailsHeading">Szczegóły mapy</h3>
+        <div class="map-detail-grid">
+          <button id="toggleRfLayerBtn" class="map-detail-card ${rfVisible?'active':''}" type="button" ${rfAvailable?'':'disabled'} aria-pressed="${rfVisible}">
+            <span class="detail-preview detail-preview-rf" aria-hidden="true"><i></i></span>
+            <span><b>Zasięg RF</b><small>${rfAvailable?(rfVisible?'Widoczny':'Ukryty'):'Najpierw oblicz zasięg'}</small></span>
+          </button>
+          <button id="toggleCoverageLayerBtn" class="map-detail-card ${coverageVisible?'active':''}" type="button" ${coverageAvailable?'':'disabled'} aria-pressed="${coverageVisible}">
+            <span class="detail-preview detail-preview-coverage" aria-hidden="true"><i></i></span>
+            <span><b>Mapa zasięgu</b><small>${coverageAvailable?(coverageVisible?'Widoczna':'Ukryta'):'Brak wczytanej warstwy'}</small></span>
+          </button>
+        </div>
+      </section>
+
+      <details class="layers-advanced">
+        <summary>Zaawansowane źródła zasięgu</summary>
+        <div class="layers-advanced-body">
+          <div class="layers-source-card">
+            <strong>Dodatkowa warstwa XYZ</strong>
+            <span>Wklej legalny adres kafelków HTTPS zawierający {z}/{x}/{y}.</span>
+            <input id="coverageTileInput" type="text" inputmode="url" autocomplete="off" placeholder="https://.../{z}/{x}/{y}.png" value="${esc(state.coverageTileUrl||'')}">
+            <div class="layers-source-actions">
+              <button id="applyCoverageTileBtn" class="panel-btn primary" type="button">Dodaj warstwę</button>
+              <button id="clearCoverageTileBtn" class="panel-btn" type="button">Usuń warstwę</button>
+            </div>
+          </div>
+          <div class="layers-source-card">
+            <strong>Plik GeoJSON</strong>
+            <span>Wczytaj lokalny plik pokrycia jako warstwę pomocniczą.</span>
+            <input id="coverageGeoJsonInput" type="file" accept=".geojson,.json,application/geo+json,application/json">
+            <button id="importCoverageGeoJsonBtn" class="panel-btn primary" type="button">Wczytaj GeoJSON</button>
+          </div>
+        </div>
+      </details>`;
+
+    content.querySelectorAll('[data-base]').forEach(button=>{
+      button.onclick=()=>{
+        setBase(button.dataset.base);
+        renderLayersSheet();
+      };
+    });
+    const rfButton=$('toggleRfLayerBtn');
+    if(rfButton && rfAvailable) rfButton.onclick=()=>{
+      setOptionalMapLayerVisible(state.rfLayer,!mapLayerIsVisible(state.rfLayer));
+      renderLayersSheet();
+    };
+    const coverageButton=$('toggleCoverageLayerBtn');
+    if(coverageButton && coverageAvailable) coverageButton.onclick=()=>{
+      setOptionalMapLayerVisible(state.coverageLayer,!mapLayerIsVisible(state.coverageLayer));
+      renderLayersSheet();
+    };
+    const applyButton=$('applyCoverageTileBtn');
+    if(applyButton) applyButton.onclick=()=>{
+      applyCoverageTile($('coverageTileInput')?.value||'');
+      renderLayersSheet();
+    };
+    const clearButton=$('clearCoverageTileBtn');
+    if(clearButton) clearButton.onclick=()=>{
+      state.coverageTileUrl='';
+      clearCoverageLayer();
+      save();
+      toast('Usunięto zewnętrzną warstwę zasięgu.');
+      renderLayersSheet();
+    };
+    const importButton=$('importCoverageGeoJsonBtn');
+    if(importButton) importButton.onclick=async()=>{
+      try{
+        await importCoverageGeoJson($('coverageGeoJsonInput')?.files?.[0]);
+        renderLayersSheet();
+      }catch(err){ toast('Błąd GeoJSON: '+(err.message||err)); }
+    };
+  }
+  function openLayersSheet(){
+    const sheet=$('layersSheet');
+    const backdrop=$('layersBackdrop');
+    if(!sheet || !backdrop) return;
+    $('appPanel')?.classList.add('collapsed');
+    renderLayersSheet();
+    backdrop.hidden=false;
+    sheet.hidden=false;
+    requestAnimationFrame(()=>{
+      backdrop.classList.add('visible');
+      sheet.classList.add('open');
+    });
+    sheet.setAttribute('aria-hidden','false');
+    sheet.inert=false;
+    document.body.classList.add('layers-open');
+  }
+  function closeLayersSheet(){
+    const sheet=$('layersSheet');
+    const backdrop=$('layersBackdrop');
+    if(!sheet || !backdrop) return;
+    sheet.classList.remove('open');
+    backdrop.classList.remove('visible');
+    sheet.setAttribute('aria-hidden','true');
+    sheet.inert=true;
+    document.body.classList.remove('layers-open');
+    setTimeout(()=>{
+      if(!sheet.classList.contains('open')){
+        sheet.hidden=true;
+        backdrop.hidden=true;
+      }
+    },240);
+  }
   function showLayers(){
-    openPanel('Warstwy mapy','Podkład mapy oraz dodatkowa mapa zasięgu GeoJSON/XYZ.', `
-      <button class="tx-item ${state.base==='osm'?'active':''}" data-base="osm"><strong>Plan OSM</strong><span>Klasyczna mapa z nazwami miejscowości.</span></button>
-      <button class="tx-item ${state.base==='hot'?'active':''}" data-base="hot"><strong>OSM Humanitarian</strong><span>Wyraźniejsze drogi i miejscowości.</span></button>
-      <button class="tx-item ${state.base==='light'?'active':''}" data-base="light"><strong>Jasna CARTO</strong><span>Jasny styl do pracy na komputerze.</span></button>
-      <button class="tx-item ${state.base==='topo'?'active':''}" data-base="topo"><strong>Topo</strong><span>Mapa topograficzna z nazwami miejsc.</span></button>
-      <button class="tx-item ${state.base==='street'?'active':''}" data-base="street"><strong>Ulice Esri</strong><span>Mapa drogowa z podpisami miast.</span></button>
-      <button class="tx-item ${state.base==='sat'?'active':''}" data-base="sat"><strong>Satelita Esri + nazwy</strong><span>Zdjęcia satelitarne z dołożonymi nazwami miejscowości.</span></button>
-      <div class="info-card"><strong>Dodatkowa warstwa zasięgu XYZ</strong><span>Wklej adres kafelków HTTPS z tokenami {z}/{x}/{y}. To jest osobna mapa pokrycia, nie zasięg orientacyjny liczony przez aplikację.</span><input id="coverageTileInput" type="text" placeholder="https://.../{z}/{x}/{y}.png" value="${esc(state.coverageTileUrl||'')}"><button id="applyCoverageTileBtn" class="panel-btn primary">Dodaj zewnętrzną warstwę zasięgu</button><button id="clearCoverageTileBtn" class="panel-btn">Usuń zewnętrzną warstwę</button></div>
-      <div class="info-card"><strong>Wczytaj mapę zasięgu GeoJSON</strong><span>Wczytuje lokalny plik GeoJSON jako warstwę pomocniczą. Plik musi pochodzić z legalnego źródła.</span><input id="coverageGeoJsonInput" type="file" accept=".geojson,.json,application/geo+json,application/json"><button id="importCoverageGeoJsonBtn" class="panel-btn primary">Wczytaj GeoJSON</button></div>
-    `);
-    $('panelContent').querySelectorAll('[data-base]').forEach(b=>b.onclick=()=>{setBase(b.dataset.base); closePanel();});
-    $('applyCoverageTileBtn').onclick=()=>applyCoverageTile($('coverageTileInput').value);
-    $('clearCoverageTileBtn').onclick=()=>{ state.coverageTileUrl=''; clearCoverageLayer(); save(); toast('Usunięto zewnętrzną warstwę zasięgu.'); };
-    $('importCoverageGeoJsonBtn').onclick=()=>importCoverageGeoJson($('coverageGeoJsonInput').files?.[0]).catch(err=>toast('Błąd GeoJSON: '+(err.message||err)));
+    openLayersSheet();
   }
   function showFilters(){
     toast('Zakładka Filtry została usunięta, bo dublowała funkcje programu.');
@@ -488,7 +998,7 @@
     state.coverageTileUrl=safeUrl;
     if(!state.coverageTileUrl){ save(); return; }
     state.coverageLayer=L.tileLayer(state.coverageTileUrl, {
-      maxZoom:19, opacity:.58, updateWhenIdle:true, updateWhenZooming:false, keepBuffer:2, attribution:'Warstwa zasięgu: zewnętrzne/licencjonowane źródło'
+      maxZoom:MAP_MAX_ZOOM, maxNativeZoom:19, opacity:.58, updateWhenIdle:true, updateWhenZooming:false, keepBuffer:2, attribution:'Warstwa zasięgu: zewnętrzne/licencjonowane źródło'
     }).addTo(state.map);
     save();
     toast('Dodano zewnętrzną warstwę zasięgu.');
@@ -551,7 +1061,7 @@
     openPanel('O programie','Instrukcja obsługi i opis funkcji.', `
       <div class="info-card"><strong>Do czego służy program</strong><span>Aplikacja pomaga dobrać nadajnik DVB-T/T2 dla wskazanego punktu odbioru. Pokazuje odległość, azymut, MUX-y, moc ERP, profil terenu, kompas/północ oraz warstwy pomocnicze.</span></div>
       <div class="info-card"><strong>1. Ustaw punkt odbioru</strong><span>Wpisz adres w polu wyszukiwania, użyj GPS albo przytrzymaj palec na mapie. Od wersji 19.13 zmiana punktu odbioru nie przełącza automatycznie wcześniej wybranego nadajnika.</span></div>
-      <div class="info-card"><strong>2. Wybierz nadajnik</strong><span>Kliknij marker nadajnika albo przycisk z listą nadajników. Na karcie nadajnika zobaczysz azymut, odległość, polaryzację i moc ERP dla emisji/MUX-ów.</span></div>
+      <div class="info-card"><strong>2. Wybierz nadajnik i MUX</strong><span>Kliknij marker nadajnika albo przycisk z listą nadajników. Następnie wybierz MUX z listy przy nazwie nadajnika. Polaryzacja, moc ERP, zasięg orientacyjny, obliczenia RF i strefa Fresnela dotyczą wybranego MUX.</span></div>
       <div class="info-card"><strong>3. Kompas</strong><span>Kompas jest dostępny z górnego widżetu oraz z przycisku N↑ po prawej stronie. Niebieska igła oznacza kierunek do nadajnika, pomarańczowa kierunek telefonu. Stożek na mapie pokazuje orientacyjny kierunek trzymania telefonu.</span></div>
       <div class="info-card"><strong>4. Profil terenu</strong><span>Profil wymaga danych wysokości DEM. Program pobiera je z API wysokości i zapisuje w lokalnym cache przeglądarki. Jeżeli API nie odpowiada, program nie udaje prawdziwego terenu prostą kreską — pokaże informację o braku DEM albo użyje tylko częściowego cache jako profil przybliżony.</span></div>
       <div class="info-card"><strong>5. DEM i zasięg terenowy</strong><span>Przycisk „Pobierz DEM” zapisuje lokalnie wysokości dla okolicy wybranego nadajnika. Obliczony zasięg RF/ITM-lite jest orientacyjny, nie oficjalny. Bierze pod uwagę ERP, częstotliwość, wysokość anten, teren i pliki ANT z cache, jeśli są dostępne.</span></div>
@@ -909,7 +1419,7 @@
     }
   }
   function txMainParams(t){
-    const mux=(t.muxes||[]).slice().sort((a,b)=>(+b.erp_kw||0)-(+a.erp_kw||0))[0] || {};
+    const mux=selectedMuxForTx(t) || {};
     const ch=String(mux.channel||'').replace(/[^0-9]/g,'');
     const freq=+mux.frequency_mhz || (ch ? 474 + ((+ch - 21) * 8) : 650);
     const erpKw=Math.max(0.001, +mux.erp_kw || 1);
@@ -1508,7 +2018,7 @@
     }
     return new Promise(resolve=>{
       pendingRfModeResolve=resolve;
-      openPanel('Tryb obliczania zasięgu', stationDisplayName(t), `
+      openPanel('Tryb obliczania zasięgu', `${stationDisplayName(t)} · ${muxOptionText(selectedMuxForTx(t))}`, `
         <div class="info-card"><strong>Wybierz sposób liczenia</strong><span>Szybkie liczenie zawsze sprawdza profil terenu w promieniu ${Math.round(RF_QUICK_LOCAL_RADIUS_KM*1000)} m od punktu odbioru. Pełna siatka bez profilu jest szybsza. Pełna siatka z profilem może liczyć bardzo długo, ale nadaje się do późniejszego eksportu na telefon.</span></div>
         <button id="rfQuickModeBtn" class="panel-btn primary" type="button">Szybkie liczenie — 1 km z profilem</button>
         <button id="rfFullModeBtn" class="panel-btn" type="button">Pełna siatka — bez dokładnego profilu</button>
@@ -1693,8 +2203,8 @@
     const mode=await askRfCalcMode(t);
     if(!mode) return;
     state.rfBusy=true;
-    const stationName = stationDisplayName(t);
-    openPanel(mode==='quick' ? 'Szybkie obliczanie zasięgu RF / terenowego' : (mode==='full_profile' ? 'Obliczanie pełnego zasięgu z profilem terenu' : 'Obliczanie gęstego zasięgu RF / terenowego'), stationName, `<div id="rfStatusBox" class="info-card"><strong>Start</strong><span>Przygotowuję obliczenia dla wybranego nadajnika...</span></div>`);
+    const stationName = `${stationDisplayName(t)} · ${muxOptionText(selectedMuxForTx(t))}`;
+    openPanel(mode==='quick' ? 'Szybkie obliczanie zasięgu RF / terenowego' : (mode==='full_profile' ? 'Obliczanie pełnego zasięgu z profilem terenu' : 'Obliczanie gęstego zasięgu RF / terenowego'), stationName, `<div id="rfStatusBox" class="info-card"><strong>Start</strong><span>Przygotowuję obliczenia dla wybranego nadajnika i MUX.</span></div>`);
     const setRfStatus=(title,msg)=>{ const box=$('rfStatusBox'); if(box) box.innerHTML=`<strong>${esc(title)}</strong><span>${esc(msg)}</span>`; };
     toast(mode==='quick' ? 'Szybkie liczenie: dokładna siatka przy punkcie odbioru...' : (mode==='full_profile' ? 'Liczenie pełnej siatki z profilem terenu...' : 'Liczenie bardzo gęstej siatki zasięgu...'));
     try{
@@ -1903,7 +2413,7 @@
     const lastTerrain=terrainPts[terrainPts.length-1];
     const terrainArea=`M${firstTerrain[0].toFixed(1)},${H-padB} L${firstTerrain[0].toFixed(1)},${firstTerrain[1].toFixed(1)} ${terrainPts.slice(1).map(pt=>`L${pt[0].toFixed(1)},${pt[1].toFixed(1)}`).join(' ')} L${lastTerrain[0].toFixed(1)},${H-padB} Z`;
     const losPath=`M${padL},${y(rxAlt).toFixed(1)} L${W-padR},${y(txAlt).toFixed(1)}`;
-    const muxForFresnel=(t.muxes||[]).find(m=>Number.isFinite(+m.frequency_mhz)) || {};
+    const muxForFresnel=selectedMuxForTx(t) || (t.muxes||[]).find(m=>Number.isFinite(+m.frequency_mhz)) || {};
     const freqForFresnel=+muxForFresnel.frequency_mhz || 650;
     const lambda=300/Math.max(1,freqForFresnel);
     const fresnelUpper=[], fresnelLower=[];
@@ -2001,21 +2511,24 @@
   }
 
   function updateCompass(){
-    const t=state.selected; const target=t?Math.round(t.azimuth):0;
-    $('targetNeedle').style.transform=`translate(-50%,-100%) rotate(${target}deg)`;
-    if(state.heading!=null) $('phoneNeedle').style.transform=`translate(-50%,-100%) rotate(${state.heading}deg)`;
+    const t=state.selected;
+    const target=t && Number.isFinite(t.azimuth) ? normDeg(t.azimuth) : 0;
+    const targetNeedle=$('targetNeedle');
+    const phoneNeedle=$('phoneNeedle');
+    if(targetNeedle) targetNeedle.style.transform=`translate(-50%,-100%) rotate(${target.toFixed(1)}deg)`;
+    if(phoneNeedle && state.heading!=null) phoneNeedle.style.transform=`translate(-50%,-100%) rotate(${state.heading.toFixed(1)}deg)`;
 
-    const northNeedle = $('northNeedle');
+    const northNeedle=$('northNeedle');
     if(northNeedle){
-      const northRotation = state.heading == null ? 0 : -state.heading;
-      northNeedle.style.transform = `rotate(${northRotation}deg)`;
-      northNeedle.classList.toggle('active', state.heading != null);
-      $('northBtn').title = state.heading == null
-        ? 'Północ / czekam na kompas'
-        : `Północ · telefon ${Math.round(state.heading)}°`;
+      const northRotation=state.heading==null ? 0 : -state.heading;
+      northNeedle.style.transform=`rotate(${northRotation.toFixed(1)}deg)`;
+      northNeedle.classList.toggle('active',state.heading!=null);
+      $('northBtn').title=state.heading==null
+        ? 'Północ — uruchom kompas'
+        : `Północ względem telefonu · kierunek telefonu ${Math.round(state.heading)}°`;
     }
 
-    let txt=state.compassOn?'Czekam na czujnik':'Czujnik automatyczny';
+    let txt=state.compassOn?'Kompas aktywny':'Kompas';
     let cls='';
     if(state.heading!=null && t){
       const d=diff(state.heading,target);
@@ -2023,30 +2536,59 @@
       if(a<=5){ txt='Kierunek prawidłowy'; cls='ok'; }
       else { txt=`Obróć ${a}° w ${d>0?'prawo':'lewo'}`; cls='turn'; }
     }
-    $('turnText').textContent=txt;
-    $('turnText').className=cls;
-    $('headingText').textContent=`Tel: ${state.heading==null?'—':Math.round(state.heading)+'°'} · Cel: ${t?target+'°':'—'} · ${state.compassOn && state.headingSource==='brak' ? 'czujnik' : state.headingSource}`;
+    state.compassStatusText=txt;
+    const turnText=$('turnText');
+    if(turnText){ turnText.textContent=txt; turnText.className=cls; }
+    const accuracy=state.headingAccuracy==null ? '' : ` · dokładność ±${Math.round(state.headingAccuracy)}°`;
+    const headingText=$('headingText');
+    if(headingText) headingText.textContent=`Tel: ${state.heading==null?'—':Math.round(state.heading)+'°'} · Cel: ${t?Math.round(target)+'°':'—'} · ${state.compassOn && state.headingSource==='brak' ? 'czujnik' : state.headingSource}${accuracy}`;
     renderHeadingCone();
+  }
+  async function requestCompassPermission(){
+    if(!window.DeviceOrientationEvent?.requestPermission) return true;
+    try{
+      let permission;
+      try{ permission=await DeviceOrientationEvent.requestPermission(true); }
+      catch(err){
+        if(!(err instanceof TypeError)) throw err;
+        permission=await DeviceOrientationEvent.requestPermission();
+      }
+      return permission==='granted';
+    }catch{
+      return false;
+    }
+  }
+  function onCompassScreenChange(){
+    resetHeadingFilter();
   }
   async function startCompass(silent=false){
     if(state.compassOn) return true;
-    if(window.DeviceOrientationEvent?.requestPermission){
-      try{ const p=await DeviceOrientationEvent.requestPermission(); if(p!=='granted'){ if(!silent) toast('Brak zgody na kompas.'); return false; } }catch{ if(!silent) toast('Przeglądarka nie udostępniła kompasu.'); return false; }
+    if(!(await requestCompassPermission())){
+      if(!silent) toast('Brak zgody na kompas albo magnetometr.');
+      return false;
     }
-    state.compassOn = true;
-    window.addEventListener('deviceorientationabsolute', onOrientation, true);
-    window.addEventListener('deviceorientation', onOrientation, true);
-    state.headingSource = state.headingSource==='brak' ? 'czujnik aktywny' : state.headingSource;
-    if(!silent) toast('Czujnik kierunku aktywny. Porusz telefonem ósemką, jeśli wskazanie pływa.');
+    state.compassOn=true;
+    window.addEventListener('deviceorientationabsolute',onOrientation,true);
+    window.addEventListener('deviceorientation',onOrientation,true);
+    window.screen?.orientation?.addEventListener?.('change',onCompassScreenChange);
+    window.addEventListener('orientationchange',onCompassScreenChange);
+    state.headingSource=state.headingSource==='brak'?'czujnik aktywny':state.headingSource;
+    if(!silent) toast('Kompas aktywny. Czerwona litera N wskazuje rzeczywistą północ.');
     updateCompass();
     return true;
   }
   function onOrientation(e){
-    if(typeof e.webkitCompassHeading==='number'){ applyHeading(e.webkitCompassHeading, 'ios'); return; }
-    if(typeof e.alpha!=='number') return;
-    const source = (e.type === 'deviceorientationabsolute' || e.absolute) ? 'absolute' : 'sensor';
-    if(source === 'sensor' && (state.headingSource === 'ios' || state.headingSource === 'absolute')) return;
-    applyHeading(e.alpha, source);
+    if(Number.isFinite(e.webkitCompassHeading)){
+      const heading=normDeg(e.webkitCompassHeading-screenOrientationAngle());
+      const accuracy=typeof e.webkitCompassAccuracy==='number' && Number.isFinite(e.webkitCompassAccuracy) ? e.webkitCompassAccuracy : null;
+      applyHeading(heading,'ios',accuracy);
+      return;
+    }
+    const absolute=e.type==='deviceorientationabsolute' || e.absolute===true;
+    if(!absolute) return;
+    const heading=absoluteCompassHeading(e);
+    if(heading==null) return;
+    applyHeading(heading,'absolute');
   }
 
   function stopGpsWatch(){
@@ -2056,48 +2598,94 @@
     }
   }
 
+  function setLocateButtonState(mode='idle'){
+    const btn=$('locateBtn');
+    if(!btn) return;
+    const loading=mode==='loading';
+    btn.classList.toggle('is-loading', loading);
+    btn.classList.toggle('has-location', mode==='success');
+    btn.classList.toggle('has-error', mode==='error');
+    btn.disabled=loading;
+    btn.setAttribute('aria-busy', loading ? 'true' : 'false');
+    btn.title=loading ? 'Pobieranie lokalizacji…' : 'Zlokalizuj mnie';
+  }
+
+  function focusOnReceiver(zoom=LOCATION_FOCUS_ZOOM, animate=true){
+    if(!state.map) return;
+    const safeZoom=Math.min(MAP_MAX_ZOOM, Math.max(MAP_MIN_ZOOM, zoom));
+    state.map.stop();
+    state.map.setView([state.rx.lat,state.rx.lon], safeZoom, {animate, duration:.45});
+  }
+
+  function gpsErrorText(error){
+    if(error?.code===1) return 'Brak zgody na lokalizację. Włącz GPS i zezwól aplikacji na dostęp.';
+    if(error?.code===2) return 'Telefon nie może teraz ustalić położenia.';
+    if(error?.code===3) return 'Upłynął czas oczekiwania na GPS. Spróbuj ponownie.';
+    return 'Nie udało się pobrać lokalizacji.';
+  }
+
   function applyGpsPosition(p, pan=true){
-    const {latitude, longitude, heading} = p.coords;
-    if(!Number.isFinite(latitude) || !Number.isFinite(longitude)) return;
+    const {latitude, longitude, heading, accuracy} = p.coords;
+    if(!Number.isFinite(latitude) || !Number.isFinite(longitude)) return false;
     state.rx={lat:latitude, lon:longitude, label:'GPS / punkt odbioru'};
+    state.gpsAccuracy=Number.isFinite(accuracy) ? accuracy : null;
     if(Number.isFinite(heading) && heading >= 0 && state.headingSource !== 'ios' && state.headingSource !== 'absolute' && state.headingSource !== 'sensor') applyHeading(heading, 'gps');
     save();
     renderHome();
     renderConnection();
     selectTx(state.selected?.id || bestTx()?.id,false,false);
-    if(pan) state.map.setView([latitude,longitude], Math.max(state.map.getZoom(), 12), {animate:true});
+    if(pan) focusOnReceiver(LOCATION_FOCUS_ZOOM, true);
+    setLocateButtonState('success');
+    return true;
   }
 
-  function startGpsWatch(){
-    if(!navigator.geolocation) return toast('Brak GPS w tej przeglądarce.');
-    // POPRAWKA KRYTYCZNA 19.24 — NIE ZMIENIAĆ BEZ TESTU W TERENIE:
-    // Przycisk GPS ma ustawić punkt tylko raz. Nie używać tutaj watchPosition + panTo,
-    // bo ciągłe aktualizacje GPS blokują ręczne przesuwanie mapy i wyszukiwarkę miejscowości.
+  function startGpsWatch(options={}){
+    const automatic=!!options.automatic;
+    if(!navigator.geolocation){
+      setLocateButtonState('error');
+      if(!automatic) toast('Brak GPS w tej przeglądarce.');
+      return;
+    }
+    if(state.gpsRequestActive) return;
+    // Jednorazowy, dokładny odczyt. Nie używamy watchPosition, aby mapa po
+    // zlokalizowaniu nie wracała sama i nie blokowała ręcznego przesuwania.
     stopGpsWatch();
+    state.gpsRequestActive=true;
+    setLocateButtonState('loading');
     navigator.geolocation.getCurrentPosition(
-      p=>{ applyGpsPosition(p, true); toast('Ustawiono punkt z GPS. Mapa nie będzie już automatycznie wracać.'); },
-      ()=>toast('Nie udało się pobrać GPS.'),
-      {enableHighAccuracy:true, timeout:12000, maximumAge:2500}
+      p=>{
+        state.gpsRequestActive=false;
+        if(applyGpsPosition(p, true) && !automatic){
+          const acc=state.gpsAccuracy!=null ? ` Dokładność około ${Math.round(state.gpsAccuracy)} m.` : '';
+          toast(`Zlokalizowano i przybliżono mapę.${acc}`);
+        }
+      },
+      error=>{
+        state.gpsRequestActive=false;
+        setLocateButtonState('error');
+        if(!automatic || error?.code===1) toast(gpsErrorText(error));
+      },
+      {enableHighAccuracy:true, timeout:15000, maximumAge:5000}
     );
   }
   function showCompassPanel(){
     const t=state.selected; const target=t?Math.round(t.azimuth):'—';
     openPanel('Kompas anteny','Stożek na mapie pokazuje kierunek telefonu w punkcie odbioru.', `
       <div class="compass-panel-head">
-        <div class="big-compass"><i class="target" style="transform:translate(-50%,-100%) rotate(${t?Math.round(t.azimuth):0}deg)"></i><i class="phone" style="transform:translate(-50%,-100%) rotate(${state.heading||0}deg)"></i><b>N</b></div>
-        <div><strong>${esc($('turnText').textContent)}</strong><span>Telefon: ${state.heading==null?'—':Math.round(state.heading)+'°'} · Cel: ${target}°</span><small>Źródło: ${esc(state.headingSource)}</small></div>
+        <div class="big-compass"><i class="target" style="transform:translate(-50%,-100%) rotate(${t&&Number.isFinite(t.azimuth)?t.azimuth.toFixed(1):0}deg)"></i><i class="phone" style="transform:translate(-50%,-100%) rotate(${state.heading==null?0:state.heading.toFixed(1)}deg)"></i><b>N</b></div>
+        <div><strong>${esc(state.compassStatusText||'Kompas')}</strong><span>Telefon: ${state.heading==null?'—':Math.round(state.heading)+'°'} · Cel: ${target}°</span><small>Źródło: ${esc(state.headingSource)}</small></div>
       </div>
-      <div class="info-card"><strong>Czujnik kierunku</strong><span>Czujnik jest uruchamiany automatycznie. Jeżeli przeglądarka wymaga zgody, dotknij tego panelu lub widgetu kompasu i zaakceptuj dostęp.</span></div>
+      <div class="info-card"><strong>Czujnik kierunku</strong><span>Aplikacja używa wyłącznie kierunku absolutnego względem północy. Uwzględnia obrót ekranu oraz położenie telefonu, a względne odczyty czujnika są odrzucane, aby nie przesuwały wskazania.</span></div>
       <div class="info-card"><strong>Ręczna korekta awaryjna: <span id="manualHeadingValue">${Math.round(state.heading||0)}°</span></strong><input id="manualHeading" type="range" min="0" max="359" value="${Math.round(state.heading||0)}"></div>
       <div class="panel-grid-2">
         <button id="invertCompassBtn" class="panel-btn">Odwróć czujnik</button>
         <button id="resetCompassBtn" class="panel-btn">Reset korekty</button>
       </div>
-      <div class="info-card"><strong>Uwaga</strong><span>Wygładzanie jest teraz szybsze i adaptacyjne, więc wskazanie powinno reagować bez dużego opóźnienia. Kompas telefonu nadal może przekłamywać przy maszcie, antenie, blasze, aucie i magnesach. Skalibruj telefon ruchem ósemki.</span></div>`);
+      <div class="info-card"><strong>Uwaga</strong><span>Trzymaj telefon z dala od masztu, anteny, blachy, samochodu i magnesów. Gdy wskazanie pływa, skalibruj czujnik ruchem ósemki. Niebieska linia na mapie jest kierunkiem geograficznym do nadajnika, a stożek pokazuje skorygowany kierunek telefonu.</span></div>`);
     startCompass(true);
     $('manualHeading').oninput=e=>{ $('manualHeadingValue').textContent=`${e.target.value}°`; setManualHeading(e.target.value); };
-    $('invertCompassBtn').onclick=()=>{ state.headingInvert=!state.headingInvert; save(); toast(state.headingInvert?'Odwrócono kierunek czujnika.':'Przywrócono standardowy kierunek czujnika.'); };
-    $('resetCompassBtn').onclick=()=>{ state.headingOffset=0; state.headingInvert=false; save(); updateCompass(); toast('Zresetowano korektę kompasu.'); };
+    $('invertCompassBtn').onclick=()=>{ state.headingInvert=!state.headingInvert; resetHeadingFilter(); if(Number.isFinite(state.rawHeading) && state.headingSource!=='ręczny') applyHeading(state.rawHeading,state.headingSource,state.headingAccuracy); else updateCompass(); save(); toast(state.headingInvert?'Odwrócono kierunek czujnika.':'Przywrócono standardowy kierunek czujnika.'); };
+    $('resetCompassBtn').onclick=()=>{ state.headingOffset=0; state.headingInvert=false; resetHeadingFilter(); if(Number.isFinite(state.rawHeading) && state.headingSource!=='ręczny') applyHeading(state.rawHeading,state.headingSource,state.headingAccuracy); else updateCompass(); save(); toast('Zresetowano korektę kompasu.'); };
   }
 
   function setRx(lat,lon,label,pan,preserveSelected=true, keepZoom=true){
@@ -2116,11 +2704,46 @@
 
   function bind(){
     setDisplayedVersion();
-    $('searchForm').onsubmit=search; $('locateBtn').onclick=startGpsWatch; const installBtn=$('installBtn'); if(installBtn) installBtn.onclick=installApp;
-    const locationChipBtn = $('locationChip'); if(locationChipBtn) locationChipBtn.onclick=()=>state.map.setView([state.rx.lat,state.rx.lon],12); $('txListBtn').onclick=showTxList; $('northBtn').onclick=()=>{ startCompass(false); toast(state.heading==null?'Włączam kompas. Porusz telefonem, aby wskazać północ.':'Północ wskazuje obrotowa ikona.'); }; $('layersBtn').onclick=showLayers; $('dataBtn').onclick=showData; const aboutBtn=$('aboutBtn'); if(aboutBtn) aboutBtn.onclick=showAbout; $('closePanelBtn').onclick=closePanel;
-    $('closeStationBtn').onclick=hideStation; $('openStationBtn').onclick=showStation; $('compassWidget').onclick=()=>{startCompass(false); showCompassPanel();}; $('stationProfileBtn').onclick=showProfile; $('stationMuxBtn').onclick=showMux; $('stationDemBtn').onclick=downloadDemForSelectedTx; $('stationDemCacheBtn').onclick=showSelectedDemStats; $('stationRfBtn').onclick=()=>calculateRfCoverage(); $('stationClearRfBtn').onclick=()=>{ clearRfLayer(); toast('Usunięto obliczony zasięg RF.'); }; const exportRfBtn=$('stationExportRfBtn'); if(exportRfBtn) exportRfBtn.onclick=()=>exportCurrentRfCache().catch(err=>toast('Błąd eksportu cache: '+(err.message||err))); const importRfBtn=$('stationImportRfBtn'); const importRfInput=$('rfCacheImportInput'); if(importRfBtn && importRfInput){ importRfBtn.onclick=()=>{ importRfInput.value=''; importRfInput.click(); }; importRfInput.onchange=()=>importRfCacheFile(importRfInput.files?.[0]).catch(err=>toast('Błąd importu cache: '+(err.message||err))); } $('stationAntBtn').onclick=()=>checkSelectedTransmitterAnt().catch(err=>toast('Błąd sprawdzania ANT: '+(err.message||err))); 
+    $('searchForm').onsubmit=search; $('locateBtn').onclick=()=>startGpsWatch({automatic:false}); const installBtn=$('installBtn'); if(installBtn) installBtn.onclick=installApp;
+    const locationChipBtn = $('locationChip'); if(locationChipBtn) locationChipBtn.onclick=()=>state.map.setView([state.rx.lat,state.rx.lon],12); $('txListBtn').onclick=showTxList; $('northBtn').onclick=async()=>{ const active=await startCompass(false); if(active && state.heading!=null) toast('Czerwona litera N wskazuje północ względem telefonu.'); }; $('layersBtn').onclick=showLayers; $('closePanelBtn').onclick=closePanel;
+    $('closeLayersBtn').onclick=closeLayersSheet;
+    $('layersBackdrop').onclick=closeLayersSheet;
+    $('menuBtn').onclick=openDrawer;
+    $('closeDrawerBtn').onclick=closeDrawer;
+    $('drawerBackdrop').onclick=closeDrawer;
+    $('drawerTxBtn').onclick=()=>openFromDrawer(showTxList);
+    $('drawerLayersBtn').onclick=()=>openFromDrawer(showLayers);
+    $('drawerCompassBtn').onclick=()=>openFromDrawer(()=>{ startCompass(false); showCompassPanel(); });
+    $('drawerSettingsBtn').onclick=()=>openFromDrawer(showData);
+    $('drawerReferenceBtn').onclick=()=>openFromDrawer(showReferenceBook);
+    $('drawerHelpBtn').onclick=()=>openFromDrawer(showAbout);
+    window.addEventListener('keydown',e=>{
+      if(e.key!=='Escape') return;
+      if($('layersSheet')?.classList.contains('open')) closeLayersSheet();
+      else if($('navDrawer')?.classList.contains('open')) closeDrawer();
+    });
+    $('closeStationBtn').onclick=hideStation; $('openStationBtn').onclick=showStation; const stationMuxSelect=$('stationMuxSelect'); if(stationMuxSelect) stationMuxSelect.onchange=e=>setSelectedMux(e.target.value); $('stationProfileBtn').onclick=showProfile; $('stationMuxBtn').onclick=showMux; $('stationDemBtn').onclick=downloadDemForSelectedTx; $('stationDemCacheBtn').onclick=showSelectedDemStats; $('stationRfBtn').onclick=()=>calculateRfCoverage(); $('stationClearRfBtn').onclick=()=>{ clearRfLayer(); toast('Usunięto obliczony zasięg RF.'); }; const exportRfBtn=$('stationExportRfBtn'); if(exportRfBtn) exportRfBtn.onclick=()=>exportCurrentRfCache().catch(err=>toast('Błąd eksportu cache: '+(err.message||err))); const importRfBtn=$('stationImportRfBtn'); const importRfInput=$('rfCacheImportInput'); if(importRfBtn && importRfInput){ importRfBtn.onclick=()=>{ importRfInput.value=''; importRfInput.click(); }; importRfInput.onchange=()=>importRfCacheFile(importRfInput.files?.[0]).catch(err=>toast('Błąd importu cache: '+(err.message||err))); } $('stationAntBtn').onclick=()=>checkSelectedTransmitterAnt().catch(err=>toast('Błąd sprawdzania ANT: '+(err.message||err))); 
     window.addEventListener('online',()=>{$('onlineChip').textContent='Online';$('onlineChip').classList.add('online-chip');}); window.addEventListener('offline',()=>{$('onlineChip').textContent='Offline';$('onlineChip').classList.remove('online-chip');});
+    window.addEventListener('resize', syncFloatingControlOffsets);
+    if(window.ResizeObserver){
+      const ro=new ResizeObserver(syncFloatingControlOffsets);
+      ro.observe($('stationCard'));
+    }
   }
-  async function boot(){ load(); setupPwaInstall(); bind(); initMap(); await loadTxs(); if(state.coverageTileUrl) applyCoverageTile(state.coverageTileUrl); startCompass(true); window.addEventListener('pointerdown',()=>startCompass(true),{once:true,passive:true}); if('serviceWorker' in navigator) navigator.serviceWorker.register('./service-worker.js?v=19.30-1905260815').catch(()=>{}); setAppHeight(); }
+  async function boot(){
+    load();
+    setupPwaInstall();
+    bind();
+    initMap();
+    syncFloatingControlOffsets();
+    // Automatyczna próba lokalizacji natychmiast po uruchomieniu aplikacji.
+    setTimeout(()=>startGpsWatch({automatic:true}),180);
+    await loadTxs();
+    if(state.coverageTileUrl) applyCoverageTile(state.coverageTileUrl);
+    startCompass(true);
+    window.addEventListener('pointerdown',()=>startCompass(true),{once:true,passive:true});
+    if('serviceWorker' in navigator) navigator.serviceWorker.register('./service-worker.js?v=19.39-1007260932').catch(()=>{});
+    setAppHeight();
+  }
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', boot); else boot();
 })();
