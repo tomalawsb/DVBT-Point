@@ -21,12 +21,16 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Przygotuj bazę nadajników dla APK
+      - name: Przygotuj dane i mapę dla APK
         shell: bash
         run: |
           mkdir -p android-finder/app/src/main/assets
           { printf 'window.TRANSMITTER_DATA='; cat data/transmitters.json; printf ';\n'; } > android-finder/app/src/main/assets/transmitters.js
+          curl -fsSL https://unpkg.com/leaflet@1.9.4/dist/leaflet.js -o android-finder/app/src/main/assets/leaflet.js
+          curl -fsSL https://unpkg.com/leaflet@1.9.4/dist/leaflet.css -o android-finder/app/src/main/assets/leaflet.css
           test -s android-finder/app/src/main/assets/transmitters.js
+          test -s android-finder/app/src/main/assets/leaflet.js
+          test -s android-finder/app/src/main/assets/leaflet.css
 
       - name: Zainstaluj Android SDK
         shell: bash
@@ -57,14 +61,14 @@ jobs:
         shell: bash
         run: |
           mkdir -p android-finder/dist
-          cp android-finder/app/build/outputs/apk/debug/app-debug.apk android-finder/dist/DVB-T-Asystent-PL-1.0.apk
-          sha256sum android-finder/dist/DVB-T-Asystent-PL-1.0.apk > android-finder/dist/SHA256SUMS.txt
+          cp android-finder/app/build/outputs/apk/debug/app-debug.apk android-finder/dist/DVB-T-Asystent-PL-1.1.apk
+          sha256sum android-finder/dist/DVB-T-Asystent-PL-1.1.apk > android-finder/dist/SHA256SUMS.txt
 
       - name: Artefakt APK
         uses: actions/upload-artifact@v4
         with:
-          name: DVB-T-Asystent-PL-1.0
+          name: DVB-T-Asystent-PL-1.1
           path: |
-            android-finder/dist/DVB-T-Asystent-PL-1.0.apk
+            android-finder/dist/DVB-T-Asystent-PL-1.1.apk
             android-finder/dist/SHA256SUMS.txt
           retention-days: 30
