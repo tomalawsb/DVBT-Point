@@ -2,114 +2,69 @@
 <html lang="pl">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#07131f">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#0a1016">
 <title>DVB-T Asystent PL</title>
+<link rel="stylesheet" href="leaflet.css">
 <style>
-:root{--bg:#07131f;--panel:#0d1d2b;--panel2:#12283a;--text:#f4f8fb;--muted:#9db0bf;--accent:#2dd4bf;--accent2:#38bdf8;--line:#20384a;--warn:#fbbf24}
-*{box-sizing:border-box}body{margin:0;background:linear-gradient(180deg,#07131f,#0a1723 45%,#07131f);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif}button,input{font:inherit}.app{max-width:760px;margin:0 auto;min-height:100vh;padding:16px 14px 32px}.top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}.brand h1{font-size:23px;margin:0}.brand p{margin:3px 0 0;color:var(--muted);font-size:12px}.badge{padding:6px 9px;border:1px solid var(--line);border-radius:999px;color:var(--accent);font-size:12px;background:#0a1b28}.toolbar{display:grid;grid-template-columns:1fr auto;gap:9px;margin-bottom:10px}.search{width:100%;border:1px solid var(--line);background:#0b1b28;color:#fff;border-radius:13px;padding:12px 14px;outline:none}.btn{border:0;border-radius:12px;padding:11px 13px;background:var(--accent);color:#06221d;font-weight:800}.btn.secondary{background:#193247;color:#dbe9f2;border:1px solid #28465d}.status{display:flex;gap:8px;flex-wrap:wrap;margin:9px 0 13px}.pill{background:#0c1d2b;border:1px solid var(--line);color:var(--muted);border-radius:999px;padding:7px 10px;font-size:12px}.pill strong{color:#fff}.panel{background:rgba(13,29,43,.96);border:1px solid var(--line);border-radius:18px;padding:14px;margin:12px 0;box-shadow:0 12px 30px rgba(0,0,0,.18)}.panel h2{font-size:16px;margin:0 0 10px}.list{display:grid;gap:9px}.tx{background:#0b1a27;border:1px solid #1c3447;border-radius:14px;padding:12px;display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center}.tx.selected{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset}.tx h3{font-size:14px;margin:0 0 4px}.tx .meta{color:var(--muted);font-size:12px;line-height:1.4}.distance{color:var(--accent2);font-weight:800;font-size:13px}.empty{color:var(--muted);text-align:center;padding:22px}.details-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.stat{background:#0a1a27;border:1px solid var(--line);border-radius:12px;padding:10px;text-align:center}.stat span{display:block;color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.04em}.stat strong{display:block;margin-top:4px;font-size:16px}.compass-wrap{display:flex;flex-direction:column;align-items:center;gap:10px}.compass{width:min(70vw,280px);aspect-ratio:1;border:2px solid #315064;border-radius:50%;position:relative;background:radial-gradient(circle at center,#10283a 0 4%,#091925 5% 100%);box-shadow:inset 0 0 40px rgba(0,0,0,.4)}.compass .north{position:absolute;top:8px;left:50%;transform:translateX(-50%);font-weight:900;color:#fff}.compass .south{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);color:var(--muted)}.compass .east{position:absolute;right:10px;top:50%;transform:translateY(-50%);color:var(--muted)}.compass .west{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--muted)}.needle{position:absolute;left:50%;top:50%;width:8px;height:42%;transform-origin:50% 100%;transform:translate(-50%,-100%) rotate(0deg);transition:transform .18s linear}.needle:before{content:"";position:absolute;top:0;left:50%;transform:translateX(-50%);border-left:13px solid transparent;border-right:13px solid transparent;border-bottom:0;border-top:30px solid var(--accent);filter:drop-shadow(0 0 8px rgba(45,212,191,.45))}.needle:after{content:"";position:absolute;left:50%;bottom:-8px;transform:translateX(-50%);width:18px;height:18px;border-radius:50%;background:#d9fdf7;border:5px solid var(--accent)}.guide{text-align:center}.guide strong{font-size:18px}.guide p{margin:5px 0;color:var(--muted);font-size:12px}.mux{width:100%;border-collapse:collapse;font-size:12px}.mux th,.mux td{padding:9px 6px;border-bottom:1px solid var(--line);text-align:left}.mux th{color:var(--muted);font-size:10px;text-transform:uppercase}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.source{font-size:11px;color:var(--muted);line-height:1.5}.source a{color:var(--accent2)}.footer{text-align:center;color:#6f8493;font-size:11px;padding-top:14px}@media(max-width:520px){.details-grid{grid-template-columns:repeat(2,1fr)}.toolbar{grid-template-columns:1fr}.tx{grid-template-columns:1fr}.distance{justify-self:start}.mux{font-size:11px}.mux th,.mux td{padding:8px 4px}}
+:root{--bg:#0a1016;--panel:#121a22;--panel2:#18232d;--line:#293846;--text:#f2f6f9;--muted:#91a2b1;--accent:#00c2ff;--good:#45d483;--warn:#ffc857}
+*{box-sizing:border-box}html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;overflow:hidden}button,input{font:inherit}button{cursor:pointer}
+#app{height:100%;display:flex;flex-direction:column}.header{height:56px;display:flex;align-items:center;gap:9px;padding:0 12px;background:#080d12;border-bottom:1px solid var(--line);z-index:1500}.logo{font-size:22px}.brand{font-size:17px;font-weight:900;flex:1}.ver{font-size:11px;color:var(--muted)}
+.mapWrap{position:relative;flex:1;min-height:260px}.map{height:100%;width:100%;background:#111820}.searchbar{position:absolute;z-index:1000;left:10px;right:10px;top:10px;display:flex;gap:7px}.search{flex:1;background:rgba(18,26,34,.97);border:1px solid #334756;color:#fff;border-radius:13px;padding:12px 13px;outline:none;box-shadow:0 4px 18px #0007;font-size:14px}.round{width:46px;border:0;border-radius:13px;background:var(--accent);color:#00151d;font-size:22px;font-weight:900;box-shadow:0 4px 18px #0007}
+.mapHint{position:absolute;z-index:900;left:10px;bottom:10px;background:rgba(8,13,18,.86);border:1px solid #243442;border-radius:10px;padding:7px 9px;color:#c7d2db;font-size:11px;max-width:75%}
+.sheet{height:43%;min-height:300px;background:var(--panel);border-top:1px solid var(--line);box-shadow:0 -8px 26px #0008;display:flex;flex-direction:column;z-index:1400}.handle{width:44px;height:4px;background:#465664;border-radius:999px;margin:8px auto 4px}.tabs{display:flex;gap:6px;padding:4px 8px 8px}.tab{flex:1;border:1px solid #2b3b49;background:var(--panel2);color:#c6d1da;border-radius:10px;padding:9px 4px;font-size:11px;font-weight:900}.tab.active{background:#103a49;color:#a9eaff;border-color:#17607a}.content{flex:1;overflow:auto;padding:0 9px 14px}.card{background:#0f161d;border:1px solid #263643;border-radius:13px;padding:11px;margin-bottom:8px}.tx{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center}.tx.selected{border-color:#159bc3;box-shadow:inset 0 0 0 1px #159bc3}.name{font-size:14px;font-weight:900;line-height:1.25}.meta{font-size:11px;color:var(--muted);margin-top:4px;line-height:1.35}.badge{border-radius:999px;padding:5px 8px;background:#143648;color:#a9eaff;font-size:10px;font-weight:900;white-space:nowrap}
+.hero{display:grid;grid-template-columns:112px 1fr;gap:12px;align-items:center}.compass{width:112px;height:112px;border:2px solid #365268;border-radius:50%;position:relative;background:radial-gradient(circle,#15222c 0,#0c141b 70%)}.north{position:absolute;top:3px;left:50%;transform:translateX(-50%);font-weight:900;color:#ff7282}.needle{position:absolute;width:5px;height:84px;left:52px;top:14px;transform-origin:50% 42px;transition:transform .12s linear}.needle:before{content:"";position:absolute;left:-7px;top:0;border-left:9px solid transparent;border-right:9px solid transparent;border-bottom:43px solid var(--accent)}.needle:after{content:"";position:absolute;left:-5px;top:43px;border-left:7px solid transparent;border-right:7px solid transparent;border-top:32px solid #71808d}.dot{position:absolute;left:48px;top:48px;width:12px;height:12px;border-radius:50%;background:white}.az{font-size:30px;font-weight:950}.dir{font-size:17px;font-weight:900;color:#a9eaff;margin-top:2px}.small{font-size:11px;color:var(--muted);line-height:1.45}.row{display:flex;gap:7px;flex-wrap:wrap;margin-top:8px}.pill{background:#182631;border-radius:9px;padding:7px 9px;font-size:11px}.btn{border:0;border-radius:10px;padding:9px 11px;background:#0d87aa;color:#fff;font-weight:900;font-size:11px}.btn.alt{background:#263642;color:#e5edf3}.mux{border-left:4px solid var(--accent);padding-left:9px}.muxTitle{font-weight:900;font-size:13px}.empty{text-align:center;color:var(--muted);padding:22px 10px}.leaflet-control-attribution{font-size:9px}.leaflet-control-zoom{margin-bottom:34px!important}.userArrow{font-size:29px;color:#15b8ff;font-weight:900;text-shadow:0 1px 4px #00151d;line-height:30px;transform-origin:center}.txMarker{width:18px;height:18px;background:var(--warn);border:3px solid #543a0d;transform:rotate(45deg);box-shadow:0 1px 6px #0009}.targetMarker{width:23px;height:23px;background:#ff7b57;border:4px solid #5a2012;transform:rotate(45deg);box-shadow:0 1px 8px #000b}
+@media(min-width:720px){.sheet{height:38%}.searchbar{max-width:700px;margin:auto}.content{max-width:900px;width:100%;margin:auto}}
 </style>
 </head>
 <body>
-<div class="app">
-  <div class="top">
-    <div class="brand"><h1>📡 DVB-T Asystent PL</h1><p>nadajniki • azymut • kompas • parametry MUX</p></div>
-    <div class="badge">v1.0</div>
+<div id="app">
+  <div class="header"><div class="logo">📡</div><div class="brand">DVB-T Asystent PL</div><div class="ver">v1.1</div></div>
+  <div class="mapWrap">
+    <div id="map" class="map"></div>
+    <div class="searchbar"><input id="search" class="search" placeholder="Miejscowość, nadajnik, MUX, kanał lub MHz…"><button class="round" onclick="centerMe()">◎</button></div>
+    <div id="mapHint" class="mapHint">GPS: oczekiwanie</div>
   </div>
-
-  <div class="toolbar">
-    <input id="search" class="search" placeholder="Szukaj nadajnika, miejscowości lub MUX…">
-    <button id="gpsBtn" class="btn">📍 Użyj GPS</button>
-  </div>
-  <div class="status">
-    <div class="pill">Baza: <strong id="count">0</strong> obiektów</div>
-    <div class="pill">GPS: <strong id="gpsState">brak</strong></div>
-    <div class="pill">Tryb: <strong id="sortState">alfabetyczny</strong></div>
-  </div>
-
-  <section id="detailsPanel" class="panel" hidden>
-    <h2 id="detailsName">Nadajnik</h2>
-    <div class="details-grid">
-      <div class="stat"><span>Odległość</span><strong id="dDistance">–</strong></div>
-      <div class="stat"><span>Azymut</span><strong id="dBearing">–</strong></div>
-      <div class="stat"><span>Pozycja</span><strong id="dCoords">–</strong></div>
-    </div>
-    <div class="compass-wrap" style="margin-top:14px">
-      <div class="compass">
-        <div class="north">N</div><div class="south">S</div><div class="east">E</div><div class="west">W</div>
-        <div id="needle" class="needle"></div>
-      </div>
-      <div class="guide"><strong id="guideText">Wybierz GPS, aby wyliczyć kierunek</strong><p id="headingText">Kierunek telefonu: –</p></div>
-    </div>
-    <div class="actions">
-      <button id="mapBtn" class="btn secondary">🗺️ Mapa</button>
-      <button id="compassBtn" class="btn secondary">🧭 Uruchom kompas</button>
-    </div>
-    <h2 style="margin-top:16px">Emisje / MUX</h2>
-    <div style="overflow:auto"><table class="mux"><thead><tr><th>MUX</th><th>Kanał</th><th>MHz</th><th>ERP</th><th>Pol.</th></tr></thead><tbody id="muxBody"></tbody></table></div>
+  <section class="sheet">
+    <div class="handle"></div>
+    <div class="tabs"><button class="tab active" data-tab="near">NAJBLIŻSZE</button><button class="tab" data-tab="aim">CELOWANIE</button><button class="tab" data-tab="details">PARAMETRY</button></div>
+    <div id="content" class="content"></div>
   </section>
-
-  <section class="panel">
-    <h2 id="listTitle">Nadajniki</h2>
-    <div id="list" class="list"></div>
-  </section>
-
-  <section class="panel">
-    <h2>Źródła i aktualność</h2>
-    <div class="source">Baza nadajników w tej wersji pochodzi z danych projektu DVBT-Point przygotowanych na podstawie wykazu RadioPolska. Aplikacja podaje źródło i nie udaje oficjalnej aplikacji operatora. Do sprawdzenia bieżących parametrów możesz otworzyć oficjalne dane UKE lub Emitel.</div>
-    <div class="actions">
-      <button class="btn secondary" onclick="openUrl('https://bip.uke.gov.pl/pozwolenia-radiowe/wykaz-pozwolen-radiowych-tresci/stacje-telewizyjne,5,114.html')">UKE</button>
-      <button class="btn secondary" onclick="openUrl('https://emitel.pl/strefa-widza/')">Emitel</button>
-    </div>
-  </section>
-  <div class="footer">DVB-T Asystent PL 1.0 • narzędzie pomocnicze do ustawiania anteny</div>
 </div>
-
+<script src="leaflet.js"></script>
 <script src="transmitters.js"></script>
 <script>
-const raw=window.TRANSMITTER_DATA||{transmitters:[]};
-const txs=Array.isArray(raw.transmitters)?raw.transmitters:[];
-let position=null,selected=null,heading=null,compassOn=false;
-const $=id=>document.getElementById(id);
-$('count').textContent=txs.length;
-
-function rad(v){return v*Math.PI/180}
-function deg(v){return v*180/Math.PI}
-function distanceKm(a,b){const R=6371,dLat=rad(b.lat-a.lat),dLon=rad(b.lon-a.lon);const s=Math.sin(dLat/2)**2+Math.cos(rad(a.lat))*Math.cos(rad(b.lat))*Math.sin(dLon/2)**2;return 2*R*Math.asin(Math.sqrt(s))}
-function bearing(a,b){const y=Math.sin(rad(b.lon-a.lon))*Math.cos(rad(b.lat));const x=Math.cos(rad(a.lat))*Math.sin(rad(b.lat))-Math.sin(rad(a.lat))*Math.cos(rad(b.lat))*Math.cos(rad(b.lon-a.lon));return (deg(Math.atan2(y,x))+360)%360}
-function fmtKm(v){return v<10?v.toFixed(1)+' km':Math.round(v)+' km'}
-function fmtBearing(v){return Math.round(v)+'°'}
-function normalize(v){return ((v+540)%360)-180}
-function safe(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
-
-function render(){
- const q=$('search').value.trim().toLowerCase();
- let arr=txs.filter(t=>!q||[t.name,t.short_name,t.location,t.site,...(t.muxes||[]).map(m=>m.name)].join(' ').toLowerCase().includes(q));
- if(position){arr=arr.map(t=>({...t,_d:distanceKm(position,t)})).sort((a,b)=>a._d-b._d);$('sortState').textContent='najbliższe';$('listTitle').textContent='Najbliższe nadajniki';}
- else{arr=arr.sort((a,b)=>(a.name||'').localeCompare(b.name||'','pl'));$('sortState').textContent='alfabetyczny';$('listTitle').textContent='Nadajniki';}
- arr=arr.slice(0,position?40:70);
- $('list').innerHTML=arr.length?arr.map(t=>`<div class="tx ${selected&&selected.id===t.id?'selected':''}" data-id="${safe(t.id)}"><div><h3>${safe(t.name||t.short_name)}</h3><div class="meta">${safe((t.muxes||[]).map(m=>m.name).join(' • ')||'brak danych MUX')}</div></div><div class="distance">${position?fmtKm(t._d):safe(t.site||'')}</div></div>`).join(''):'<div class="empty">Brak wyników.</div>';
- document.querySelectorAll('.tx').forEach(el=>el.addEventListener('click',()=>selectTx(el.dataset.id)));
-}
-
-function selectTx(id){selected=txs.find(t=>t.id===id);if(!selected)return;$('detailsPanel').hidden=false;$('detailsName').textContent=selected.name||selected.short_name;$('dCoords').textContent=`${Number(selected.lat).toFixed(3)}, ${Number(selected.lon).toFixed(3)}`;
- const muxes=selected.muxes||[];$('muxBody').innerHTML=muxes.length?muxes.map(m=>`<tr><td>${safe(m.name)}</td><td>${safe(m.channel||m.channel_no||'–')}</td><td>${safe(m.frequency_mhz??'–')}</td><td>${m.erp_kw!=null?safe(m.erp_kw)+' kW':'–'}</td><td>${safe(m.polarization||'–')}</td></tr>`).join(''):'<tr><td colspan="5">Brak danych emisji</td></tr>';
- updateTarget();render();setTimeout(()=>$('detailsPanel').scrollIntoView({behavior:'smooth',block:'start'}),60)}
-
-function updateTarget(){if(!selected)return;if(position){const d=distanceKm(position,selected),b=bearing(position,selected);selected._bearing=b;$('dDistance').textContent=fmtKm(d);$('dBearing').textContent=fmtBearing(b);$('guideText').textContent=`Ustaw antenę na ${fmtBearing(b)}`;updateNeedle()}else{$('dDistance').textContent='–';$('dBearing').textContent='–';$('guideText').textContent='Wybierz GPS, aby wyliczyć kierunek';$('needle').style.transform='translate(-50%,-100%) rotate(0deg)'}}
-function updateNeedle(){if(!selected||!position)return;const target=selected._bearing??bearing(position,selected);const rel=heading==null?target:normalize(target-heading);$('needle').style.transform=`translate(-50%,-100%) rotate(${rel}deg)`;if(heading!=null){const delta=normalize(target-heading);$('guideText').textContent=Math.abs(delta)<5?`Cel! ${fmtBearing(target)}`:delta>0?`Obróć w prawo o ${Math.round(Math.abs(delta))}°`:`Obróć w lewo o ${Math.round(Math.abs(delta))}°`;}}
-
-window.onNativeLocation=(lat,lon,acc)=>{position={lat,lon};$('gpsState').textContent=acc>0?`±${Math.round(acc)} m`:'OK';render();updateTarget()};
-window.onNativeLocationError=msg=>{$('gpsState').textContent='błąd';alert(msg)};
-window.onCompassHeading=h=>{heading=h;$('headingText').textContent=`Kierunek telefonu: ${Math.round(h)}°`;updateNeedle()};
-window.onCompassUnavailable=()=>{alert('Ten telefon nie udostępnia czujnika kierunku.')};
-function openUrl(url){if(window.Android&&Android.openUrl)Android.openUrl(url);else location.href=url}
-
-$('gpsBtn').addEventListener('click',()=>{if(window.Android&&Android.requestLocation){$('gpsState').textContent='ustalam…';Android.requestLocation()}else alert('GPS jest dostępny w wersji Android APK.')});
-$('search').addEventListener('input',render);
-$('mapBtn').addEventListener('click',()=>{if(!selected)return;if(window.Android&&Android.openMap)Android.openMap(Number(selected.lat),Number(selected.lon),selected.name||'Nadajnik DVB-T')});
-$('compassBtn').addEventListener('click',()=>{if(!selected){alert('Najpierw wybierz nadajnik.');return}if(!position){alert('Najpierw użyj GPS.');return}compassOn=!compassOn;if(window.Android){if(compassOn&&Android.startCompass)Android.startCompass();if(!compassOn&&Android.stopCompass)Android.stopCompass()}$('compassBtn').textContent=compassOn?'⏹ Zatrzymaj kompas':'🧭 Uruchom kompas'});
-render();
+const TXS=(window.TRANSMITTER_DATA&&window.TRANSMITTER_DATA.transmitters)||[];
+const $=id=>document.getElementById(id); const rad=d=>d*Math.PI/180; const deg=r=>r*180/Math.PI;
+let map,user={lat:null,lon:null,acc:null,heading:0},selected=null,activeTab='near',userMarker,targetMarker,routeLine,allMarkers=[];
+function norm(s){return String(s??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9.]+/g,' ').trim()}
+function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function dist(a,b,c,d){const R=6371,dp=rad(c-a),dl=rad(d-b);const x=Math.sin(dp/2)**2+Math.cos(rad(a))*Math.cos(rad(c))*Math.sin(dl/2)**2;return 2*R*Math.asin(Math.sqrt(x))}
+function bearing(a,b,c,d){const y=Math.sin(rad(d-b))*Math.cos(rad(c));const x=Math.cos(rad(a))*Math.sin(rad(c))-Math.sin(rad(a))*Math.cos(rad(c))*Math.cos(rad(d-b));return (deg(Math.atan2(y,x))+360)%360}
+function diffDeg(target,heading){return ((target-heading+540)%360)-180}
+function searchable(t){let s=[t.name,t.short_name,t.location,t.site];(t.muxes||[]).forEach(m=>s.push(m.name,m.channel,m.channel_no,m.frequency_mhz,m.erp_kw,m.polarization,m.operator,m.band));return norm(s.join(' '))}
+function filtered(){const q=norm($('search').value);let arr=TXS.filter(t=>!q||searchable(t).includes(q)).map(t=>({...t,_d:user.lat==null?99999:dist(user.lat,user.lon,t.lat,t.lon)}));arr.sort((a,b)=>a._d-b._d||(a.name||'').localeCompare(b.name||'','pl'));return arr}
+function initMap(){map=L.map('map',{zoomControl:false}).setView([52.05,19.2],6);L.control.zoom({position:'bottomright'}).addTo(map);L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'}).addTo(map);renderAll();setTimeout(()=>map.invalidateSize(),200)}
+function userIcon(){return L.divIcon({className:'',html:`<div class="userArrow" style="transform:rotate(${user.heading}deg)">▲</div>`,iconSize:[30,30],iconAnchor:[15,15]})}
+function txIcon(target=false){return L.divIcon({className:'',html:`<div class="${target?'targetMarker':'txMarker'}"></div>`,iconSize:[target?23:18,target?23:18],iconAnchor:[target?11:9,target?11:9]})}
+function setUserMarker(){if(user.lat==null)return;if(userMarker)map.removeLayer(userMarker);userMarker=L.marker([user.lat,user.lon],{icon:userIcon(),zIndexOffset:1200}).addTo(map).bindTooltip('Twoja pozycja')}
+function renderMapMarkers(){allMarkers.forEach(m=>map.removeLayer(m));allMarkers=[];const arr=filtered().slice(0,user.lat==null?70:55);for(const t of arr){if(selected&&t.id===selected.id)continue;const m=L.marker([t.lat,t.lon],{icon:txIcon(false)}).addTo(map);m.on('click',()=>selectTx(t.id,true));m.bindTooltip(t.name||t.short_name||'Nadajnik');allMarkers.push(m)}}
+function updateRoute(){if(routeLine){map.removeLayer(routeLine);routeLine=null}if(targetMarker){map.removeLayer(targetMarker);targetMarker=null}if(!selected)return;targetMarker=L.marker([selected.lat,selected.lon],{icon:txIcon(true),zIndexOffset:1000}).addTo(map).bindTooltip(selected.name||'Wybrany nadajnik');if(user.lat!=null)routeLine=L.polyline([[user.lat,user.lon],[selected.lat,selected.lon]],{color:'#00c2ff',weight:4,opacity:.85,dashArray:'8 7'}).addTo(map)}
+function renderList(){if(activeTab!=='near')return;const arr=filtered().slice(0,100);if(!arr.length){$('content').innerHTML='<div class="empty">Brak wyników. Spróbuj np. „Rzeszow”, „MUX 3”, „K29” albo „538”.</div>';return} $('content').innerHTML=arr.map(t=>`<div class="card tx ${selected&&selected.id===t.id?'selected':''}" onclick="selectTx('${esc(t.id)}',true)"><div><div class="name">${esc(t.name||t.short_name)}</div><div class="meta">${esc((t.muxes||[]).map(m=>m.name).filter(Boolean).join(' • ')||'DVB-T/T2')} · ${user.lat!=null?t._d.toFixed(1)+' km':'GPS potrzebny do odległości'}</div></div><div class="badge">${(t.muxes||[]).length} emisji</div></div>`).join('')}
+function selectTx(id,fit){selected=TXS.find(t=>t.id===id)||null;if(!selected)return;updateRoute();renderMapMarkers();renderAll();if(fit){if(user.lat!=null)map.fitBounds([[user.lat,user.lon],[selected.lat,selected.lon]],{padding:[45,45],maxZoom:13});else map.setView([selected.lat,selected.lon],12)}}
+function renderAim(){if(activeTab!=='aim')return;if(!selected){$('content').innerHTML='<div class="empty">Wybierz nadajnik z listy.</div>';return}if(user.lat==null){$('content').innerHTML='<div class="empty">Do celowania potrzebna jest lokalizacja.<br><br><button class="btn" onclick="requestGps()">WŁĄCZ GPS</button></div>';return}const b=bearing(user.lat,user.lon,selected.lat,selected.lon),d=dist(user.lat,user.lon,selected.lat,selected.lon),df=diffDeg(b,user.heading);const dir=Math.abs(df)<5?'TRZYMAJ TEN KIERUNEK':Math.abs(df)<15?(df>0?'lekko w prawo':'lekko w lewo'):(df>0?'OBRÓĆ W PRAWO':'OBRÓĆ W LEWO');$('content').innerHTML=`<div class="card hero"><div class="compass"><div class="north">N</div><div class="needle" style="transform:rotate(${df}deg)"></div><div class="dot"></div></div><div><div class="small">Cel</div><div class="name">${esc(selected.name)}</div><div class="az">${Math.round(b)}°</div><div class="dir">${dir}</div><div class="small">telefon ${Math.round(user.heading)}° · różnica ${Math.round(df)}°</div></div></div><div class="card"><div class="row"><div class="pill">📏 ${d.toFixed(1)} km</div><div class="pill">📍 GPS ±${user.acc?Math.round(user.acc):'?'} m</div></div><div class="small" style="margin-top:9px">Trzymaj telefon płasko. Niebieska strzałka na mapie pokazuje, w którą stronę jest obrócony telefon. Linia prowadzi do wybranego nadajnika.</div><div class="row"><button class="btn" onclick="fitRoute()">POKAŻ CAŁĄ TRASĘ</button><button class="btn alt" onclick="centerMe()">MOJA POZYCJA</button></div></div>`}
+function renderDetails(){if(activeTab!=='details')return;if(!selected){$('content').innerHTML='<div class="empty">Wybierz nadajnik z listy.</div>';return}let extra='';if(user.lat!=null){const d=dist(user.lat,user.lon,selected.lat,selected.lon),b=bearing(user.lat,user.lon,selected.lat,selected.lon);extra=`<div class="row"><div class="pill">${d.toFixed(1)} km</div><div class="pill">azymut ${Math.round(b)}°</div></div>`}let html=`<div class="card"><div class="name">${esc(selected.name)}</div><div class="meta">${esc(selected.location||'')} ${esc(selected.site||'')}</div>${extra}</div>`;(selected.muxes||[]).forEach(m=>{html+=`<div class="card mux"><div class="muxTitle">${esc(m.name||'MUX')} · ${esc(m.channel||('K'+(m.channel_no||'?')))}</div><div class="small">${m.frequency_mhz!=null?m.frequency_mhz+' MHz · ':''}${m.erp_kw!=null?'ERP '+m.erp_kw+' kW · ':''}${m.polarization?'pol. '+esc(m.polarization)+' · ':''}${esc(m.operator||'')}</div></div>`});$('content').innerHTML=html}
+function renderAll(){renderList();renderAim();renderDetails();updateRoute();renderMapMarkers()}
+function requestGps(){if(window.Android&&Android.requestLocation)Android.requestLocation()}
+function centerMe(){if(user.lat!=null)map.setView([user.lat,user.lon],14);else requestGps()}
+function fitRoute(){if(selected&&user.lat!=null)map.fitBounds([[user.lat,user.lon],[selected.lat,selected.lon]],{padding:[45,45],maxZoom:13})}
+window.onNativeLocation=(lat,lon,acc)=>{const first=user.lat==null;user.lat=Number(lat);user.lon=Number(lon);user.acc=Number(acc);$('mapHint').textContent=`GPS: ${user.lat.toFixed(5)}, ${user.lon.toFixed(5)} · ±${acc>0?Math.round(acc):'?'} m`;setUserMarker();renderAll();if(first){const n=filtered()[0];if(n)selectTx(n.id,false);map.setView([user.lat,user.lon],11)}};
+window.onNativeLocationError=msg=>{$('mapHint').textContent='GPS: '+msg};
+window.onCompassHeading=h=>{user.heading=(Number(h)+360)%360;setUserMarker();if(activeTab==='aim')renderAim()};
+window.onCompassUnavailable=()=>{$('mapHint').textContent+=' · brak kompasu'};
+document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));b.classList.add('active');activeTab=b.dataset.tab;renderAll()}));
+$('search').addEventListener('input',()=>{activeTab='near';document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('active',x.dataset.tab==='near'));renderAll()});
+initMap();requestGps();if(window.Android&&Android.startCompass)Android.startCompass();
 </script>
 </body>
 </html>
