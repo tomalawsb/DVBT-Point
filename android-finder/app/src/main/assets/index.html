@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#07131f">
+<title>DVB-T Asystent PL</title>
+<style>
+:root{--bg:#07131f;--panel:#0d1d2b;--panel2:#12283a;--text:#f4f8fb;--muted:#9db0bf;--accent:#2dd4bf;--accent2:#38bdf8;--line:#20384a;--warn:#fbbf24}
+*{box-sizing:border-box}body{margin:0;background:linear-gradient(180deg,#07131f,#0a1723 45%,#07131f);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif}button,input{font:inherit}.app{max-width:760px;margin:0 auto;min-height:100vh;padding:16px 14px 32px}.top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}.brand h1{font-size:23px;margin:0}.brand p{margin:3px 0 0;color:var(--muted);font-size:12px}.badge{padding:6px 9px;border:1px solid var(--line);border-radius:999px;color:var(--accent);font-size:12px;background:#0a1b28}.toolbar{display:grid;grid-template-columns:1fr auto;gap:9px;margin-bottom:10px}.search{width:100%;border:1px solid var(--line);background:#0b1b28;color:#fff;border-radius:13px;padding:12px 14px;outline:none}.btn{border:0;border-radius:12px;padding:11px 13px;background:var(--accent);color:#06221d;font-weight:800}.btn.secondary{background:#193247;color:#dbe9f2;border:1px solid #28465d}.status{display:flex;gap:8px;flex-wrap:wrap;margin:9px 0 13px}.pill{background:#0c1d2b;border:1px solid var(--line);color:var(--muted);border-radius:999px;padding:7px 10px;font-size:12px}.pill strong{color:#fff}.panel{background:rgba(13,29,43,.96);border:1px solid var(--line);border-radius:18px;padding:14px;margin:12px 0;box-shadow:0 12px 30px rgba(0,0,0,.18)}.panel h2{font-size:16px;margin:0 0 10px}.list{display:grid;gap:9px}.tx{background:#0b1a27;border:1px solid #1c3447;border-radius:14px;padding:12px;display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center}.tx.selected{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset}.tx h3{font-size:14px;margin:0 0 4px}.tx .meta{color:var(--muted);font-size:12px;line-height:1.4}.distance{color:var(--accent2);font-weight:800;font-size:13px}.empty{color:var(--muted);text-align:center;padding:22px}.details-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.stat{background:#0a1a27;border:1px solid var(--line);border-radius:12px;padding:10px;text-align:center}.stat span{display:block;color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.04em}.stat strong{display:block;margin-top:4px;font-size:16px}.compass-wrap{display:flex;flex-direction:column;align-items:center;gap:10px}.compass{width:min(70vw,280px);aspect-ratio:1;border:2px solid #315064;border-radius:50%;position:relative;background:radial-gradient(circle at center,#10283a 0 4%,#091925 5% 100%);box-shadow:inset 0 0 40px rgba(0,0,0,.4)}.compass .north{position:absolute;top:8px;left:50%;transform:translateX(-50%);font-weight:900;color:#fff}.compass .south{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);color:var(--muted)}.compass .east{position:absolute;right:10px;top:50%;transform:translateY(-50%);color:var(--muted)}.compass .west{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--muted)}.needle{position:absolute;left:50%;top:50%;width:8px;height:42%;transform-origin:50% 100%;transform:translate(-50%,-100%) rotate(0deg);transition:transform .18s linear}.needle:before{content:"";position:absolute;top:0;left:50%;transform:translateX(-50%);border-left:13px solid transparent;border-right:13px solid transparent;border-bottom:0;border-top:30px solid var(--accent);filter:drop-shadow(0 0 8px rgba(45,212,191,.45))}.needle:after{content:"";position:absolute;left:50%;bottom:-8px;transform:translateX(-50%);width:18px;height:18px;border-radius:50%;background:#d9fdf7;border:5px solid var(--accent)}.guide{text-align:center}.guide strong{font-size:18px}.guide p{margin:5px 0;color:var(--muted);font-size:12px}.mux{width:100%;border-collapse:collapse;font-size:12px}.mux th,.mux td{padding:9px 6px;border-bottom:1px solid var(--line);text-align:left}.mux th{color:var(--muted);font-size:10px;text-transform:uppercase}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.source{font-size:11px;color:var(--muted);line-height:1.5}.source a{color:var(--accent2)}.footer{text-align:center;color:#6f8493;font-size:11px;padding-top:14px}@media(max-width:520px){.details-grid{grid-template-columns:repeat(2,1fr)}.toolbar{grid-template-columns:1fr}.tx{grid-template-columns:1fr}.distance{justify-self:start}.mux{font-size:11px}.mux th,.mux td{padding:8px 4px}}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="top">
+    <div class="brand"><h1>📡 DVB-T Asystent PL</h1><p>nadajniki • azymut • kompas • parametry MUX</p></div>
+    <div class="badge">v1.0</div>
+  </div>
+
+  <div class="toolbar">
+    <input id="search" class="search" placeholder="Szukaj nadajnika, miejscowości lub MUX…">
+    <button id="gpsBtn" class="btn">📍 Użyj GPS</button>
+  </div>
+  <div class="status">
+    <div class="pill">Baza: <strong id="count">0</strong> obiektów</div>
+    <div class="pill">GPS: <strong id="gpsState">brak</strong></div>
+    <div class="pill">Tryb: <strong id="sortState">alfabetyczny</strong></div>
+  </div>
+
+  <section id="detailsPanel" class="panel" hidden>
+    <h2 id="detailsName">Nadajnik</h2>
+    <div class="details-grid">
+      <div class="stat"><span>Odległość</span><strong id="dDistance">–</strong></div>
+      <div class="stat"><span>Azymut</span><strong id="dBearing">–</strong></div>
+      <div class="stat"><span>Pozycja</span><strong id="dCoords">–</strong></div>
+    </div>
+    <div class="compass-wrap" style="margin-top:14px">
+      <div class="compass">
+        <div class="north">N</div><div class="south">S</div><div class="east">E</div><div class="west">W</div>
+        <div id="needle" class="needle"></div>
+      </div>
+      <div class="guide"><strong id="guideText">Wybierz GPS, aby wyliczyć kierunek</strong><p id="headingText">Kierunek telefonu: –</p></div>
+    </div>
+    <div class="actions">
+      <button id="mapBtn" class="btn secondary">🗺️ Mapa</button>
+      <button id="compassBtn" class="btn secondary">🧭 Uruchom kompas</button>
+    </div>
+    <h2 style="margin-top:16px">Emisje / MUX</h2>
+    <div style="overflow:auto"><table class="mux"><thead><tr><th>MUX</th><th>Kanał</th><th>MHz</th><th>ERP</th><th>Pol.</th></tr></thead><tbody id="muxBody"></tbody></table></div>
+  </section>
+
+  <section class="panel">
+    <h2 id="listTitle">Nadajniki</h2>
+    <div id="list" class="list"></div>
+  </section>
+
+  <section class="panel">
+    <h2>Źródła i aktualność</h2>
+    <div class="source">Baza nadajników w tej wersji pochodzi z danych projektu DVBT-Point przygotowanych na podstawie wykazu RadioPolska. Aplikacja podaje źródło i nie udaje oficjalnej aplikacji operatora. Do sprawdzenia bieżących parametrów możesz otworzyć oficjalne dane UKE lub Emitel.</div>
+    <div class="actions">
+      <button class="btn secondary" onclick="openUrl('https://bip.uke.gov.pl/pozwolenia-radiowe/wykaz-pozwolen-radiowych-tresci/stacje-telewizyjne,5,114.html')">UKE</button>
+      <button class="btn secondary" onclick="openUrl('https://emitel.pl/strefa-widza/')">Emitel</button>
+    </div>
+  </section>
+  <div class="footer">DVB-T Asystent PL 1.0 • narzędzie pomocnicze do ustawiania anteny</div>
+</div>
+
+<script src="transmitters.js"></script>
+<script>
+const raw=window.TRANSMITTER_DATA||{transmitters:[]};
+const txs=Array.isArray(raw.transmitters)?raw.transmitters:[];
+let position=null,selected=null,heading=null,compassOn=false;
+const $=id=>document.getElementById(id);
+$('count').textContent=txs.length;
+
+function rad(v){return v*Math.PI/180}
+function deg(v){return v*180/Math.PI}
+function distanceKm(a,b){const R=6371,dLat=rad(b.lat-a.lat),dLon=rad(b.lon-a.lon);const s=Math.sin(dLat/2)**2+Math.cos(rad(a.lat))*Math.cos(rad(b.lat))*Math.sin(dLon/2)**2;return 2*R*Math.asin(Math.sqrt(s))}
+function bearing(a,b){const y=Math.sin(rad(b.lon-a.lon))*Math.cos(rad(b.lat));const x=Math.cos(rad(a.lat))*Math.sin(rad(b.lat))-Math.sin(rad(a.lat))*Math.cos(rad(b.lat))*Math.cos(rad(b.lon-a.lon));return (deg(Math.atan2(y,x))+360)%360}
+function fmtKm(v){return v<10?v.toFixed(1)+' km':Math.round(v)+' km'}
+function fmtBearing(v){return Math.round(v)+'°'}
+function normalize(v){return ((v+540)%360)-180}
+function safe(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
+
+function render(){
+ const q=$('search').value.trim().toLowerCase();
+ let arr=txs.filter(t=>!q||[t.name,t.short_name,t.location,t.site,...(t.muxes||[]).map(m=>m.name)].join(' ').toLowerCase().includes(q));
+ if(position){arr=arr.map(t=>({...t,_d:distanceKm(position,t)})).sort((a,b)=>a._d-b._d);$('sortState').textContent='najbliższe';$('listTitle').textContent='Najbliższe nadajniki';}
+ else{arr=arr.sort((a,b)=>(a.name||'').localeCompare(b.name||'','pl'));$('sortState').textContent='alfabetyczny';$('listTitle').textContent='Nadajniki';}
+ arr=arr.slice(0,position?40:70);
+ $('list').innerHTML=arr.length?arr.map(t=>`<div class="tx ${selected&&selected.id===t.id?'selected':''}" data-id="${safe(t.id)}"><div><h3>${safe(t.name||t.short_name)}</h3><div class="meta">${safe((t.muxes||[]).map(m=>m.name).join(' • ')||'brak danych MUX')}</div></div><div class="distance">${position?fmtKm(t._d):safe(t.site||'')}</div></div>`).join(''):'<div class="empty">Brak wyników.</div>';
+ document.querySelectorAll('.tx').forEach(el=>el.addEventListener('click',()=>selectTx(el.dataset.id)));
+}
+
+function selectTx(id){selected=txs.find(t=>t.id===id);if(!selected)return;$('detailsPanel').hidden=false;$('detailsName').textContent=selected.name||selected.short_name;$('dCoords').textContent=`${Number(selected.lat).toFixed(3)}, ${Number(selected.lon).toFixed(3)}`;
+ const muxes=selected.muxes||[];$('muxBody').innerHTML=muxes.length?muxes.map(m=>`<tr><td>${safe(m.name)}</td><td>${safe(m.channel||m.channel_no||'–')}</td><td>${safe(m.frequency_mhz??'–')}</td><td>${m.erp_kw!=null?safe(m.erp_kw)+' kW':'–'}</td><td>${safe(m.polarization||'–')}</td></tr>`).join(''):'<tr><td colspan="5">Brak danych emisji</td></tr>';
+ updateTarget();render();setTimeout(()=>$('detailsPanel').scrollIntoView({behavior:'smooth',block:'start'}),60)}
+
+function updateTarget(){if(!selected)return;if(position){const d=distanceKm(position,selected),b=bearing(position,selected);selected._bearing=b;$('dDistance').textContent=fmtKm(d);$('dBearing').textContent=fmtBearing(b);$('guideText').textContent=`Ustaw antenę na ${fmtBearing(b)}`;updateNeedle()}else{$('dDistance').textContent='–';$('dBearing').textContent='–';$('guideText').textContent='Wybierz GPS, aby wyliczyć kierunek';$('needle').style.transform='translate(-50%,-100%) rotate(0deg)'}}
+function updateNeedle(){if(!selected||!position)return;const target=selected._bearing??bearing(position,selected);const rel=heading==null?target:normalize(target-heading);$('needle').style.transform=`translate(-50%,-100%) rotate(${rel}deg)`;if(heading!=null){const delta=normalize(target-heading);$('guideText').textContent=Math.abs(delta)<5?`Cel! ${fmtBearing(target)}`:delta>0?`Obróć w prawo o ${Math.round(Math.abs(delta))}°`:`Obróć w lewo o ${Math.round(Math.abs(delta))}°`;}}
+
+window.onNativeLocation=(lat,lon,acc)=>{position={lat,lon};$('gpsState').textContent=acc>0?`±${Math.round(acc)} m`:'OK';render();updateTarget()};
+window.onNativeLocationError=msg=>{$('gpsState').textContent='błąd';alert(msg)};
+window.onCompassHeading=h=>{heading=h;$('headingText').textContent=`Kierunek telefonu: ${Math.round(h)}°`;updateNeedle()};
+window.onCompassUnavailable=()=>{alert('Ten telefon nie udostępnia czujnika kierunku.')};
+function openUrl(url){if(window.Android&&Android.openUrl)Android.openUrl(url);else location.href=url}
+
+$('gpsBtn').addEventListener('click',()=>{if(window.Android&&Android.requestLocation){$('gpsState').textContent='ustalam…';Android.requestLocation()}else alert('GPS jest dostępny w wersji Android APK.')});
+$('search').addEventListener('input',render);
+$('mapBtn').addEventListener('click',()=>{if(!selected)return;if(window.Android&&Android.openMap)Android.openMap(Number(selected.lat),Number(selected.lon),selected.name||'Nadajnik DVB-T')});
+$('compassBtn').addEventListener('click',()=>{if(!selected){alert('Najpierw wybierz nadajnik.');return}if(!position){alert('Najpierw użyj GPS.');return}compassOn=!compassOn;if(window.Android){if(compassOn&&Android.startCompass)Android.startCompass();if(!compassOn&&Android.stopCompass)Android.stopCompass()}$('compassBtn').textContent=compassOn?'⏹ Zatrzymaj kompas':'🧭 Uruchom kompas'});
+render();
+</script>
+</body>
+</html>
